@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Backroads Fishing</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#0c1915">
@@ -28,6 +28,7 @@
   color-scheme:dark;
 }
 html,body{height:100%}
+*{touch-action:manipulation}
 [hidden]{display:none!important}
 body{background:var(--ink);color:var(--lichen);font-family:var(--f-body);font-size:15px;line-height:1.45;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0;
@@ -2682,6 +2683,8 @@ window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.ho
 <script>
 // Installed-app support: offline play, and ask the phone to keep saved progress.
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}
+// Block pinch and double-tap zoom so stray taps don't zoom the game.
+addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{});}catch(e){}
 </script>
 
