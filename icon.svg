@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#21423a"/>
+      <stop offset="1" stop-color="#173027"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1d4a48"/>
+      <stop offset="1" stop-color="#0c1915"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#f2a93b" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#f2a93b" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+  <!-- distant reeds / treeline -->
+  <path d="M0 270 Q60 238 120 258 T250 248 T380 256 T512 244 V290 H0Z" fill="#12261f"/>
+  <!-- water -->
+  <rect y="284" width="512" height="228" fill="url(#water)"/>
+  <!-- glow on water -->
+  <ellipse cx="256" cy="300" rx="170" ry="70" fill="url(#glow)"/>
+  <!-- ripples -->
+  <g fill="none" stroke="#e1ead2" stroke-linecap="round" opacity=".55">
+    <ellipse cx="256" cy="300" rx="78" ry="13" stroke-width="7"/>
+    <ellipse cx="256" cy="300" rx="128" ry="22" stroke-width="5" opacity=".6"/>
+    <ellipse cx="256" cy="300" rx="178" ry="31" stroke-width="4" opacity=".35"/>
+  </g>
+  <!-- line -->
+  <g transform="translate(0 40)"><path d="M256 150 L256 110" stroke="#e1ead2" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+  <!-- bobber: top white, bottom red, sitting in the water -->
+  <g>
+    <rect x="248" y="140" width="16" height="42" rx="6" fill="#e1ead2"/>
+    <path d="M176 262 A80 80 0 0 1 336 262 Z" fill="#f4f1e6"/>
+    <path d="M176 262 A80 80 0 0 0 336 262 Z" fill="#e65a3d"/>
+    <rect x="172" y="254" width="168" height="16" rx="8" fill="#0c1915" opacity=".85"/>
+    <ellipse cx="226" cy="214" rx="20" ry="13" fill="#fff" opacity=".7"/>
+  </g></g>
+  <!-- submerged half fades into water -->
+  <path d="M168 304 L344 304 L344 390 L168 390Z" fill="#14332f" opacity="0"/>
+  <!-- reeds -->
+  <g stroke="#86ab5c" stroke-width="9" stroke-linecap="round" fill="none">
+    <path d="M70 512 Q66 400 92 330"/>
+    <path d="M100 512 Q104 420 78 360"/>
+    <path d="M440 512 Q446 410 420 340"/>
+  </g>
+  <ellipse cx="92" cy="324" rx="9" ry="26" fill="#b86e10" transform="rotate(18 92 324)"/>
+  <ellipse cx="420" cy="334" rx="9" ry="26" fill="#b86e10" transform="rotate(-20 420 334)"/>
+</svg>

@@ -1,0 +1,17 @@
+{
+  "name": "Backroads Fishing",
+  "short_name": "Backroads",
+  "description": "A laid-back fishing game. Plays offline; progress saves on your device.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#0c1915",
+  "theme_color": "#0c1915",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
