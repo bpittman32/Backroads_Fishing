@@ -116,7 +116,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .tut-btns{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:4px}
 /* ---------- Toast ---------- */
 #toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.9);z-index:8;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;
-  font-family:var(--f-display);font-size:clamp(22px,7vw,34px);color:var(--lichen);text-shadow:0 3px 0 rgba(0,0,0,.45),0 0 18px rgba(0,0,0,.4);text-align:center;width:max-content;max-width:calc(100vw - 40px)}
+  font-family:var(--f-display);font-size:clamp(22px,calc(7vw / var(--ui,1)),34px);color:var(--lichen);text-shadow:0 3px 0 rgba(0,0,0,.45),0 0 18px rgba(0,0,0,.4);text-align:center;width:max-content;max-width:calc(calc(100vw / var(--ui,1)) - 40px)}
 #toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #toast small{display:block;font-family:var(--f-body);font-size:14px;font-weight:700;color:var(--amber);text-shadow:0 2px 0 rgba(0,0,0,.5)}
 
@@ -175,10 +175,10 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 
 /* Menu */
 #menu{background:linear-gradient(180deg,rgba(6,14,12,0) 0%,rgba(6,14,12,.15) 40%,rgba(6,14,12,.78) 100%);backdrop-filter:none;-webkit-backdrop-filter:none;display:flex}
-.menu-inner{max-width:440px;width:100%;margin:auto auto 0;display:flex;flex-direction:column;gap:22px;padding-top:8vh}
+.menu-inner{max-width:440px;width:100%;margin:auto auto 0;display:flex;flex-direction:column;gap:22px;padding-top:calc(8vh / var(--ui,1))}
 .brand{text-align:center}
 .eyebrow{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--amber);font-weight:700}
-.brand h1{font-family:var(--f-display);font-weight:400;font-size:clamp(56px,19vw,92px);line-height:.86;margin:10px 0 12px;color:var(--lichen);
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:clamp(56px,calc(18vw / var(--ui,1)),84px);line-height:.86;margin:10px 0 12px;color:var(--lichen);
   text-shadow:0 5px 0 #0b1a14,0 9px 22px rgba(0,0,0,.45);letter-spacing:.01em;text-wrap:balance}
 .brand h1 em{font-style:normal;color:var(--amber)}
 .tag{margin:0 auto;max-width:30ch;color:var(--lichen);opacity:.9;text-shadow:0 1px 4px rgba(0,0,0,.7)}
@@ -275,7 +275,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 .catch-card{max-width:420px;width:100%;margin:auto;text-align:center;display:flex;flex-direction:column;gap:12px;animation:rise .35s cubic-bezier(.2,1.4,.4,1)}
 @keyframes rise{from{transform:translateY(30px) scale(.94);opacity:0}}
 .catch-card .eyebrow{font-size:12px}
-.catch-card h2{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,9vw,40px);margin:0;line-height:1;text-wrap:balance}
+.catch-card h2{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,calc(9vw / var(--ui,1)),40px);margin:0;line-height:1;text-wrap:balance}
 #catchCanvas{width:100%;max-width:100%;height:auto;aspect-ratio:2/1;border-radius:14px;background:radial-gradient(circle at 50% 55%,#2c6a66,#10302d 75%)}
 .catch-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .catch-stats div{background:rgba(0,0,0,.28);border-radius:12px;padding:8px}
@@ -340,8 +340,51 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 #confirm p{margin:0;color:var(--lichen-dim)}
 #confirm .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
+/* tablets: everything but the pond canvas and the tour spotlight scales by --ui (set in resize) */
+#hud,#shopBtn,#questBtn,#fightHud,#toast,.tut-card,#controls,.screen{zoom:var(--ui,1)}
+/* ---------- landscape (phones and tablets held sideways) ---------- */
+@media (orientation:landscape){
+  #lureChip{flex:0 1 auto;max-width:340px}
+  #hud{justify-content:space-between}
+  #clockChip{margin-inline:auto}
+  #fightHud .fh-card{max-width:400px;padding:8px 12px;gap:5px}
+  #controls.fighting{grid-template-columns:1fr}
+  #tilt{display:grid;grid-template-columns:minmax(210px,300px) 1fr minmax(230px,330px);align-items:end;gap:12px}
+  /* the reel pad stays on the same side as the REEL button; drag goes on the other side */
+  #tilt .drag-ctl{grid-column:3;grid-row:1;margin-bottom:0}
+  #tilt .tilt-track{grid-column:1;grid-row:1;height:96px}
+  #controls.lefty #tilt .drag-ctl{grid-column:1}
+  #controls.lefty #tilt .tilt-track{grid-column:3}
+  #tilt .tilt-label{display:none}
+  #hint{min-height:1.4em}
+  #bHook{align-self:flex-end;width:170px;height:60px;font-size:20px}
+  #controls.lefty #bHook{align-self:flex-start}
+}
+/* short landscape screens (phones sideways, and tablets sideways once the UI is scaled up): set in resize() */
+  html.short #menu{align-items:center}
+  html.short .menu-inner{max-width:900px;flex-direction:row;align-items:center;gap:36px;padding:12px 24px;margin:auto}
+  html.short .menu-inner .brand{flex:1.2}
+  html.short .menu-inner .menu-btns{flex:1}
+  html.short .menu-inner .menu-stats{display:none}
+  html.short .menu-inner .ver-tag{position:absolute;bottom:6px;left:0;right:0}
+  html.short .brand h1{font-size:clamp(40px,calc(13vh / var(--ui,1)),64px)}
+  html.short .tag{font-size:14px}
+  html.short .sheet-head{padding-block:4px;padding-bottom:8px}
+  html.short .sheet-head h2{font-size:24px}
+  html.short #fightHud{top:calc(env(safe-area-inset-top,0px) + 50px)}
+  html.short #fightHud .say{font-size:15px}
+  html.short .pad-btn{width:80px;height:80px}
+  html.short #controls{grid-template-columns:80px 1fr 80px}
+  html.short #tilt .tilt-track{height:80px;font-size:19px}
+  html.short .drag-ctl button,html.short .drag-meter{height:40px}
+  html.short .catch-card{max-width:760px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"eb eb" "nm nm" "cv bd" "cv st" "cv ac";gap:8px 16px;align-items:center;padding:12px 16px}
+  html.short .catch-card .eyebrow{grid-area:eb}
+  html.short .catch-card h2{grid-area:nm;font-size:28px}
+  html.short #catchCanvas{grid-area:cv}
+  html.short .catch-card .badges{grid-area:bd}
+  html.short .catch-card .catch-stats{grid-area:st}
+  html.short .catch-card .catch-actions{grid-area:ac}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (min-width:700px) and (min-height:600px){.pad-btn{width:104px;height:104px}#controls{grid-template-columns:104px 1fr 104px}}
 </style>
 
 <canvas id="cv" aria-label="Pond"></canvas>
@@ -565,7 +608,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.74a';
+const VERSION='v0.77c';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -802,7 +845,7 @@ function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}}
 // ---------------- WORLD ----------------
 const cv=$('#cv'),ctx=cv.getContext('2d');
 const darkC=document.createElement('canvas'),dctx=darkC.getContext('2d');
-let DPR=1,CW=0,CH=0,SC=1,W=400,WX=800,H=700,SURF=220,GROUND=600;
+let UI=1,DPR=1,CW=0,CH=0,SC=1,W=400,TW=400,WX=800,H=700,SURF=220,GROUND=600;
 const DOCKX=70;
 let bigTrees=[],bridge=null,weeds=[],pads=[],hills=[],trees=[],stones=[],rocks=[],roots=[],GPAT=null,farTrees=[],ridge=[],clouds=[],reeds=[],specks=[];
 function makeGroundPat(){
@@ -846,7 +889,7 @@ const DEPTH_WARP=2.2;
 function warpY(y){const D=GROUND-SURF,t=(y-SURF)/D;return t<=0||t>=1?y:SURF+D*(1-Math.pow(1-t,DEPTH_WARP));}
 function unwarpY(y){const D=GROUND-SURF,w=(y-SURF)/D;return w<=0||w>=1?y:SURF+D*(1-Math.pow(1-w,1/DEPTH_WARP));}
 function bottomAt(x){return warpY(rawBottomAt(x));}
-function rawBottomAt(x){const lid=(typeof S!=='undefined'&&S&&S.loc)||'pond';if(lid==='amazon')return amazonBottom(x);if(lid==='creek')return creekBottom(x);if(lid==='lake')return lakeBottom(x);if(lid==='river')return riverBottom(x);const u=x/W;const ft=profFt(u,POND_PTS)+(1-nestZoneW(u))*(.5*Math.sin(u*27)+.9*Math.sin(u*9+1)*smooth(1.05,1.4,u));return Math.min(GROUND,ftToY(Math.max(1.5,ft)));}
+function rawBottomAt(x){const lid=(typeof S!=='undefined'&&S&&S.loc)||'pond';if(lid==='amazon')return amazonBottom(x);if(lid==='creek')return creekBottom(x);if(lid==='lake')return lakeBottom(x);if(lid==='river')return riverBottom(x);const u=x/TW;const ft=profFt(u,POND_PTS)+(1-nestZoneW(u))*(.5*Math.sin(u*27)+.9*Math.sin(u*9+1)*smooth(1.05,1.4,u));return Math.min(GROUND,ftToY(Math.max(1.5,ft)));}
 const POND_PTS=[[0,2.5],[.17,4.2],[.24,5],[.6,5],[.74,9],[1.06,9],[1.24,18.5],[1.5,19.5],[1.75,19],[2.05,19.5]];
 // Depth profile from control points: [u (screen widths from the bank), depth in feet]. Smooth between points
 // and level at each one, so two points at the same depth make a true flat.
@@ -884,23 +927,28 @@ let cboulders=[],holds=[];
 // Willow Creek, laid out by hand: riffle off the rocks, a deep pool, a gravel run (smallmouth beds),
 // a shallow rocky run (rock bass beds), then a rounded pool under the undercut bank.
 const CREEK_PTS=[[0,.6],[.17,1.2],[.3,3],[.45,3.8],[.58,3.7],[.7,5.4],[.79,7.1],[.88,7.4],[.96,5.2],[1.02,4],[1.28,4],[1.42,3.5],[1.64,3.5],[1.75,5.4],[1.85,7.2],[1.92,7.3],[1.99,5.4],[2.04,1.2]];
-function creekBottom(x){const u=x/W;const ft=profFt(u,CREEK_PTS)+(1-nestZoneW(u))*(.22*Math.sin(u*31)+.16*Math.sin(u*57));
+// The creek's far run and undercut bank sit at the world's right edge (WX). On a wide screen WX is more than 2 lake-widths,
+// so the far half of the creek stretches to meet it. Portrait is unchanged (ckStretch()=1).
+const CK0=1.42;function ckStretch(){return Math.max(1,(WX/TW+.04-CK0)/.62);}
+function creekBottom(x){let u=x/TW;if(u>CK0)u=CK0+(u-CK0)/ckStretch();const ft=profFt(u,CREEK_PTS)+(1-nestZoneW(u))*(.22*Math.sin(u*31)+.16*Math.sin(u*57));
   const yy=Math.min(GROUND,ftToY(Math.max(.5,ft)));if(x<DOCKX+46){const k=smooth(DOCKX-10,DOCKX+46,x);return lerp(SURF+2,yy,k);}return yy;}
 const LAKE_PTS=[[0,7.5],[.18,6.5],[.24,6],[.6,6],[.76,11],[1.08,11],[1.3,25],[1.55,27.5],[1.8,27],[2.05,22]];
-function lakeBottom(x){const u=x/W;const ft=profFt(u,LAKE_PTS)+(1-nestZoneW(u))*(.6*Math.sin(u*23)+.35*Math.sin(u*61));return Math.min(GROUND,ftToY(Math.max(2,ft)));}
-function riverBottom(x){const u=x/W;let p=.12+.36*smooth(.05,.42,u)+.38*smooth(.75,1.02,u)-.12*Math.exp(-(((u-1.32)/.06)**2))-.32*smooth(1.62,1.95,u)+.02*Math.sin(u*29)+.012*Math.sin(u*53);
+function lakeBottom(x){const u=x/TW;const ft=profFt(u,LAKE_PTS)+(1-nestZoneW(u))*(.6*Math.sin(u*23)+.35*Math.sin(u*61));return Math.min(GROUND,ftToY(Math.max(2,ft)));}
+function riverBottom(x){const u=x/TW;let p=.12+.36*smooth(.05,.42,u)+.38*smooth(.75,1.02,u)-.12*Math.exp(-(((u-1.32)/.06)**2))-.32*smooth(1.62,1.95,u)+.02*Math.sin(u*29)+.012*Math.sin(u*53);
   let yy=SURF+(GROUND-SURF)*clamp(p,.07,.95);for(const z of LOC().nests||[]){const w=smooth(z.a-.07,z.a,u)*(1-smooth(z.b,z.b+.07,u));if(w>0)yy=lerp(yy,ftToY(z.d),w);}if(x<DOCKX+46){const k=smooth(DOCKX-10,DOCKX+46,x);return lerp(SURF+2,yy,k);}return yy;}
-function amazonBottom(x){const u=x/W;let p=.3+.4*smooth(.1,.6,u)+.12*Math.sin(u*5+1)*smooth(.6,1,u)-.2*smooth(1.75,2,u)+.02*Math.sin(u*27);let yy=SURF+(GROUND-SURF)*clamp(p,.15,.9);for(const z of LOC().nests||[]){const w=smooth(z.a-.07,z.a,u)*(1-smooth(z.b,z.b+.07,u));if(w>0)yy=lerp(yy,ftToY(z.d),w);}return yy;}
+function amazonBottom(x){const u=x/TW;let p=.3+.4*smooth(.1,.6,u)+.12*Math.sin(u*5+1)*smooth(.6,1,u)-.2*smooth(1.75,2,u)+.02*Math.sin(u*27);let yy=SURF+(GROUND-SURF)*clamp(p,.15,.9);for(const z of LOC().nests||[]){const w=smooth(z.a-.07,z.a,u)*(1-smooth(z.b,z.b+.07,u));if(w>0)yy=lerp(yy,ftToY(z.d),w);}return yy;}
 function currentAt(x,y){const Lc=LOC();if(!Lc.current)return 0;const b=bottomAt(x),dep=clamp((b-SURF)/(GROUND-SURF),.05,1),df=clamp((y-SURF)/Math.max(10,b-SURF),0,1);
   let v=Lc.current*(1.5-dep)*(1-.55*df);for(const k of cboulders){const d=x-k.x;if(d<0&&d>-k.r*3.2&&y>k.y-k.r*1.6)v*=.25;}return -v;}
-function resize(){
+function resize(){ // the world is 2 lake-widths (TW) on every screen, so everything drawn can be reached by the best rod
   DPR=Math.min(2,window.devicePixelRatio||1);CW=innerWidth;CH=innerHeight;
+  // Tablets: scale the buttons, menus and cards with the screen (phones stay at 1). The canvas scales on its own via SC.
+  const land0=CW>CH*1.15;UI=clamp(land0?CH/560:CW/500,1,1.7);document.documentElement.classList.toggle('short',land0&&CH/UI<620);document.documentElement.style.setProperty('--ui',UI.toFixed(3));
   cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);cv.style.width=CW+'px';cv.style.height=CH+'px';
-  SC=Math.min(CW/400,CH/560);W=CW/SC;WX=Math.round(W*2);H=CH/SC;SURF=Math.round(H*.31);
-  GROUND=H-Math.max(60,(150)/SC);if(GROUND-SURF<150)GROUND=SURF+150;
+  const land=CW>CH*1.15;G.land=land;SC=land?Math.max(Math.min(CW/400,CH/470),CW/800):Math.min(CW/400,CH/560);W=CW/SC;TW=Math.min(W,400);WX=Math.round(Math.max(TW*2,W));H=CH/SC;SURF=Math.round(H*(land?.34:.31));
+  GROUND=H-Math.max(land?34:60,(land?64:150)/SC);if(GROUND-SURF<150)GROUND=SURF+150;
   darkC.width=Math.ceil(CW/2);darkC.height=Math.ceil(CH/2);
   const r=seeded(LOC().seed),Lc=LOC(),creek=!!Lc.rocky||!!Lc.boulders;
-  weeds=[];for(let x=DOCKX-6;x<WX;x+=r()*16+6){if(r()<.22)continue;const shallow=x<W*.45,type=r()<.62?'ribbon':r()<.6?'coontail':'pondweed';
+  weeds=[];for(let x=DOCKX-6;x<WX;x+=r()*16+6){if(r()<.22)continue;const shallow=x<TW*.45,type=r()<.62?'ribbon':r()<.6?'coontail':'pondweed';
     const n=type==='ribbon'?2+Math.floor(r()*4):1+Math.floor(r()*2),blades=[];
     for(let k=0;k<n;k++)blades.push({dx:(r()-.5)*8,h:(type==='ribbon'?26:18)+r()*(shallow?70:48)*(type==='coontail'?.8:1),ph:r()*6,w:type==='ribbon'?1.1+r()*1.4:1.2+r()*.8});
     weeds.push({x,type,blades,c:r(),ph:r()*6});}
@@ -915,7 +963,7 @@ function resize(){
   bigTrees=[];bridge=null;if(Lc.riverbank){let z=(Lc.seed*9301+49297)%233280;const q=()=>(z=(z*9301+49297)%233280)/233280;
     for(let x=10+q()*30;x<WX*.5+W+30;x+=46+q()*60)bigTrees.push({x,h:58+q()*44,w:24+q()*16,lean:(q()-.5)*.22,syc:q()<.45,blobs:Array.from({length:12},()=>[(q()-.5)*1.1,(q()-.5)*1.1,.22+q()*.2])});
     trees=trees.filter((t,i)=>i%2===0).map(t=>({...t,h:t.h*.8}));
-    bridge={x:W*.62,span:230,y:SURF-26};}
+    bridge={x:TW*.62,span:230,y:SURF-26};}
   farTrees=[];for(let x=-10;x<WX*.3+W+30;x+=r()*7+4)farTrees.push({x,h:7+r()*9,w:3+r()*3,con:r()<.7});
   ridge=[];for(let x=-30;x<=WX*.12+W+40;x+=24)ridge.push([x,SURF-58-Math.sin(x*.006+1)*26-Math.sin(x*.019)*12-r()*5]);
   clouds=[];for(let i=0;i<8;i++){const puffs=[];const n=4+Math.floor(r()*4),wd=40+r()*60;for(let k=0;k<n;k++)puffs.push({dx:(k/(n-1)-.5)*wd+r()*8,dy:-r()*10,r:9+r()*14});clouds.push({x:r()*(W+300),y:SURF*(.1+r()*.45),v:2+r()*4,puffs});}
@@ -926,8 +974,8 @@ function resize(){
   if(Lc.shore==='boat'){weeds=weeds.filter(w=>bottomAt(w.x)-SURF<(GROUND-SURF)*.55);}
   if(creek){if(Lc.rocky){reeds=Lc.current?[]:reeds;weeds=weeds.filter((w,i)=>i%2===0);for(const w of weeds)for(const bl of w.blades)bl.h*=.5;
     stones=[];for(let x=DOCKX;x<WX;x+=r()*16+7)stones.push({x,r:3+r()*6,s:r()});}
-    cboulders=[];for(const u of Lc.boulders||[]){const x=u*W,rr=10+r()*12,b=bottomAt(x);cboulders.push({x,r:rr,y:b-rr*.55,t:r()});}
-    holds=cboulders.map(k=>({x:k.x-k.r-10,y:k.y}));for(const u of Lc.holds||[])holds.push({x:u*W,y:bottomAt(u*W)-20});if(Lc.stumps)for(const k of cboulders){k.y=bottomAt(k.x);}}
+    cboulders=[];for(const u of Lc.boulders||[]){const x=(S.loc==='creek'&&u>CK0?CK0+(u-CK0)*ckStretch():u)*TW,rr=10+r()*12,b=bottomAt(x);cboulders.push({x,r:rr,y:b-rr*.55,t:r()});}
+    holds=cboulders.map(k=>({x:k.x-k.r-10,y:k.y}));for(const u of Lc.holds||[])holds.push({x:u*TW,y:bottomAt(u*TW)-20});if(Lc.stumps)for(const k of cboulders){k.y=bottomAt(k.x);}}
   else{cboulders=[];holds=[];}
   specks=[];for(let i=0;i<Math.round(WX/5);i++)specks.push({x:r()*WX,y:SURF+8+r()*(GROUND-SURF),s:.5+r()*1.1,ph:r()*6,v:2+r()*4});
   for(const f of G.fish){const [a,b]=bandRange(f.sp,f.x);f.y=clamp(f.y,a,b);f.ty=clamp(f.ty,a,b);}
@@ -990,7 +1038,7 @@ function fishPx(len,sp){return clamp(len*.85,16,sp.legend?125:90);}
 function darkness(){const h=(S.minutes/60)%24;let d;if(h<4.5||h>=21)d=1;else if(h<7)d=1-smooth(4.5,7,h);else if(h<17.5)d=0;else d=smooth(17.5,21,h);return d;}
 function visMul(){let v=1-darkness()*.62;if(S.weather==='rain')v*=gearOn('shades')?.9:.8;if(S.weather==='fog')v*=gearOn('shades')?.8:.55;if(gearOn('lantern'))v+=darkness()*.45;return clamp(v,.28,1);}
 
-function farZ(x){return clamp((x-W*1.05)/(W*.6),0,1);}
+function farZ(x){return clamp((x-TW*1.05)/(TW*.6),0,1);}
 function makeFish(sp,x){
   const z=farZ(x);
   const len=+(sp.len[0]+(sp.len[1]-sp.len[0])*Math.pow(Math.random(),1.5-.9*z)).toFixed(1);
@@ -1014,7 +1062,7 @@ function spawnTick(initial){
   for(const f of G.fish){if(f.state==='fight'||f.state==='leave')continue;if(G.lure.fish===f)continue;if(!initial&&!f.school&&!f.bed&&Math.random()<.04)f.state='leave';}
   for(const f of G.fish)if(f.state==='leave'&&f.school)for(const m of f.school.m)if(m.state!=='fight'&&G.lure.fish!==m)m.state='leave';
   const alive=G.fish.filter(f=>f.state!=='leave').length;
-  const reach0=DOCKX+34+(W-DOCKX-56);let flip=G.fish.filter(f=>f.x<reach0&&f.state!=='leave').length<alive*.5;
+  const reach0=DOCKX+34+(TW-DOCKX-56);let flip=G.fish.filter(f=>f.x<reach0&&f.state!=='leave').length<alive*.5;
   for(let i=0,need=popTarget()-alive;i<need;){flip=!flip;let x=flip?rand(DOCKX+60,reach0):rand(reach0,WX-20);const sp=pickSpecies(x);if(!sp){i++;continue;}if(sp.home==='far')x=rand(WX-170,WX-50);
     const n=sp.school?schoolSize(sp):1,sc=n>1?{m:[]}:null;
     for(let k=0;k<n;k++){const f=makeFish(sp,clamp(x+rand(-30,30),DOCKX+40,WX-20));
@@ -1035,7 +1083,7 @@ function nestAmt(id){const N=NESTERS[id],Z=sea();if(!N)return 0;if(N.jungle)retu
 function bedSpot(N,colony){const zs=(LOC().nests||[]).filter(z=>z.ids.includes(N.id));if(!zs.length)return null;
   const r=N.r+4,flat=x=>Math.abs(bottomAt(x+r)-bottomAt(x-r))<r*.3;
   const room=(x,b)=>{const g=b.id===N.id?N.gap:Math.max(N.gap,NESTERS[b.id].gap)*.8;return Math.abs(b.x-x)>=g+(b.id===N.id?0:b.r);};
-  const xs=[];for(const z of zs)for(let x=Math.max(DOCKX+30,z.a*W+r);x<=Math.min(WX-30,z.b*W-r);x+=3){
+  const xs=[];for(const z of zs)for(let x=Math.max(DOCKX+30,z.a*TW+r);x<=Math.min(WX-30,z.b*TW-r);x+=3){
     if(!flat(x))continue;if(cboulders.some(k=>Math.abs(k.x-x)<k.r+(z.rocks?6:16)))continue;if(!(G.beds||[]).every(b=>room(x,b)))continue;xs.push(x);}
   if(!xs.length)return null;
   if(colony!=null){xs.sort((a,b)=>Math.abs(a-colony)-Math.abs(b-colony));return xs[0];}
@@ -1082,7 +1130,7 @@ const MAXLV=30;
 function xpNeed(l){return Math.round(25*Math.pow(l,1.5));}
 function lvlInfo(xp=S.xp||0){let l=1,rem=xp;while(l<MAXLV&&rem>=xpNeed(l)){rem-=xpNeed(l);l++;}return{l,rem,need:l<MAXLV?xpNeed(l):0};}
 function skillT(){return Math.min(1,(lvlInfo().l-1)/14);}
-function castReach(){return(W-DOCKX-56)*(1+skillT());}
+function castReach(){return(TW-DOCKX-56)*(1+skillT());} // TW = lake width unit, the same on any screen
 function bobCastMul(){if(!isBait())return 1;const r=rig();return r.type==='bobber'&&r.bob==='fixed'?clamp(1-.07*(r.depth-4),.84,1):1;}
 function castReachNow(){return castReach()*curSetup().reach*castFit().m*bobCastMul();}
 function castTarget(p){const sc=lerp(.18,.03,skillT());return clamp(DOCKX+34+p*castReachNow()*(1+rand(-sc*(castFit().why==='heavy'?1.8:1),sc*(castFit().why==='heavy'?1.8:1))),DOCKX+30,WX-30);}
@@ -1286,7 +1334,7 @@ function updateFish(f,dt){
     case'approach':
       if(!engaged){f.state='wander';break;}
       [tx,ty]=aimAt(f,L,3);spd=Math.max(sp.speed*.9*(sp.ambush||f.strike?1.8:1),L.moving?curReel().speed*1.25:0);f.t2+=dt;
-      if(dist(f.x,f.y,tx,ty)<(f.strike?16:9)||(f.t2>(f.strike?1.5:4)&&dist(f.x,f.y,tx,ty)<(f.strike?30:20))){f.state='nibble';f.nib=sp.nibbles?Math.round(rand(sp.nibbles[0],sp.nibbles[1])):1+Math.floor(Math.random()*3);f.timer=rand(.5,1.1);
+      if(dist(f.x,f.y,tx,ty)<(f.strike?16:9)||(f.t2>(f.strike?1.5:4)&&dist(f.x,f.y,tx,ty)<(f.strike?30:20))){f.state='nibble';const md=Math.random();f.mood=md<.22?'bold':md>.75?'shy':'normal';f.nib=sp.nibbles?Math.round(rand(sp.nibbles[0],sp.nibbles[1])):1+Math.floor(Math.random()*3);if(f.mood==='bold')f.nib=Math.random()<.5?1:Math.max(1,f.nib-1);if(f.mood==='shy')f.nib+=1+Math.floor(Math.random()*2);f.timer=f.mood==='bold'?rand(.15,.5):rand(.4,1.4);
         if(!isBait()){if(L.moving||G.t-L.lastTwitch<1.6){f.nib=1;f.timer=rand(.05,.18);}else{f.nib=Math.min(f.nib,2);f.timer=rand(.3,.7);}}if(f.strike){f.nib=1;f.timer=rand(.08,.2);f.strike=false;}}
       else if(f.t2>14){f.state='wander';L.fish=null;f.cool=6;refreshControls();}
       break;
@@ -1295,7 +1343,7 @@ function updateFish(f,dt){
       [tx,ty]=aimAt(f,L,2);spd=sp.speed*.45;
       if(L.moving&&isBait()&&!nickHot()&&Math.random()<dt*.5*(1-.7*farZ(f.x))){spook(f,'Spooked it!');break;}
       f.timer-=dt;
-      if(f.timer<=0){f.nib--;if(f.nib>0){if(stealCheck(f))break;L.jig=.18;G.bobJig=.4;if(G.bob)ripple(G.bob.x,isBait()&&rig().bob==='fixed'?.4:.22);SFX.nibble();vib(15);ripple(L.x,.25);f.timer=rand(.45,1);}else{G.dry=0;f.state='bite';f.timer=(sp.bite*1.3+.15)*mods().biteWindow*(nickHot()?1.6:1)*(isBait()&&rig().type==='bobber'?(rig().bob==='fixed'?1.25:1.1):1)*curSetup().sens*(1+.06*curTier())*(curSetup().botSens&&isBait()&&['carolina','threeway','free','dropshot'].includes(rig().type)?curSetup().botSens:1);SFX.bite();vib([40,30,40]);L.jig=.4;f.layDown=!!G.bob&&['crappie','bluegill','perch','pumpkinseed'].includes(sp.id)&&Math.random()<.4;if(G.bob){splash(G.bob.x,f.layDown?.2:.5);}else splash(L.x,.35);refreshControls();}}
+      if(f.timer<=0){f.nib--;if(f.nib>0&&f.mood==='shy'&&!f.bed&&!nickHot()&&Math.random()<.13){f.state='wander';f.cool=rand(6,12);L.fish=null;newWanderTarget(f);refreshControls();break;}if(f.nib>0){if(stealCheck(f))break;L.jig=.18;G.bobJig=.4;if(G.bob)ripple(G.bob.x,isBait()&&rig().bob==='fixed'?.4:.22);SFX.nibble();vib(15);ripple(L.x,.25);f.timer=f.mood==='shy'?rand(.6,1.7):rand(.3,1.3);}else{G.dry=0;f.state='bite';f.timer=(sp.bite*1.3+.15)*rand(.8,1.25)*mods().biteWindow*(nickHot()?1.6:1)*(isBait()&&rig().type==='bobber'?(rig().bob==='fixed'?1.25:1.1):1)*curSetup().sens*(1+.06*curTier())*(curSetup().botSens&&isBait()&&['carolina','threeway','free','dropshot'].includes(rig().type)?curSetup().botSens:1);SFX.bite();vib([40,30,40]);L.jig=.4;f.layDown=!!G.bob&&['crappie','bluegill','perch','pumpkinseed'].includes(sp.id)&&Math.random()<.4;if(G.bob){splash(G.bob.x,f.layDown?.2:.5);}else splash(L.x,.35);refreshControls();}}
       break;
     case'bite':
       if(!engaged){f.state='wander';break;}
@@ -1549,7 +1597,7 @@ function render(){
   c.save();c.translate(-cam,0);
   if(G.mode==='play'){
     if(L.fish&&L.fish.state==='bite'&&L.state==='water'){const bx=L.x,by=SURF-26+Math.sin(G.t*30)*1.5;c.fillStyle='#f2a93b';c.strokeStyle='#2a1903';c.lineWidth=2;c.beginPath();c.arc(bx,by,11,0,TAU);c.fill();c.stroke();c.fillStyle='#2a1903';c.font='22px "Lilita One",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('!',bx,by+1);c.textBaseline='alphabetic';}
-    if(G.charging){const t=tip();const cx=t.hx+6,cy=t.hy-70;c.lineWidth=6;c.lineCap='round';c.strokeStyle='rgba(0,0,0,.45)';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*2.2);c.stroke();c.strokeStyle=G.power>.92?'#ffe08a':'#f2a93b';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*.8+Math.PI*1.4*G.power);c.stroke();c.fillStyle='#e1ead2';c.font='600 10px "IBM Plex Mono",monospace';c.textAlign='center';c.fillText(Math.round(G.power*100)+'%',cx,cy+4);}
+    if(G.charging){const t=tip();let cx=t.hx+6,cy=t.hy-70;const top=(60*UI)/SC+26;if(cy<top){cy=top;cx=Math.max(cx,DOCKX+44);}c.lineWidth=6;c.lineCap='round';c.strokeStyle='rgba(0,0,0,.45)';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*2.2);c.stroke();c.strokeStyle=G.power>.92?'#ffe08a':'#f2a93b';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*.8+Math.PI*1.4*G.power);c.stroke();c.fillStyle='#e1ead2';c.font='600 10px "IBM Plex Mono",monospace';c.textAlign='center';c.fillText(Math.round(G.power*100)+'%',cx,cy+4);}
     if(G.fight){const F=G.fight,f=F.f,bx=f.x,by=f.y-f.L*SHAPES[f.sp.shape].h*.5-18;
       const jump=F.phase==='surge'||F.phase==='air';const col=jump?'#8cc6d8':F.phase==='run'?'#e65a3d':F.phase==='tell'?(Math.sin(G.t*40)>0?'#f2a93b':'#e65a3d'):'#86ab5c';
       c.fillStyle=col;c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=1.5;c.beginPath();c.arc(bx,by,9,0,TAU);c.fill();c.stroke();
@@ -2674,7 +2722,7 @@ function start(data){
   requestAnimationFrame(frame);
   if(isNick()){nickLog();nickDebug();}
 }
-addEventListener('resize',()=>{resize();});
+addEventListener('resize',()=>{const wx0=WX;resize();if(WX!==wx0){for(const f of G.fish){f.x=clamp(f.x,DOCKX+30,WX-15);f.y=clamp(f.y,SURF+6,Math.max(SURF+8,bottomAt(f.x)-8));newWanderTarget(f);}if(G.lure.state==='water'&&G.lure.x>WX-20)G.lure.x=WX-20;if(G.beds){for(const b of G.beds)if(b.guard&&b.guard.state!=='fight'){b.guard.bed=null;b.guard.state='wander';}G.beds=[];updateNests();}}});
 setInterval(()=>{if(G.mode==='play')save();},15000);
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
