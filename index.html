@@ -608,7 +608,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.77e';
+const VERSION='v0.78a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1144,7 +1144,7 @@ function fTrophy(id){const t=TROPHY[id];return imp()?t.map(v=>Math.round(v/2.54)
 function lvlSummary(){return`Casts reach ${fDist(castReach()/10)} \u00b7 hook sets up to ${Math.round(Math.min(.97,.92*hookSkill())*100)}%`;}
 function gainXP(n){const before=lvlInfo().l;S.xp=(S.xp||0)+n;const now=lvlInfo().l;updateLvChip();
   if(now>before){G.lvMsg=[`Angler level ${now}`,lvlSummary()];if(!currentScreen())flushLv();}}
-function flushLv(){if(!G.lvMsg)return;const m=G.lvMsg;G.lvMsg=null;setTimeout(()=>{toast(m[0],m[1]);SFX.fanfare();},500);}
+function flushLv(){if(!G.lvMsg)return;const m=G.lvMsg;G.lvMsg=null;setTimeout(()=>{toast(m[0],m[1]);SFX.fanfare();G.lvFx=G.t;vib([40,60,40]);},500);}
 function updateLvChip(){if(!$('#log').hidden)renderLog();}
 function gearOn(id){return!!S.owned[id]&&S.settings[id]!==false;}
 function isBait(){return!!LURES[S.lure].bait;}
@@ -1796,9 +1796,20 @@ function drawDock(c,dk){
   if(nick){c.strokeStyle=c1;c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(ax+3,y-18);c.lineTo(ax+11,y-10);c.stroke();}
   if(G.mode==='play'&&!G.charging){const li=lvlInfo(),lab=(S.name?S.name+' \u00b7 ':'')+'Lv '+li.l;c.font='11px "Lilita One",sans-serif';
     const tw=Math.max(34,c.measureText(lab).width+12),tx=Math.max(2,ax-tw/2),ty=y-66+sy,cx=tx+tw/2;
-    c.fillStyle='rgba(14,30,25,.88)';c.strokeStyle='rgba(140,198,216,.55)';c.lineWidth=1;c.beginPath();c.roundRect?c.roundRect(tx,ty,tw,16,5):c.rect(tx,ty,tw,16);c.fill();c.stroke();
-    c.fillStyle='#8cc6d8';c.textAlign='center';c.textBaseline='middle';c.fillText(lab,cx,ty+7);c.textBaseline='alphabetic';
-    c.fillStyle='rgba(0,0,0,.5)';c.fillRect(tx+4,ty+12.5,tw-8,2);c.fillStyle='#8cc6d8';c.fillRect(tx+4,ty+12.5,(tw-8)*(li.need?li.rem/li.need:1),2);
+    // Level-up celebration: for ~4 s the tag swells and turns gold, sparks burst from it and "LEVEL UP!" rises above;
+    // the gold trim then fades over the next ~8 s so the new number stays noticeable.
+    const lt=G.lvFx!=null?G.t-G.lvFx:99,hot=lt<4,gold=lt<12?(hot?1:1-(lt-4)/8):0;
+    if(hot){const pulse=1+.55*Math.max(0,1-lt/3.2)*(.8+.2*Math.sin(lt*14));
+      c.save();c.globalAlpha=Math.max(0,1-lt/1.6)*.55;c.fillStyle='#ffd36b';c.beginPath();c.arc(ax,y-30+sy,18+lt*70,0,TAU);c.fill();c.restore();
+      c.save();for(let i=0;i<14;i++){const a=i/14*TAU+.3,d=10+lt*95*(.7+.3*((i*7)%5)/5),fa=Math.max(0,1-lt/1.4);if(fa<=0)break;c.globalAlpha=fa;c.fillStyle=i%2?'#ffe08a':'#fff6d8';c.beginPath();c.arc(cx+Math.cos(a)*d,ty+8+Math.sin(a)*d*.8,2.2,0,TAU);c.fill();}c.restore();
+      const fa=lt<.2?lt/.2:lt>3?Math.max(0,(4-lt)):1,top=(60*UI)/SC+18;c.save();c.globalAlpha=fa;c.font='18px "Lilita One",sans-serif';c.textAlign='center';const lw=c.measureText('LEVEL UP!').width;
+      let rx=Math.max(cx,lw/2+6),ry=ty-14-lt*16;if(ry<top){rx=tx+tw*pulse+lw/2+10+lt*4;ry=ty+18;}
+      c.lineWidth=3;c.strokeStyle='rgba(30,20,0,.7)';c.strokeText('LEVEL UP!',rx,ry);c.fillStyle='#ffd36b';c.fillText('LEVEL UP!',rx,ry);c.restore();
+      const px=Math.max(cx,2+tw*pulse/2);c.save();c.translate(px,ty+8);c.scale(pulse,pulse);c.translate(-cx,-(ty+8));}
+    c.fillStyle=gold>0?`rgba(${Math.round(14+60*gold)},${Math.round(30+30*gold)},${Math.round(25-10*gold)},.92)`:'rgba(14,30,25,.88)';c.strokeStyle=gold>0?`rgba(255,211,107,${.55+.45*gold})`:'rgba(140,198,216,.55)';c.lineWidth=1+gold;c.beginPath();c.roundRect?c.roundRect(tx,ty,tw,16,5):c.rect(tx,ty,tw,16);c.fill();c.stroke();
+    c.fillStyle=gold>.3?'#ffe08a':'#8cc6d8';c.textAlign='center';c.textBaseline='middle';c.fillText(lab,cx,ty+7);c.textBaseline='alphabetic';
+    c.fillStyle='rgba(0,0,0,.5)';c.fillRect(tx+4,ty+12.5,tw-8,2);c.fillStyle=gold>.3?'#ffe08a':'#8cc6d8';c.fillRect(tx+4,ty+12.5,(tw-8)*(li.need?li.rem/li.need:1),2);
+    if(hot)c.restore();
     c.beginPath();c.moveTo(ax-3,ty+16);c.lineTo(ax+3,ty+16);c.lineTo(ax,ty+19);c.closePath();c.fillStyle='rgba(140,198,216,.55)';c.fill();}
   if(nick)return;
   // arm
