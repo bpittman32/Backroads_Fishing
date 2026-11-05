@@ -608,7 +608,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.77c';
+const VERSION='v0.77e';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1173,6 +1173,7 @@ function cast(){
   G.schoolHint=null;G.dry=(G.dry||0)+1;if(G.dry>=5&&G.dry%3===2)chatter('drought',.7);
   if(nickHot())G.nickCasts--;
   const L=G.lure,t=tip(),p=G.power;
+  L.rockLuck=rand(.4,1.6);L.onRock=null;
   L.state='flying';L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
   SFX.cast();
 }
@@ -1215,14 +1216,14 @@ function updateLure(dt){
     else if(r.type==='carolina')ty=bot-Math.min(r.leader/12*ppf*(S.lure==='minnow'?.6:.35),room);
     else if(r.type==='dropshot')ty=bot-Math.min(r.leader/12*ppf,room);
     else if(r.type==='threeway')ty=bot-Math.min(r.leader/12*ppf*.25,room);
-    if(G.input.reel){const sp=curReel().speed;L.x-=sp*dt;L.moving=true;reelClick(dt);
+    if(G.input.reel){const sp=curReel().speed*(L.bare?1.3:1);L.x-=sp*dt;L.moving=true;reelClick(dt);
       if(r.type==='bobber'||bottomRig){L.y+=(ty-L.y)*Math.min(1,dt*2);if(r.type==='bobber'&&Math.random()<dt*6)ripple(L.x,.3);}else L.y-=sp*riseRate()*dt;}
     else{if(L.y<ty)L.y=Math.min(ty,L.y+sinkRate()*dt);else L.y=Math.max(ty,L.y-40*dt);}
     if(LOC().current&&!(L.fish&&L.fish.state==='bite')){const held=['carolina','dropshot','threeway'].includes(r.type)&&L.y>=bot-14;L.x+=currentAt(L.x,L.y)*dt*(held?.1:r.type==='bobber'?1:.85);}
     L.y=clamp(L.y,SURF+1,bot);if(snagCheck(dt,bot,['egg','bank','teardrop'].includes(rigSinker())))return;if(L.x<DOCKX+12)retrieve();return;
   }
   if(G.input.reel&&(!isBait()||!(L.fish&&L.fish.state==='bite'))){
-    const sp=curReel().speed;L.x-=sp*dt;if(lu.crank)L.y+=(SURF+SIZES[lureVar().size].dive-L.y)*Math.min(1,sp*dt/80);else L.y-=sp*riseRate()*dt;L.moving=true;reelClick(dt);
+    const sp=curReel().speed*(L.bare?1.3:1);L.x-=sp*dt;if(lu.crank)L.y+=(SURF+SIZES[lureVar().size].dive-L.y)*Math.min(1,sp*dt/80);else L.y-=sp*riseRate()*dt;L.moving=true;reelClick(dt);
     if(lu.float&&Math.random()<dt*6)ripple(L.x,.35);
   }else if(!(L.fish&&L.fish.state==='bite')){
     if(lu.float)L.y=SURF+1;else L.y+=sinkRate()*dt;
@@ -1234,9 +1235,16 @@ function updateLure(dt){
   if(!lu.float&&snagCheck(dt,bot,true))return;
   if(L.x<DOCKX+12)retrieve();
 }
+let SNAG_HIT=.1,SNAG_SIT=.08;
 function snagCheck(dt,bot,heavy){const L=G.lure,sg=LOC().snags||0;if(!sg||L.fish||L.y<bot-1.5||L.state!=='water')return false;
-  let near=false;for(const k of cboulders)if(Math.abs(L.x-k.x)<k.r+5){near=true;break;}
-  const p=(near?.35:heavy?.06*sg:.02*sg)*(G.input.reel?2:1);if(Math.random()>=p*dt)return false;
+  // Rocks: one roll as the lure first touches a boulder (dragging it in snags more than letting it settle), then only a small
+  // chance while it sits there. Each cast gets its own luck, and a snag can still pop free.
+  let rock=null;for(const k of cboulders)if(Math.abs(L.x-k.x)<k.r+(L.onRock===k?14:5)){rock=k;break;}
+  let p=0;
+  if(rock){if(L.onRock!==rock){L.onRock=rock;p=SNAG_HIT*(heavy?1.4:1)*(G.input.reel?1.25:.8)*(L.rockLuck??1);}else p=(G.input.reel?.02:SNAG_SIT)*dt;}
+  else{L.onRock=null;p=(heavy?.06*sg:.02*sg)*(G.input.reel?2:1)*dt;}
+  if(Math.random()>=p)return false;
+  if(Math.random()<.35){L.y-=8;L.onRock=rock;toast('Hung up for a second','It popped free');vib(25);return false;}
   if(isBait()){const nm=baitNoun();useBait();toast('Snagged on a rock',`Lost the ${nm}`);}else{const nm=LURES[S.lure].name;S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];S.lure='worm';}toast('Snagged on a rock',`Lost your ${nm}`);save();updateHUD(true);}
   SFX.lose();vib(60);chatter('snap',.5);retrieve();return true;}
 function reelClick(dt){G.clickT-=dt;if(G.clickT<=0){SFX.click();G.clickT=.075;}}
