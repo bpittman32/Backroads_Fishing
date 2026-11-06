@@ -231,6 +231,14 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .li-sec p{margin:0;line-height:1.45}.li-chips{display:flex;flex-wrap:wrap;gap:6px}.li-chips span{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.07);font-size:13px;font-weight:700}
 .li-leg{margin:8px 4px 0;font-size:13px;font-style:italic;opacity:.75}
 .li-chips span.new{opacity:.55;font-weight:600}.item .ic.tap{cursor:pointer;position:relative}.item .ic.tap::after{content:'i';position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:var(--amber);color:#1b1406;font:900 11px/16px sans-serif;text-align:center}
+.install-btn{grid-column:1/-1;justify-self:center;margin-top:4px;padding:9px 16px;border-radius:999px;border:1px solid rgba(242,177,52,.6);background:rgba(242,177,52,.12);color:#f2c46a;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
+.inst-lede{margin:4px 2px 12px;opacity:.85;line-height:1.45}
+.inst-step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.inst-step h3{margin:0 0 6px;display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:400;font-size:20px}
+.inst-step h3 i{font-style:normal;display:inline-flex;width:30px;height:30px;border-radius:50%;background:var(--amber);color:#2a1a05;align-items:center;justify-content:center;font-size:17px;flex:none}
+.inst-step p{margin:0 0 10px;line-height:1.45;opacity:.9}.inst-step img{display:block;width:100%;max-width:240px;margin:0 auto;border-radius:18px;border:1px solid var(--line)}
+.inst-tip{border-left:3px solid var(--amber);padding:10px 12px;background:rgba(242,177,52,.08);border-radius:0 12px 12px 0;font-size:14px;line-height:1.45;margin-top:4px}
+.inst-done{text-align:center;font-family:var(--f-display);font-size:24px;color:var(--amber);margin:14px 0 4px}
 .note-v{margin:14px 2px 8px;display:flex;align-items:baseline;gap:10px}.note-v b{font-family:var(--f-display);font-size:19px;color:var(--amber)}.note-v span{font-size:12px;opacity:.6}
 #notesList ul{margin:0;padding:12px 14px 12px 30px;background:var(--panel);border:1px solid var(--line);border-radius:14px}#notesList li{margin:4px 0;line-height:1.4}
 .board-note{margin-top:10px;font-size:12px;opacity:.6;text-align:center}
@@ -476,6 +484,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
       <button class="btn big primary" id="mPlay">Go Fishing</button>
       <button class="btn" id="mBoard" hidden>🏆 Leaderboard</button>
       <div class="menu-links"><button class="linkish" id="mSettings">Settings</button><button class="linkish" id="mHelp">How to Play</button></div>
+      <button class="install-btn" id="mInstall" hidden>📲 Add to Home Screen</button>
     </nav>
     <div class="menu-stats" id="menuStats"></div>
     <div class="ver-tag"></div>
@@ -576,6 +585,14 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
   <div class="sheet">
     <header class="sheet-head"><button class="back" data-back>‹ Back</button><h2 id="liName">Lure</h2></header>
     <div id="liBody"></div>
+  </div>
+</section>
+
+<section class="screen" id="install" hidden>
+  <div class="sheet">
+    <header class="sheet-head"><button class="back" data-back>‹ Back</button><h2>Home Screen</h2></header>
+    <p class="inst-lede">Put Backroads Fishing on your home screen so it opens like a regular app: full screen, one tap away.</p>
+    <div id="instBody"></div>
   </div>
 </section>
 
@@ -685,7 +702,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.85a';
+const VERSION='v0.86a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -2425,7 +2442,7 @@ addEventListener('blur',()=>{G.input.reel=false;if(G.charging)G.charging=false;i
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(G.mode==='play'&&!G.paused)pauseGame();}});
 
 // ---------------- SCREENS ----------------
-const SCREENS=['map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo'];
+const SCREENS=['map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install'];
 function show(id){for(const s of SCREENS)$('#'+s).hidden=s!==id;}
 function open(id){G.stack.push(currentScreen());show(id);render_(id);SFX.ui();}
 function currentScreen(){return SCREENS.find(s=>!$('#'+s).hidden)||null;}
@@ -2482,7 +2499,7 @@ function renderBoard(){
     .then(rows=>{sbCache[cur]={t:Date.now(),rows};show(rows);})
     .catch(err=>{const why=err&&err.name==='AbortError'?'timed out':String(err&&err.message||err);if(G.boardSp===cur&&!$('#board').hidden)list.innerHTML=`<div class="board-msg">Couldn\u2019t reach the leaderboard. Check your connection and try again in a bit.<br><small style="opacity:.6">(${esc(why)})</small></div>`;});
 }
-function render_(id){if(id==='shop')renderShop();if(id==='log')renderLog();if(id==='settings')renderSettings();if(id==='menu')renderMenu();if(id==='lurePick')renderLurePick();if(id==='map')renderMap();if(id==='quests')renderQuests();if(id==='board')renderBoard();if(id==='notes')renderNotes();if(id==='lureInfo')renderLureInfo();}
+function render_(id){if(id==='shop')renderShop();if(id==='log')renderLog();if(id==='settings')renderSettings();if(id==='menu')renderMenu();if(id==='lurePick')renderLurePick();if(id==='map')renderMap();if(id==='quests')renderQuests();if(id==='board')renderBoard();if(id==='notes')renderNotes();if(id==='lureInfo')renderLureInfo();if(id==='install')renderInstall();}
 document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',back));
 function inGameUI(on){$('#hud').hidden=!on;$('#controls').hidden=!on;$('#shopBtn').hidden=!on;$('#questBtn').hidden=!on;if(!on)$('#fightHud').hidden=true;}
 
@@ -2821,8 +2838,30 @@ function renderLureInfo(){const id=G.liId,lu=LURES[id],inf=LINFO[id]||{};$('#liN
     ${legend?'<p class="li-leg">Rumor has it something legendary takes it too.</p>':''}
     <div class="li-sec"><h3>Best rod</h3><p>${rodTxt}</p></div>`;
   $('#liIc').replaceWith(c);}
+// ---------- add to home screen ----------
+// Shown only when the game is open in a browser tab. iPhone/iPad get the step-by-step guide (Safari has no install button);
+// Android/Chrome can install with one tap through the browser's own prompt.
+const IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function isInstalled(){try{return matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;}catch(e){return false;}}
+let installEvt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;installBtn();});
+window.addEventListener('appinstalled',()=>{installEvt=null;installBtn();toast('Installed','Open it from your home screen');});
+function installBtn(){const b=$('#mInstall');if(b)b.hidden=isInstalled()||!(IS_IOS||installEvt||/Android/.test(navigator.userAgent));}
+$('#mInstall').onclick=()=>{SFX.ui();if(installEvt&&!IS_IOS){installEvt.prompt();installEvt.userChoice.finally(()=>{installEvt=null;installBtn();});return;}open('install');};
+function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><i>${n}</i>${t}</h3><p>${p}</p>${img?`<img src="howto/${img}" alt="" loading="lazy">`:''}</section>`;
+  $('#instBody').innerHTML=IS_IOS?
+    st(1,'Open the menu','Open the game in <b>Safari</b>. In the address bar at the bottom, tap the <b>menu button</b> (the three lines on the left).','step1.jpg')
+   +st(2,'Tap Share','Tap <b>Share</b> at the top of the menu.','step2.jpg')
+   +st(3,'Tap View More','On the share sheet, tap <b>View More</b> in the bottom-right corner.','step3.jpg')
+   +st(4,'Add to Home Screen','Tap <b>Add to Home Screen</b> near the bottom of the list. Scroll down a little if you don\u2019t see it.','step4.jpg')
+   +st(5,'Tap Add','Leave <b>Open as Web App</b> switched on if you see it, then tap <b>Add</b> in the top-right corner.','')
+   +'<div class="inst-tip">On an older iPhone the steps are shorter: tap the <b>Share</b> button (square with an up arrow) in Safari\u2019s toolbar, scroll down, and tap <b>Add to Home Screen</b>.</div><div class="inst-done">Tight lines!</div>'
+   :st(1,'Open the browser menu','In Chrome, tap the <b>\u22ee</b> menu in the top-right corner.','')
+   +st(2,'Install the app','Tap <b>Add to Home screen</b> or <b>Install app</b>, then confirm.','')
+   +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v0.86','Home screen',['An Add to Home Screen button on the main menu, with step-by-step help for iPhone and a one-tap install where the browser supports it']],
   ['v0.85','Lure guide',['Tap a lure\u2019s picture in the shop for how to fish it, what bites it and which rod suits it']],
   ['v0.84','More lures',['Added nine lures: buzzbait, prop bait, spinnerbait, jerkbait, rattlebait, swimbait, plastic worm, grub and a crappie jig','Lures in the shop are grouped into topwater, moving baits, bottom & jigs, and flies','Some lures are weedless and hang up less in rocks']],
   ['v0.83','Fights and testing',['Bigger fish take longer to tire and can\u2019t just be cranked in','Reeling hard against a running fish now risks the line','Nick keeps his gear but no longer starts with a Fish Log']],
@@ -3059,6 +3098,7 @@ function renderOutfit(box,row,pill,buyHtml){
 
 document.querySelectorAll('.ver-tag').forEach(e=>e.textContent='Backroads Fishing '+VERSION);
 try{devBadge();}catch(e){}
+try{installBtn();}catch(e){}
 
 // ---------------- BOOT ----------------
 function start(data){
