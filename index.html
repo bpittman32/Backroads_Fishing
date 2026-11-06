@@ -636,7 +636,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.80a';
+const VERSION='v0.80b';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1621,13 +1621,13 @@ function render(){
     c.fillStyle='rgba(245,248,252,.85)';for(const d of G.drops){if(!d.sn)continue;c.beginPath();c.arc(d.x,d.y,1.1+(d.v%3)*.3,0,TAU);c.fill();}}
   if(fog){for(let i=0;i<4;i++){const y=SURF-30+i*28;const x=((G.t*(6+i*3))%(W+300))-150;g=c.createLinearGradient(0,y-24,0,y+24);g.addColorStop(0,'rgba(205,215,212,0)');g.addColorStop(.5,`rgba(205,215,212,${.32-i*.04})`);g.addColorStop(1,'rgba(205,215,212,0)');c.fillStyle=g;c.fillRect(0,y-24,W,48);c.fillStyle=`rgba(215,222,220,${.12})`;c.beginPath();c.ellipse(x,y,140,14,0,0,TAU);c.fill();}c.fillStyle='rgba(180,195,195,.12)';c.fillRect(0,0,W,H);}
   // darkness
-  if(dk>.02){const dc=dctx,s=darkC.width/W;dc.setTransform(1,0,0,1,0,0);dc.globalCompositeOperation='source-over';dc.clearRect(0,0,darkC.width,darkC.height);dc.fillStyle=`rgba(3,7,20,${dk*.6})`;dc.fillRect(0,0,darkC.width,darkC.height);
+  if(dk>.02){const dc=dctx,s=darkC.width/W;dc.setTransform(1,0,0,1,0,0);dc.globalCompositeOperation='source-over';dc.clearRect(0,0,darkC.width,darkC.height);dc.fillStyle=`rgba(3,7,20,${dk*(gearOn('lantern')?.4:.6)})`;dc.fillRect(0,0,darkC.width,darkC.height);
     dc.globalCompositeOperation='destination-out';
     const hole=(x,y,r,a)=>{const gg=dc.createRadialGradient(x*s,y*s,0,x*s,y*s,r*s);gg.addColorStop(0,`rgba(0,0,0,${a})`);gg.addColorStop(1,'rgba(0,0,0,0)');dc.fillStyle=gg;dc.fillRect((x-r)*s,(y-r)*s,r*2*s,r*2*s);};
-    if(gearOn('lantern')){hole(30-cam,dockY()-20,190,.95);hole(110-cam,SURF+50,150,.75);}
+    if(gearOn('lantern')){hole(30-cam,dockY()-20,230,.95);hole(120-cam,SURF+60,190,.8);}
     if(L.state==='water'||L.state==='hooked')hole(L.x-cam,L.y,gearOn('lantern')?60:34,.6);
     c.setTransform(1,0,0,1,0,0);c.drawImage(darkC,0,0,CW*DPR,CH*DPR);c.setTransform(DPR*SC,0,0,DPR*SC,0,0);
-    if(gearOn('lantern')&&cam<120){g=c.createRadialGradient(22-cam,dockY()-26,0,22-cam,dockY()-26,70);g.addColorStop(0,`rgba(255,190,90,${dk*.35})`);g.addColorStop(1,'rgba(255,190,90,0)');c.fillStyle=g;c.fillRect(-50-cam,dockY()-100,150,150);}
+    if(gearOn('lantern')&&cam<120){g=c.createRadialGradient(22-cam,dockY()-26,0,22-cam,dockY()-26,70);g.addColorStop(0,`rgba(255,190,90,${dk*.42})`);g.addColorStop(1,'rgba(255,190,90,0)');c.fillStyle=g;c.fillRect(-50-cam,dockY()-100,150,150);}
   }
   // indicators
   c.save();c.translate(-cam,0);
@@ -2374,7 +2374,7 @@ const CHAT={
   nickIdle:['Fishing’s more of a mindset.','Look at that sky.','I could catch that one. If I wanted to.','Ahh. This is the good stuff.','You ever just… sit?','Fish can wait. Fish always wait.','Somebody should cast. Not me. Somebody.','Pass the snacks.','I can hear the big ones laughing.','Best seat on the lake.','This chair was made for me.','Shhh. You’ll wake the fish.']};
 const CHAT_BAG={};let lastChat='';
 function pickChat(k){let bag=CHAT_BAG[k];if(!bag||!bag.length){bag=CHAT_BAG[k]=CHAT[k].slice().sort(()=>Math.random()-.5);if(bag[bag.length-1]===lastChat&&bag.length>1)bag.unshift(bag.pop());}let t=bag.pop();if(t===lastChat&&bag.length)t=bag.pop();lastChat=t;return t;}
-function say(t){if(S.settings.chatter===false)return;G.bubble={t,life:3.8,max:3.8};G.chatCD=40;}
+function say(t){if(S.settings.chatter===false)return;const life=clamp(3+String(t).split(/\s+/).length*.45,5.5,11);G.bubble={t,life,max:life};G.chatCD=40;}
 function chatter(k,prob){if(G.mode!=='play'||S.settings.chatter===false||(nickSits()&&k!=='nickIdle'))return;if((G.chatCD||0)>0)return;if(Math.random()>(prob??.4))return;say(pickChat(k));}
 function tickChatter(dt){G.chatCD=Math.max(0,(G.chatCD||0)-dt);if(G.bubble){G.bubble.life-=dt;if(G.bubble.life<=0)G.bubble=null;}
   if(G.mode!=='play'||G.paused||G.fight)return;G.idleChatT=(G.idleChatT??rand(50,90))-dt;
