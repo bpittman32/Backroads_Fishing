@@ -231,6 +231,9 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .li-sec p{margin:0;line-height:1.45}.li-chips{display:flex;flex-wrap:wrap;gap:6px}.li-chips span{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.07);font-size:13px;font-weight:700}
 .li-leg{margin:8px 4px 0;font-size:13px;font-style:italic;opacity:.75}
 .li-chips span.new{opacity:.55;font-weight:600}.item .ic.tap{cursor:pointer;position:relative}.item .ic.tap::after{content:'i';position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:var(--amber);color:#1b1406;font:900 11px/16px sans-serif;text-align:center}
+.tu-card{text-align:center}.tu-card .eyebrow{color:var(--amber);letter-spacing:.2em;text-transform:uppercase;font-size:12px;font-weight:800;margin-top:6px}
+.tu-card h2{margin:4px 0 6px}#tuCanvas{width:100%;max-width:420px;height:auto;background:linear-gradient(#2e5a62,#1d3a40);border-radius:16px}
+.tu-size{font-weight:800;margin:10px 0 4px}.tu-fact{opacity:.85;line-height:1.45;margin:0 6px 8px}.tu-xp{color:var(--amber);font-weight:800;margin:0 0 12px}
 .install-btn{grid-column:1/-1;justify-self:center;margin-top:4px;padding:9px 16px;border-radius:999px;border:1px solid rgba(242,177,52,.6);background:rgba(242,177,52,.12);color:#f2c46a;font:inherit;font-weight:800;font-size:15px;cursor:pointer}
 .inst-lede{margin:4px 2px 12px;opacity:.85;line-height:1.45}
 .inst-step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
@@ -596,6 +599,18 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
   </div>
 </section>
 
+<section class="screen" id="turtle" hidden>
+  <div class="sheet tu-card">
+    <div class="eyebrow">You caught a turtle!</div>
+    <h2 id="tuName">Turtle</h2>
+    <canvas id="tuCanvas" width="640" height="300"></canvas>
+    <p class="tu-size" id="tuSize"></p>
+    <p class="tu-fact" id="tuFact"></p>
+    <p class="tu-xp" id="tuXp"></p>
+    <button class="btn big primary" id="tuGo">Let it go</button>
+  </div>
+</section>
+
 <section class="screen" id="notes" hidden>
   <div class="sheet">
     <header class="sheet-head"><button class="back" data-back>‹ Back</button><h2>Dev Notes</h2></header>
@@ -702,7 +717,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.86a';
+const VERSION='v0.90a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -873,7 +888,7 @@ function rigOrderText(r){const out=[];if(r.type==='bobber')out.push(GEAR.bobbers
   if(r.type==='carolina')out.push('Egg sinker','Swivel','Leader');if(r.type==='threeway')out.push('Three-way swivel','Bank sinker on dropper','Leader');
   out.push('Hook + bait');if(r.type==='dropshot')out.push('Leader','Teardrop sinker');return out.join(' → ');}
 
-const SHAPES={walleye:{h:.22,k:1.15e-5},round:{h:.5,k:2.4e-5},perch:{h:.32,k:1.3e-5},bass:{h:.34,k:1.5e-5},long:{h:.24,k:1.1e-5},cat:{h:.24,k:1e-5},pike:{h:.16,k:.6e-5},carp:{h:.36,k:1.6e-5},eel:{h:.08,k:.25e-5},koi:{h:.3,k:1.4e-5},crappie:{h:.44,k:1.5e-5},bowfin:{h:.22,k:1.2e-5},bullhead:{h:.3,k:1.3e-5}};
+const SHAPES={turtle:{h:.42,k:1.2e-4},walleye:{h:.22,k:1.15e-5},round:{h:.5,k:2.4e-5},perch:{h:.32,k:1.3e-5},bass:{h:.34,k:1.5e-5},long:{h:.24,k:1.1e-5},cat:{h:.24,k:1e-5},pike:{h:.16,k:.6e-5},carp:{h:.36,k:1.6e-5},eel:{h:.08,k:.25e-5},koi:{h:.3,k:1.4e-5},crappie:{h:.44,k:1.5e-5},bowfin:{h:.22,k:1.2e-5},bullhead:{h:.3,k:1.3e-5}};
 const SPECIES=[
   {id:'bluegill',locs:['pond','lake'],name:'Bluegill',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.05,.5],lures:['cricket','worm','spinner','fly'],likes:'twitch',power:.22,speed:38,end:.6,bite:.75,rar:10,len:[12,25],price:10,shape:'round',col:'#4f7fa8',belly:'#e8a83a',mark:'bar',school:[4,7],nibbles:[2,4],rises:true,hint:'Small schools near the weeds. Feeds hardest at dawn and dusk and nibbles a few times before it bites.'},
   {id:'pumpkinseed',name:'Pumpkinseed',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.02,.4],lures:['cricket','worm','fly','spinner'],likes:'still',power:.2,speed:36,end:.6,bite:.75,rar:8,len:[10,22],price:11,shape:'round',col:'#6f7d45',belly:'#f0a030',mark:'pumpkin',school:[2,3],nibbles:[2,4],rises:true,hint:'Pairs and small groups tucked in the weeds. Feeds all day, most in the afternoon. Small hook, still worm.'},
@@ -1040,11 +1055,11 @@ function profFt(u,pts){if(u<=pts[0][0])return pts[0][1];for(let i=0;i<pts.length
 function nestZoneW(u){let w=0;for(const z of LOC().nests||[])w=Math.max(w,smooth(z.a-.05,z.a,u)*(1-smooth(z.b,z.b+.05,u)));return w;}
 function ftToY(ft){return SURF+ft*pxPerFt();}
 function dockY(){return SURF-14;}
-const LOCS={pond:{name:'Mossback Pond',tag:'Dockside fishing',desc:'A quiet pond with an old dock, lily pads and a weedy bottom.',seed:7,nests:[{a:.24,b:.6,d:5,ids:['pumpkinseed','bluegill']},{a:.74,b:1.06,d:9,ids:['crappie','bass']}],maxDepth:6,lv:1,shore:'dock',water:['#2f8086','#3f6f72','#0f3a40'],preview:18.3},
-  creek:{name:'Willow Creek',tag:'A rocky trout stream',desc:'A shallow stream of riffles, boulders and deep pools under a hardwood forest. The current carries your bait downstream.',seed:23,nests:[{a:.98,b:1.28,d:4,ids:['smallmouth'],rocks:true},{a:1.4,b:1.74,d:3.5,ids:['rockbass'],rocks:true}],maxDepth:2.6,lv:5,fee:250,feeName:'Trout Stamp',feeWhy:'Willow Creek is a designated trout stream, so you need a trout stamp to fish it.',current:16,shore:'boulder',rocky:true,snags:1,riffles:true,undercut:true,noPads:true,deciduous:true,water:['#4d8a7a','#5c7a6a','#2a4436'],preview:9,boulders:[.57,.75,.92,1.33,1.37,1.69,1.79],holds:[.84,1.8]},
-  lake:{name:'Big Rock Lake',tag:'Open water from a rented boat',desc:'A deep, clear lake with a weedy shelf, a rocky point and a cold basin far out. Walleye, pike and the odd tiger muskie roam it.',seed:41,nests:[{a:.24,b:.6,d:6,ids:['crappie','bluegill']},{a:.76,b:1.08,d:11,ids:['smallmouth'],rocks:true}],maxDepth:9,lv:10,fee:40,feeName:'Boat Rental',perTrip:true,feeWhy:'You rent a boat at the marina each trip.',shore:'boat',noPads:true,snags:.3,water:['#2c6f8f','#4a7486','#0a2a40'],preview:7.4,boulders:[.93],holds:[.82,1.2,1.6]},
-  river:{name:'Iron Ferry River',tag:'A big, muddy working river',desc:'A wide river with a gravel bar, a strong current and a deep channel. Catfish, walleye and drum hold in the seams and holes.',seed:57,maxDepth:5,nests:[{a:.28,b:.6,d:8,ids:['smallmouth'],rocks:true}],lv:15,fee:400,feeName:'Chest Waders',feeWhy:'You need chest waders to wade out on the gravel bar.',current:24,shore:'gravel',rocky:true,snags:1.2,flow:true,noPads:true,deciduous:true,riverbank:true,water:['#6b7c55','#77826a','#2e3524'],preview:18.6,boulders:[.62,.7,1.32,1.4,1.72],holds:[1.05,1.25,1.85]},
-  amazon:{name:'Carter\u2019s Adventure',tag:'Deep in the Amazon rainforest',desc:'Carter found it first. A tea-colored backwater deep in the Amazon rainforest, full of flooded trees, piranhas and peacock bass. Fish bite eagerly here.',seed:77,maxDepth:4,nests:[{a:.98,b:1.28,d:9,ids:['peacock'],rocks:true}],lv:20,fee:1500,feeName:'Bush Plane Charter',feeWhy:'It\u2019s a long way to the Amazon. A bush pilot flies you in and leaves you a dugout canoe.',freeFor:'carter',easy:true,shore:'canoe',noPads:false,deciduous:true,jungle:true,stumps:true,water:['#7a6230','#7d6a40','#2c200c'],preview:16.5,boulders:[.55,.72,.92,1.32,1.55],holds:[.85,1.2,1.7]}};
+const LOCS={pond:{north:-1,name:'Mossback Pond',tag:'Dockside fishing',desc:'A quiet pond with an old dock, lily pads and a weedy bottom.',seed:7,nests:[{a:.24,b:.6,d:5,ids:['pumpkinseed','bluegill']},{a:.74,b:1.06,d:9,ids:['crappie','bass']}],maxDepth:6,lv:1,shore:'dock',water:['#2f8086','#3f6f72','#0f3a40'],preview:18.3},
+  creek:{north:1,name:'Willow Creek',tag:'A rocky trout stream',desc:'A shallow stream of riffles, boulders and deep pools under a hardwood forest. The current carries your bait downstream.',seed:23,nests:[{a:.98,b:1.28,d:4,ids:['smallmouth'],rocks:true},{a:1.4,b:1.74,d:3.5,ids:['rockbass'],rocks:true}],maxDepth:2.6,lv:5,fee:250,feeName:'Trout Stamp',feeWhy:'Willow Creek is a designated trout stream, so you need a trout stamp to fish it.',current:16,shore:'boulder',rocky:true,snags:1,riffles:true,undercut:true,noPads:true,deciduous:true,water:['#4d8a7a','#5c7a6a','#2a4436'],preview:9,boulders:[.57,.75,.92,1.33,1.37,1.69,1.79],holds:[.84,1.8]},
+  lake:{north:1,name:'Big Rock Lake',tag:'Open water from a rented boat',desc:'A deep, clear lake with a weedy shelf, a rocky point and a cold basin far out. Walleye, pike and the odd tiger muskie roam it.',seed:41,nests:[{a:.24,b:.6,d:6,ids:['crappie','bluegill']},{a:.76,b:1.08,d:11,ids:['smallmouth'],rocks:true}],maxDepth:9,lv:10,fee:40,feeName:'Boat Rental',perTrip:true,feeWhy:'You rent a boat at the marina each trip.',shore:'boat',noPads:true,snags:.3,water:['#2c6f8f','#4a7486','#0a2a40'],preview:7.4,boulders:[.93],holds:[.82,1.2,1.6],sunken:[1.36],deepWeeds:[[1.1,1.28],[1.6,1.84]]},
+  river:{north:-1,name:'Iron Ferry River',tag:'A big, muddy working river',desc:'A wide river with a gravel bar, a strong current and a deep channel. Catfish, walleye and drum hold in the seams and holes.',seed:57,maxDepth:5,nests:[{a:.28,b:.6,d:8,ids:['smallmouth'],rocks:true}],lv:15,fee:400,feeName:'Chest Waders',feeWhy:'You need chest waders to wade out on the gravel bar.',current:24,shore:'gravel',rocky:true,snags:1.2,flow:true,noPads:true,deciduous:true,riverbank:true,water:['#6b7c55','#77826a','#2e3524'],preview:18.6,boulders:[.62,.7,1.32,1.4,1.72],holds:[1.05,1.25,1.85]},
+  amazon:{north:0,name:'Carter\u2019s Adventure',tag:'Deep in the Amazon rainforest',desc:'Carter found it first. A tea-colored backwater deep in the Amazon rainforest, full of flooded trees, piranhas and peacock bass. Fish bite eagerly here.',seed:77,maxDepth:4,nests:[{a:.98,b:1.28,d:9,ids:['peacock'],rocks:true}],lv:20,fee:1500,feeName:'Bush Plane Charter',feeWhy:'It\u2019s a long way to the Amazon. A bush pilot flies you in and leaves you a dugout canoe.',freeFor:'carter',easy:true,shore:'canoe',noPads:false,deciduous:true,jungle:true,stumps:true,water:['#7a6230','#7d6a40','#2c200c'],preview:16.5,boulders:[.55,.72,.92,1.32,1.55],holds:[.85,1.2,1.7]}};
 const LOC_ORDER=['pond','creek','lake','river','amazon'];
 function LOC(){return LOCS[(typeof S!=='undefined'&&S&&S.loc)||'pond']||LOCS.pond;}
 
@@ -1115,9 +1130,14 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   if(Lc.noPads){pads=[];}
   if(Lc.jungle){for(const w of weeds)for(const bl of w.blades)bl.h*=.6;}
   if(Lc.shore==='boat'){weeds=weeds.filter(w=>bottomAt(w.x)-SURF<(GROUND-SURF)*.55);}
+  // deep weed beds: tall milfoil and coontail standing up off the deep bottom
+  for(const [a,b] of Lc.deepWeeds||[])for(let x=a*TW;x<b*TW;x+=r()*9+5){const room=bottomAt(x)-SURF,type=r()<.55?'ribbon':'coontail',n=type==='ribbon'?3+Math.floor(r()*4):2+Math.floor(r()*2),blades=[];
+    for(let k=0;k<n;k++)blades.push({dx:(r()-.5)*10,h:Math.min(room*.62,(type==='ribbon'?70:55)+r()*85),ph:r()*6,w:type==='ribbon'?1.3+r()*1.4:1.3+r()*.8});
+    weeds.push({x,type,blades,c:r(),ph:r()*6,deep:true});}
   if(creek){if(Lc.rocky){reeds=Lc.current?[]:reeds;weeds=weeds.filter((w,i)=>i%2===0);for(const w of weeds)for(const bl of w.blades)bl.h*=.5;
     stones=[];for(let x=DOCKX;x<WX;x+=r()*16+7)stones.push({x,r:3+r()*6,s:r()});}
     cboulders=[];for(const u of Lc.boulders||[]){const x=(S.loc==='creek'&&u>CK0?CK0+(u-CK0)*ckStretch():u)*TW,rr=10+r()*12,b=bottomAt(x);cboulders.push({x,r:rr,y:b-rr*.55,t:r()});}
+    for(const u of Lc.sunken||[]){const x=u*TW;cboulders.push({x,r:52,y:bottomAt(x)-8,t:r(),log:true});}
     holds=cboulders.map(k=>({x:k.x-k.r-10,y:k.y}));for(const u of Lc.holds||[])holds.push({x:u*TW,y:bottomAt(u*TW)-20});if(Lc.stumps)for(const k of cboulders){k.y=bottomAt(k.x);}}
   else{cboulders=[];holds=[];}
   specks=[];for(let i=0;i<Math.round(WX/5);i++)specks.push({x:r()*WX,y:SURF+8+r()*(GROUND-SURF),s:.5+r()*1.1,ph:r()*6,v:2+r()*4});
@@ -1177,7 +1197,31 @@ function actMul(sp){if(!isActive(sp))return sp.restBite||0;let m=sp.peak&&sp.pea
 function bandRange(sp,x,rest){const b=bottomAt(x);const top=SURF+8,d=Math.max(10,b-top-8);let bd=rest&&sp.rest?sp.rest:sp.band;
   if(!sp.surface&&LOC()&&!LOC().jungle){const Z=sea(),sh=Math.min(.6,Z.cold*.45+(COLDWATER.has(sp.id)&&period()==='day'?Math.max(0,Z.temp-.7)*.8:0));if(sh>.02)bd=[bd[0]+(1-bd[0])*sh*.6,bd[1]+(1-bd[1])*sh];}
   return[top+d*bd[0],top+d*bd[1]];}
-function fishPx(len,sp){return clamp(len*.85,16,sp.legend?125:90);}
+// ---------- turtles: one kind per place. They share the fish AI for wandering and nosing at bait, but breathe at the surface,
+// steal far more worms than they swallow, and never touch lures, the Fish Log, quests or the leaderboard. ----------
+const TURTLES={
+  pond:{id:'painted',name:'Eastern Painted Turtle',shell:'painted',col:'#34402f',rim:'#c8472e',skin:'#2c3328',stripe:'#e8c94a',len:[11,22],power:.32,speed:40,
+    fact:'Painted turtles bask on logs on sunny days and can hold their breath for a long time when the water is cold. Look for the red edge on the shell.'},
+  creek:{id:'musk',name:'Common Musk Turtle',shell:'dome',col:'#3a3328',rim:'#2a241c',skin:'#3b352c',stripe:'#d6cfb6',len:[7,13],power:.2,speed:30,bottom:true,
+    fact:'Also called the stinkpot. A small bottom-walker that\u2019s famous for stealing bait from creek anglers.'},
+  lake:{id:'snapper',name:'Common Snapping Turtle',shell:'snapper',col:'#4f4a35',rim:'#3d3828',skin:'#58553f',stripe:null,len:[25,45],power:.75,speed:34,bottom:true,
+    fact:'Big, old and grumpy, with a bite to respect. Snappers mostly walk the bottom and come up to breathe now and then.'},
+  river:{id:'softshell',name:'Spiny Softshell',shell:'soft',col:'#8a8060',rim:'#9a9070',skin:'#8f8566',stripe:'#2e2a20',len:[15,40],power:.5,speed:55,
+    fact:'A flat, leathery shell like a pancake and a snorkel nose. Softshells bury in sandy bottoms and swim surprisingly fast.'},
+  amazon:{id:'yellowspot',name:'Yellow-spotted River Turtle',shell:'smooth',col:'#353b35',rim:'#2a2e2a',skin:'#3a3f3a',stripe:'#f2cf3a',len:[20,40],power:.45,speed:42,
+    fact:'Named for the bright yellow spots on its head. It nests on sandbars when the river drops in the dry season.'}};
+for(const k in TURTLES){const t=TURTLES[k];Object.assign(t,{turtle:true,locs:[k],shape:'turtle',times:['dawn','day','dusk','night'],peak:['day'],off:.8,weather:['clear','rain','fog'],
+  band:t.bottom?[.65,1]:[.2,.95],lures:['worm'],likes:'still',end:1.6,bite:.3,rar:0,price:0,belly:'#d9cfa0',nibbles:[4,6],jumps:0,deep:true});}
+function turtleTick(initial){const sp=TURTLES[S.loc];if(!sp||G.fish.some(f=>f.sp.turtle&&!f.dead))return;if(Math.random()>(initial?.7:.08))return;
+  const f=makeFish(sp,rand(DOCKX+90,WX-60));f.breathT=rand(15,50);G.fish.push(f);}
+// Turtles come up for air: swim to the surface, hang there with the head out, then go back down.
+function turtleMove(f,dt){f.crawl=false;f.dt2=dt;if(f.state!=='wander')return false;f.breathT=(f.breathT??rand(25,60))-dt;
+  if(f.breathT<=0&&f.breath==null){f.hang=Math.random()<.4;f.breath=f.hang?rand(12,28):rand(3,6);}
+  if(f.breath!=null){const up=f.y<SURF+f.L*.22;f.tx=up&&f.hang?f.x:f.x+f.face*6;f.ty=SURF;f.timer=1;if(up){f.breath-=dt;if(Math.random()<dt*(f.hang?.25:.6))ripple(f.x+f.face*f.L*.45,.2);}
+    if(f.breath<=0){f.breath=null;f.hang=false;f.breathT=rand(30,75);newWanderTarget(f);}return true;}
+  if(f.sp.bottom){f.ty=fishFloor(f,.45)+2;f.crawl=true;if(Math.abs(f.vx)>3&&Math.random()<f.dt2*.8)G.parts.push({k:'mud',x:f.x-f.face*f.L*.2,y:bottomAt(f.x)-2,r:2.5,life:2.2});}
+  return false;}
+function fishPx(len,sp){if(sp.turtle)return clamp(len*1.6,18,85);return clamp(len*.85,16,sp.legend?125:90);}
 function darkness(){const h=(S.minutes/60)%24;let d;if(h<4.5||h>=21)d=1;else if(h<7)d=1-smooth(4.5,7,h);else if(h<17.5)d=0;else d=smooth(17.5,21,h);return d;}
 function visMul(){let v=1-darkness()*.62;if(S.weather==='rain')v*=gearOn('shades')?.9:.8;if(S.weather==='fog')v*=gearOn('shades')?.8:.55;if(gearOn('lantern'))v+=darkness()*.45;return clamp(v,.28,1);}
 
@@ -1190,7 +1234,7 @@ function makeFish(sp,x){
   newWanderTarget(f);return f;
 }
 function fishFloor(f,hk){const L=f.L,hh=L*(SHAPES[f.sp.shape]||{h:.2}).h*hk;let m=Infinity;for(const k of[-.5,-.25,0,.25,.5])m=Math.min(m,bottomAt(f.x+k*L));return m-hh;}
-function pushFromBank(f){for(let i=0;i<6;i++){if(fishFloor(f,.2)>SURF+6)break;f.x+=4;}if(f.tx!=null&&bottomAt(f.tx)-SURF<f.L*.5)f.tx=f.x+30;}
+function pushFromBank(f){for(let i=0;i<6;i++){if(fishFloor(f,.2)>SURF+6)break;f.x+=i<2?2:4;}if(f.tx!=null&&bottomAt(f.tx)-SURF<f.L*.5)f.tx=f.x+30;}
 function newWanderTarget(f){_nwt(f);if(G.beds&&!f.bed)for(const b of G.beds)if(b.guard&&Math.abs(f.tx-b.x)<b.r+40&&f.ty>b.y-60){f.tx=clamp(b.x+(f.x<b.x?-1:1)*(b.r+50+rand(0,30)),DOCKX+30,WX-15);}}
 function _nwt(f){const L=G.lure;if(holds.length&&isActive(f.sp)&&!f.sp.legend&&Math.random()<.65){const cand=holds.filter(h=>Math.abs(h.x-f.x)<280);if(cand.length){const h=cand[Math.floor(Math.random()*cand.length)];f.tx=clamp(h.x+rand(-10,10),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=clamp(h.y+rand(-8,8),a,b);f.timer=rand(5,10);return;}}if(!isActive(f.sp)){f.tx=clamp(f.x+rand(-25,25),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx,true);f.ty=rand(a,b);f.timer=rand(6,14);return;}if(G.mode==='play'&&L.state==='water'&&!L.bare&&!f.wise&&f.sp.lures.includes(S.lure)&&Math.random()<.45){f.tx=clamp(L.x+rand(-50,50),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=clamp(L.y+rand(-30,30),a,b);f.timer=rand(2,5);return;}f.tx=clamp(f.x+rand(-130,130),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=rand(a,b);f.timer=rand(3,8);}
 function pickSpecies(x){const z=farZ(x);
@@ -1202,7 +1246,8 @@ function pickSpecies(x){const z=farZ(x);
 function popTarget(){return Math.round(clamp(WX/38,12,26)*(typeof S!=='undefined'&&S?mods().pop:1));}
 function schoolSize(sp){return Math.max(2,Math.min(5,Math.round(rand(sp.school[0],sp.school[1])*.6)));}
 function spawnTick(initial){
-  for(const f of G.fish){if(f.state==='fight'||f.state==='leave')continue;if(G.lure.fish===f)continue;if(!initial&&!f.school&&!f.bed&&Math.random()<.04)f.state='leave';}
+  if(typeof turtleTick==='function'&&G.mode!=='menu')turtleTick(initial);
+  for(const f of G.fish){if(f.state==='fight'||f.state==='leave')continue;if(G.lure.fish===f)continue;if(!initial&&!f.school&&!f.bed&&Math.random()<(f.sp.turtle?.008:.04))f.state='leave';}
   for(const f of G.fish)if(f.state==='leave'&&f.school)for(const m of f.school.m)if(m.state!=='fight'&&G.lure.fish!==m)m.state='leave';
   const alive=G.fish.filter(f=>f.state!=='leave').length;
   const reach0=DOCKX+34+(TW-DOCKX-56);let flip=G.fish.filter(f=>f.x<reach0&&f.state!=='leave').length<alive*.5;
@@ -1229,15 +1274,20 @@ function bedSpot(N,colony){const zs=(LOC().nests||[]).filter(z=>z.ids.includes(N
   const xs=[];for(const z of zs)for(let x=Math.max(DOCKX+30,z.a*TW+r);x<=Math.min(WX-30,z.b*TW-r);x+=3){
     if(!flat(x))continue;if(cboulders.some(k=>Math.abs(k.x-x)<k.r+(z.rocks?6:16)))continue;if(!(G.beds||[]).every(b=>room(x,b)))continue;xs.push(x);}
   if(!xs.length)return null;
-  if(colony!=null){xs.sort((a,b)=>Math.abs(a-colony)-Math.abs(b-colony));return xs[0];}
+  if(colony!=null){xs.sort((a,b)=>Math.abs(a-colony)-Math.abs(b-colony));return xs[Math.floor(Math.random()*Math.min(xs.length,8))];} // loose, uneven colony
   const mine=(G.beds||[]).filter(b=>b.id===N.id).length;if(!mine){const left=xs.filter(x=>x<=xs[xs.length-1]-N.gap*(N.n-1));const pool=left.length?left:xs;return pool[Math.floor(Math.random()*Math.min(pool.length,Math.max(1,Math.round(pool.length*.5))))];}
   const score=x=>Math.min(9999,...(G.beds||[]).filter(b=>b.id===N.id).map(b=>Math.abs(b.x-x)));const best=Math.max(...xs.map(score));
   const top=xs.filter(x=>score(x)>=best-6);return top[Math.floor(Math.random()*top.length)];}
+// Each nesting season, each possible bed only has a chance of being used, so some years a spot is busy and others it's bare.
+// The roll is kept for the whole season (per location and species) so beds don't come and go while you fish.
+const NEST_P=.6;
+function nestCount(id){const N=NESTERS[id],yr=Math.floor((S.yday||0)/YEAR_DAYS),k=S.loc+':'+id;S.nestPlan=S.nestPlan||{};
+  const pl=S.nestPlan[k];if(pl&&pl.y===yr)return pl.n;let n=0;for(let i=0;i<N.n;i++)if(Math.random()<NEST_P)n++;S.nestPlan[k]={y:yr,n};save();return n;}
 function updateNests(){if(!G.beds)G.beds=[];
   for(const id in NESTERS){const N=NESTERS[id],sp=SPMAP[id];if(!sp||!(sp.locs||['pond']).includes(S.loc))continue;
     const on=nestAmt(id)>.25,mine=G.beds.filter(b=>b.id===id);
     if(!on){for(const b of mine){if(b.guard&&b.guard.state!=='fight'){b.guard.bed=null;b.guard.state='wander';newWanderTarget(b.guard);}}G.beds=G.beds.filter(b=>b.id!==id);continue;}
-    for(let k=mine.length;k<N.n;k++){const cur=G.beds.filter(b=>b.id===id),x=bedSpot(N,N.colony&&cur.length?cur.reduce((a,b)=>a+b.x,0)/cur.length:null);if(x==null)break;G.beds.push({id,x,y:bottomAt(x)-1,r:N.r*rand(.9,1.15),guard:null,empty:false});}
+    const want=nestCount(id);for(let k=mine.length;k<want;k++){const cur=G.beds.filter(b=>b.id===id),x=bedSpot(N,N.colony&&cur.length?cur.reduce((a,b)=>a+b.x,0)/cur.length:null);if(x==null)break;G.beds.push({id,x,y:bottomAt(x)-1,r:N.r*rand(.9,1.15),guard:null,empty:false});}
     for(const b of G.beds){if(b.id!==id||b.empty||(b.guard&&!b.guard.dead))continue;const f=makeFish(sp,b.x);f.len=+(sp.len[0]+(sp.len[1]-sp.len[0])*rand(.5,.95)).toFixed(1);f.L=fishPx(f.len,sp);
       f.bed=b;b.guard=f;f.state='guard';f.timer=rand(.5,1.5);f.x=b.x+rand(-20,20);f.y=b.y-8;G.fish.push(f);}}}
 function drawBeds(c,dk,vx0,vx1){for(const b of G.beds||[]){if(b.x<vx0-20||b.x>vx1+20)continue;const a=(1-dk*.6)*Math.min(1,nestAmt(b.id)*2);if(a<.02)continue;const y=bottomAt(b.x)-1.2;
@@ -1307,8 +1357,11 @@ function missHook(f,why){
 }
 function useBait(){if(!isBait()||S.lure==='worm')return;S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];const nm=LURES[S.lure].name;S.lure='worm';toast('Out of '+nm,'Switched back to worms');}save();updateHUD(true);}
 function baitNoun(){return{worm:'worm',cricket:'cricket',minnow:'minnow',liver:'liver',dough:'dough ball',corn:'corn'}[S.lure]||'bait';}
+function stealTurtle(f){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10);f.wise=true;SFX.lose();toast(`A turtle stole your ${bn}`,'They\u2019re sneaky like that');G.lure.fish=null;refreshControls();}
 function stealCheck(f){
-  if(!isBait())return false;const d=hookFit(f.sp);const p=nickHot()||Math.random()<mods().stealSkip?0:Math.min(.6,(d>=2?.32:d===1?.15:.04)*(LURES[S.lure].soft||1));
+  if(!isBait())return false;
+  if(f.sp.turtle){const r=Math.random();if(r>=.012&&r<.4){f.state='wander';f.cool=rand(15,30);G.lure.fish=null;newWanderTarget(f);refreshControls();return true;}if(r<.012){stealTurtle(f);return true;}return false;}
+  const d=hookFit(f.sp);const p=nickHot()||Math.random()<mods().stealSkip?0:Math.min(.6,(d>=2?.32:d===1?.15:.04)*(LURES[S.lure].soft||1));
   if(Math.random()<p){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10);f.wise=true;SFX.lose();toast(`It stole your ${bn}`,d>0?'That hook is too big for its mouth':'A quick nibbler');refreshControls();return true;}
   return false;
 }
@@ -1389,7 +1442,7 @@ function snagCheck(dt,bot,heavy){const L=G.lure,sg=LOC().snags||0;if(!sg||L.fish
   if(!isBait()&&LURES[S.lure].weedless)p*=LURES[S.lure].weedless;
   if(Math.random()>=p)return false;
   if(Math.random()<.35){L.y-=8;L.onRock=rock;toast('Hung up for a second','It popped free');vib(25);return false;}
-  toast(rock?'Snagged on a rock':'Snagged',breakOff('snag'));SFX.lose();vib(60);chatter('snap',.5);retrieve();return true;}
+  toast(rock?(rock.log?'Snagged in the sunken tree':'Snagged on a rock'):'Snagged',breakOff('snag'));SFX.lose();vib(60);chatter('snap',.5);retrieve();return true;}
 function reelClick(dt){G.clickT-=dt;if(G.clickT<=0){SFX.click();G.clickT=.075;}}
 
 // ---------------- FISH AI ----------------
@@ -1401,7 +1454,7 @@ function rallySchool(f){if(!f.school)return;let n=0;for(const m of f.school.m){i
 // the bait makes the small ones back off. Nothing gets eaten.
 const PREDATORS=new Set(['bass','smallmouth','pickerel','pike','walleye','brown','trout','catfish','flathead','tigermuskie','bowfin','peacock','arowana','redtail','undercut']);
 function isPred(sp){return PREDATORS.has(sp.id);}
-function preyOf(p,f){return f!==p&&!isPred(f.sp)&&f.L<p.L*.5&&f.state!=='fight';}
+function preyOf(p,f){return f!==p&&!f.sp.turtle&&!p.sp.turtle&&!isPred(f.sp)&&f.L<p.L*.5&&f.state!=='fight';}
 function fleeFrom(f,src,t=1.6){if(f.state==='fight')return;const G2=G.lure;if(G2.fish===f){G2.fish=null;refreshControls();}
   f.state='flee';f.timer=t;f.cool=Math.max(f.cool,4);const away=Math.sign(f.x-src.x)||(Math.random()<.5?-1:1);
   f.tx=clamp(f.x+away*rand(70,130),DOCKX+30,WX-10);const [a,b]=bandRange(f.sp,f.tx);f.ty=clamp(f.y+(f.y<src.y?-20:20),a,b);}
@@ -1450,9 +1503,11 @@ function checkNotice(f,dt){
   if(sp.bigOnly&&!isBait()&&lureVar().size!=='large')return;
   if(sp.wary){let pen=curLine().vis*1.6*(1-.6*farZ(f.x));if(isBait()){const rt=rig().type;if(rt==='carolina')pen*=.6;else if(rt==='dropshot')pen*=.75;}if(S.weather!=='clear'||period()==='night')pen*=.5;m*=Math.max(.22,1-pen);}
   if(S.weather==='rain')m*=1.15;
+  if(sp.turtle)m*=.12; // turtles rarely bother with bait at all
   let chance=.8*m*(1-d/sight*.5)*(1+.5*farZ(f.x));if(hot)chance=Math.max(chance*5,2.5);
   if(Math.random()<chance*dt){
     if(L.fish){if((hot||Math.random()<.5)&&((f.school&&L.fish.school===f.school)||G.fish.filter(o=>o.state==='follow').length<(hot?4:2))){f.state='follow';f.t2=0;f.fo=Math.random()*TAU;}}
+    else if(sp.turtle&&Math.random()<.75){f.state='follow';f.t2=8;f.fo=Math.random()*TAU;f.cool=rand(20,40);} // mostly just comes to look
     else{f.state='approach';L.fish=f;f.t2=0;f.face=L.x>f.x?1:-1;rallySchool(f);refreshControls();}}
 }
 function aimAt(f,L,gap){
@@ -1462,9 +1517,10 @@ function aimAt(f,L,gap){
 }
 function updateFish(f,dt){
   const sp=f.sp,L=G.lure;
-  f.wig+=dt*(5+Math.hypot(f.vx,f.vy)*.09);if(f.state!=='leave')f.alpha=Math.min(1,f.alpha+dt*.7);f.cool=Math.max(0,f.cool-dt);
+  f.wig+=dt*(f.hang&&f.breath!=null&&f.y<SURF+f.L*.22?.6:5+Math.hypot(f.vx,f.vy)*.09);if(f.state!=='leave')f.alpha=Math.min(1,f.alpha+dt*.7);f.cool=Math.max(0,f.cool-dt);
   if(f.state==='fight')return;
-  let tx=f.tx,ty=f.ty,spd=sp.speed*.32;
+  if(sp.turtle)turtleMove(f,dt);
+  let tx=f.tx,ty=f.ty,spd=sp.speed*(f.breath!=null?(f.hang&&f.y<SURF+f.L*.22?.04:.7):f.crawl?(fishFloor(f,.45)-f.y<10?.22:.6):.32);
   const engaged=L.fish===f&&L.state==='water';
   switch(f.state){
     case'wander':
@@ -1479,7 +1535,7 @@ function updateFish(f,dt){
       if(G.mode!=='play'||L.state!=='water'||L.bare){f.state='wander';newWanderTarget(f);break;}
       {const a=f.fo+G.t*.9,r=f.L*.6+20+Math.sin(G.t*1.7+f.fo)*6;tx=L.x+Math.cos(a)*r;ty=clamp(L.y+Math.sin(a)*12,SURF+4,bottomAt(L.x)-4);}
       spd=Math.max(sp.speed*.75,L.moving?curReel().speed*1.15:0);f.face=L.x>f.x?1:-1;f.t2+=dt;
-      if(!L.fish&&!f.wise&&Math.random()<dt*(nickHot()?2:.6)){f.state='approach';L.fish=f;f.t2=0;refreshControls();}
+      if(!L.fish&&!f.wise&&Math.random()<dt*(nickHot()?2:.6)){if(sp.turtle&&Math.random()<.75){f.state='wander';f.cool=rand(20,40);newWanderTarget(f);break;}f.state='approach';L.fish=f;f.t2=0;refreshControls();}
       else if(f.t2>(nickHot()?30:12)){f.state='wander';newWanderTarget(f);}
       break;
     case'approach':
@@ -1494,7 +1550,7 @@ function updateFish(f,dt){
       [tx,ty]=aimAt(f,L,2);spd=sp.speed*.45;
       if(L.moving&&isBait()&&!nickHot()&&Math.random()<dt*.5*(1-.7*farZ(f.x))){spook(f,'Spooked it!');break;}
       f.timer-=dt;
-      if(f.timer<=0){f.nib--;if(f.nib>0&&f.mood==='shy'&&!f.bed&&!nickHot()&&Math.random()<.13){f.state='wander';f.cool=rand(6,12);L.fish=null;newWanderTarget(f);refreshControls();break;}if(f.nib>0){if(stealCheck(f))break;L.jig=.18;G.bobJig=.4;if(G.bob)ripple(G.bob.x,isBait()&&rig().bob==='fixed'?.4:.22);SFX.nibble();vib(15);ripple(L.x,.25);f.timer=f.mood==='shy'?rand(.6,1.7):rand(.3,1.3);}else{G.dry=0;f.state='bite';f.timer=(sp.bite*1.3+.15)*rand(.8,1.25)*mods().biteWindow*(nickHot()?1.6:1)*(isBait()&&rig().type==='bobber'?(rig().bob==='fixed'?1.25:1.1):1)*curSetup().sens*(1+.06*curTier())*(curSetup().botSens&&isBait()&&['carolina','threeway','free','dropshot'].includes(rig().type)?curSetup().botSens:1);SFX.bite();vib([40,30,40]);L.jig=.4;f.layDown=!!G.bob&&['crappie','bluegill','perch','pumpkinseed'].includes(sp.id)&&Math.random()<.4;if(G.bob){splash(G.bob.x,f.layDown?.2:.5);}else splash(L.x,.35);refreshControls();}}
+      if(f.timer<=0){f.nib--;if(f.nib>0&&f.mood==='shy'&&!f.bed&&!nickHot()&&Math.random()<.13){f.state='wander';f.cool=rand(6,12);L.fish=null;newWanderTarget(f);refreshControls();break;}if(f.nib>0){if(stealCheck(f))break;L.jig=.18;G.bobJig=.4;if(G.bob)ripple(G.bob.x,isBait()&&rig().bob==='fixed'?.4:.22);SFX.nibble();vib(15);ripple(L.x,.25);f.timer=f.mood==='shy'?rand(.6,1.7):rand(.3,1.3);}else if(sp.turtle&&(Math.random()>.025||(S.minutes||0)<(S.turtleNext||0))){if(Math.random()<.08)stealTurtle(f);else{f.state='wander';f.cool=rand(15,30);L.fish=null;newWanderTarget(f);refreshControls();}}else{G.dry=0;f.state='bite';f.timer=(sp.bite*1.3+.15)*rand(.8,1.25)*mods().biteWindow*(nickHot()?1.6:1)*(isBait()&&rig().type==='bobber'?(rig().bob==='fixed'?1.25:1.1):1)*curSetup().sens*(1+.06*curTier())*(curSetup().botSens&&isBait()&&['carolina','threeway','free','dropshot'].includes(rig().type)?curSetup().botSens:1);SFX.bite();vib([40,30,40]);L.jig=.4;f.layDown=!!G.bob&&['crappie','bluegill','perch','pumpkinseed'].includes(sp.id)&&Math.random()<.4;if(G.bob){splash(G.bob.x,f.layDown?.2:.5);}else splash(L.x,.35);refreshControls();}}
       break;
     case'bite':
       if(!engaged){f.state='wander';break;}
@@ -1524,15 +1580,19 @@ function updateFish(f,dt){
     case'leave':tx=f.x+f.face*20;ty=Math.min(f.y+20,bottomAt(f.x)-6);spd=sp.speed*.3;f.alpha-=dt*.6;if(f.alpha<=0)f.dead=true;break;
   }
   const dx=tx-f.x,dy=ty-f.y,d=Math.hypot(dx,dy)||1,want=Math.min(spd,d*3),k=Math.min(1,dt*2.5);
-  f.vx+=(dx/d*want+(f.avx||0)-f.vx)*k;f.vy+=(dy/d*want+(f.avy||0)-f.vy)*k;f.x+=f.vx*dt;f.y+=f.vy*dt;
+  f.vx+=(dx/d*want+(f.avx||0)-f.vx)*k;f.vy+=(dy/d*want+(f.avy||0)-f.vy)*k;const x0=f.x,y0=f.y;f.x+=f.vx*dt;f.y+=f.vy*dt;
   if(f.state==='follow')f.aim=null;
   if(LOC().current&&f.state==='wander'&&Math.abs(f.vx)<10)f.face=1;
   if((f.state==='wander'||f.state==='flee'||f.state==='leave'||f.state==='hunt'||(f.state==='guard'&&f.chase))&&Math.abs(f.vx)>2.5)f.face=Math.sign(f.vx);
   if(f.bed&&f.state==='wander'){f.state='guard';f.timer=rand(1,2.5);f.chase=null;}
   const eng=f.state==='approach'||f.state==='nibble'||f.state==='bite';
   if(eng)f.y=clamp(f.y,SURF+2,Math.max(SURF+2,fishFloor(f,.15)));
-  else f.y=clamp(f.y,SURF+5+f.L*SHAPES[f.sp.shape].h*.4,Math.max(SURF+6,fishFloor(f,.45)-3));
+  else f.y=clamp(f.y,f.breath!=null?SURF+f.L*.12:f.crawl&&Math.abs(f.y-fishFloor(f,.45))<10?fishFloor(f,.45)-1:SURF+5+f.L*SHAPES[f.sp.shape].h*.4,Math.max(SURF+6,fishFloor(f,.45)-3));
   pushFromBank(f);
+  // Riding up or down a steep bank shouldn't add speed: if following the bottom moved the fish farther than it swims,
+  // pull the step back along its path and settle it on the bottom again.
+  {const mx=(Math.hypot(f.vx,f.vy)+6)*dt*1.1,mvd=Math.hypot(f.x-x0,f.y-y0);if(mvd>mx&&mvd>.5){const kk=mx/mvd;f.x=x0+(f.x-x0)*kk;f.y=y0+(f.y-y0)*kk;
+    if(!eng)f.y=Math.min(f.y,Math.max(SURF+6,fishFloor(f,.45)-3));f.vx*=.9;}}
   const pt=eng&&f.aim!=null?f.aim:clamp(Math.atan2(f.vy,Math.abs(f.vx)+10),-.55,.55);
   f.pitch=(f.pitch||0)+(pt-(f.pitch||0))*Math.min(1,dt*5);
   f.x=clamp(f.x,DOCKX+16,WX-8);
@@ -1545,7 +1605,7 @@ function startFight(f,gut){setTimeout(updateDragUI,0);{const tl=document.querySe
   f.state='fight';G.lure.state='hooked';SFX.hook();vib(70);
   const [a,b]=bandRange(f.sp,f.x);
   G.fight={f,tension:.35,stamina:1,dir:1,phase:'rest',phaseT:rand(1.2,1.8),thrash:0,thrashT:rand(.4,.9),over:0,slack:0,ty:fightTy(f.sp,f.x),t:0,say:'',gut:!!gut};{const h=heftOf(f),lb=fishLb(f);G.fight.heft=h.m;G.fight.heftR=h.R;G.fight.lbTire=Math.max(1,Math.sqrt(lb/15));G.fight.lbDrag=Math.max(1,Math.pow(lb/20,.6));}
-  if(gut)toast('It swallowed the hook','Gut-hooked fish are worth much less');else G.fight.say=G.fight.heftR>2.5?`Way too big for ${lineTest()} lb line!`:G.fight.heftR>1.2?'Heavy fish! Let it run':'Fish on!';refreshControls();$('#fightHud').hidden=false;
+  if(gut)toast('It swallowed the hook','Gut-hooked fish are worth much less');else G.fight.say=f.sp.turtle?'Slow and heavy\u2026 that\u2019s no fish':G.fight.heftR>2.5?`Way too big for ${lineTest()} lb line!`:G.fight.heftR>1.2?'Heavy fish! Let it run':'Fish on!';refreshControls();$('#fightHud').hidden=false;
 }
 function fightTy(sp,x){const [a,b]=bandRange(sp,x);const y=rand(a,b);return sp.jumps?lerp(SURF+8,y,.4):sp.deep?Math.max(y,bottomAt(x)-14):y;}
 function nextPhase(F){
@@ -1617,6 +1677,14 @@ function updateFight(dt){
   if(f.x<DOCKX+28){const big=sp.power>=.5||f.len>mods().dockBigLen;if(big&&!F.dockTry&&!F.gut){F.dockTry=true;const sz=clamp((f.len-sp.len[0])/Math.max(1,sp.len[1]-sp.len[0]),0,1);if(!gearOn('net')&&Math.random()<(.18+.25*sz*(.4+.6*F.stamina))*mods().dockEscape){F.dir=1;F.phase='run';F.phaseT=.4;f.x=DOCKX+34;if(Math.random()<(mods().dockEscape>1?.8:.55)){chatter('net',1);lostFish('It thrashed free at the dock','A landing net stops that');return;}toast('It thrashes at the dock!');}}
     if(f.x<DOCKX+28){if(gearOn('net')&&big)toast('Netted!');landFish();}}
 }
+function landTurtle(){const f=G.fight.f,sp=f.sp;f.dead=true;splash(DOCKX+20,1);useBait();endFight();
+  S.turtles=S.turtles||{};const r=S.turtles[sp.id]||(S.turtles[sp.id]={n:0,best:0});const first=!r.n;r.n++;r.best=Math.max(r.best,f.len);
+  const xp=first?60:20;S.turtleNext=(S.minutes||0)+720;S.stats.caught=S.stats.caught;save();chatter('catch',.6);
+  setTimeout(()=>{G.paused=true;$('#tuName').textContent=sp.name;$('#tuSize').textContent=`Shell ${fLen(f.len)} \u00b7 ${fWt(SHAPES.turtle.k*Math.pow(f.len,3))}`+(first?' \u00b7 First one!':'');
+    $('#tuFact').textContent=sp.fact;$('#tuXp').textContent=`+${xp} XP for letting it go`;G.turtleXp=xp;
+    const cv=$('#tuCanvas'),x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);x.translate(cv.width*.47,cv.height*.6);x.scale(6.5,6.5);drawFish(x,sp,60,1,1,1,false);
+    show('turtle');SFX.coin();},700);}
+$('#tuGo').onclick=()=>{gainXP(G.turtleXp||20);G.turtleXp=0;resume();toast('Back in the water','It paddled off slow and steady');};
 function endFight(){G.input.reel=false;G.padEnd&&G.padEnd();$('#bReel').classList.remove('down');G.fight=null;G.lure.state='ready';G.lure.fish=null;$('#fightHud').hidden=true;G.input.tilt=0;refreshControls();}
 // ---------------- DRAG ----------------
 // Drag lets line slip off the reel before it breaks. Set tight, it behaves like before: the line snaps when
@@ -1642,7 +1710,7 @@ function snap(why){chatter('snap',.7);
   const sub=breakOff('snap');f.state='wander';flee(f,12);endFight();toast(why?'Line twist! It snapped':'Line snapped!',adv?adv+'. '+sub:sub);save();updateHUD(true);
 }
 function lostFish(msg,sub){chatter('lost',.55);if(S.lure!=='worm'&&isBait())useBait();const f=G.fight.f;f.state='wander';flee(f,10);SFX.lose();endFight();toast(msg,sub);}
-function landFish(){const qHits=questCatch(G.fight.f.sp,G.fight.f.len);{const F0=G.fight,f0=F0.f,big0=medalFor(f0.sp.id,f0.len)>=1||f0.sp.legend;chatter(big0?'big':'catch',big0?.85:.3);}
+function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const qHits=questCatch(G.fight.f.sp,G.fight.f.len);{const F0=G.fight,f0=F0.f,big0=medalFor(f0.sp.id,f0.len)>=1||f0.sp.legend;chatter(big0?'big':'catch',big0?.85:.3);}
   useBait();
   const F=G.fight,f=F.f,sp=f.sp;
   f.dead=true;splash(DOCKX+20,1);
@@ -1692,6 +1760,7 @@ function render(){
   // clouds, hills & treeline
   const cam=G.cam||0;
   drawClouds(c,cam,dk,rain,fog,h);
+  drawFlock(c,dk,fog);
   drawBackdrop(c,cam,dk,fog,rain,h);
   // water
   const LW=LOC().water,Zx=sea(),wt0=Zx.jungle?mx(rain?LW[1]:LW[0],'#5a6a38',Zx.dry*.3):mx(mx(rain?LW[1]:LW[0],'#4a8a5a',win(Zx.p,.25,.32,.45,.52)*.18),'#5a7f98',Zx.cold*.2),wTop=mx(wt0,'#0f2a3a',dk*.8),wBot=mix(LW[2],'#030b14',dk*.8);
@@ -1768,6 +1837,22 @@ function render(){
   drawBubble(c,cam);
 }
 function warmth(h){return clamp(Math.max(1-Math.abs(h-6.4)/1.6,1-Math.abs(h-18.6)/1.6),0,1);}
+// ---------- birds overhead: geese head north in spring and south in fall, high and far off.
+// Which side is north is fixed for each place (LOCS[..].north: -1 left, 1 right). In the Amazon, pairs of macaws cross instead.
+function updateFlock(dt){const F=G.flock;if(F){F.x+=F.dir*F.v*dt;F.t+=dt;if(F.x<-160||F.x>W+160)G.flock=null;return;}
+  if(G.mode!=='play'&&G.mode!=='menu')return;if(darkness()>.55)return;
+  const n=LOC().north,si=seasonIdx(),geese=n&&(si===0||si===2);if(!geese&&n!==0)return;
+  if(Math.random()>dt/(geese?100:120))return;
+  const dir=geese?(si===0?n:-n):(Math.random()<.5?1:-1),cnt=geese?7+Math.floor(Math.random()*10):2+Math.floor(Math.random()*2);
+  const m=[];for(let i=0;i<cnt;i++){const side=i===0?0:(i%2?1:-1),rank=Math.ceil(i/2)+(Math.random()<.15?1:0);m.push({b:rank*7.5+rand(-1,1),o:side*rank*3.6+rand(-.6,.6),ph:Math.random()*6});}
+  G.flock={x:dir>0?-60:W+60,y:SURF*rand(.12,.42),dir,v:geese?rand(20,28):rand(30,40),t:0,m,geese,col:geese?null:(Math.random()<.5?['#d8302a','#f2c53b']:['#2f7fd0','#f2c53b'])};}
+function drawFlock(c,dk,fog){const F=G.flock;if(!F)return;c.save();c.globalAlpha=(1-dk)*(fog?.35:.85);c.lineCap='round';c.lineJoin='round';
+  for(const b of F.m){const x=F.x-F.dir*b.b+Math.sin(F.t*.7+b.ph)*.6,y=F.y+b.o+Math.sin(F.t*.9+b.ph)*.8,fl=Math.sin(F.t*(F.geese?7:10)+b.ph);
+    if(F.geese){c.strokeStyle='#2a2f33';c.lineWidth=.9;c.beginPath();c.moveTo(x-3,y-fl*1.6);c.quadraticCurveTo(x-1.2,y-fl*.5,x,y);c.quadraticCurveTo(x+1.2,y-fl*.5,x+3,y-fl*1.6);c.stroke();
+      c.fillStyle='#2a2f33';c.beginPath();c.ellipse(x+F.dir*.6,y+.2,1.5,.55,0,0,TAU);c.fill();}
+    else{c.strokeStyle=F.col[0];c.lineWidth=1.2;c.beginPath();c.moveTo(x-3.4,y-fl*1.8);c.quadraticCurveTo(x-1.2,y-fl*.6,x,y);c.quadraticCurveTo(x+1.2,y-fl*.6,x+3.4,y-fl*1.8);c.stroke();
+      c.strokeStyle=F.col[0];c.lineWidth=.8;c.beginPath();c.moveTo(x-F.dir*1,y+.3);c.lineTo(x-F.dir*5,y+.9);c.stroke();c.fillStyle=F.col[1];c.beginPath();c.arc(x+F.dir*.8,y+.2,.6,0,TAU);c.fill();}}
+  c.restore();}
 function drawClouds(c,cam,dk,rain,fog,h){
   const wm=warmth(h),n=rain?clouds.length:fog?5:4,span=W+320;
   let col=mix('#ffffff','#ffc49a',wm*.8);col=col.map((v,i)=>lerp(v,[52,62,88][i],dk*.9));if(rain)col=col.map((v,i)=>lerp(v,[132,142,150][i],.7*(1-dk*.5)));
@@ -1888,7 +1973,7 @@ function drawPads(c,dk,vx0,vx1){
       c.fillStyle=rgbStr(mix('#f2c53b','#4a3a10',dk*.7));c.beginPath();c.arc(fx,fy-.3,1.2,0,TAU);c.fill();}}
 }
 function rockGrad(c,x,y,rr,dk,t){const tone=110+t*45,k=1-dk*.75;const g=c.createRadialGradient(x-rr*.35,y-rr*.4,rr*.1,x,y,rr*1.1);g.addColorStop(0,`rgb(${tone*1.25*k|0},${tone*1.22*k|0},${tone*1.12*k|0})`);g.addColorStop(1,`rgb(${tone*.55*k|0},${tone*.55*k|0},${tone*.5*k|0})`);return g;}
-function drawBoulders(c,dk,vx0,vx1){for(const k of cboulders){if(k.x<vx0-30||k.x>vx1+30)continue;if(LOC().stumps){drawStump(c,dk,k);continue;}c.fillStyle=rockGrad(c,k.x,k.y,k.r,dk,k.t);c.beginPath();c.ellipse(k.x,k.y,k.r*1.2,k.r,0,0,TAU);c.fill();
+function drawBoulders(c,dk,vx0,vx1){for(const k of cboulders){if(k.x<vx0-60||k.x>vx1+60)continue;if(k.log){drawLog(c,dk,k);continue;}if(LOC().stumps){drawStump(c,dk,k);continue;}c.fillStyle=rockGrad(c,k.x,k.y,k.r,dk,k.t);c.beginPath();c.ellipse(k.x,k.y,k.r*1.2,k.r,0,0,TAU);c.fill();
   c.fillStyle=rgbStr(mix('#4f7a3a','#122016',dk*.75),.55);c.beginPath();c.ellipse(k.x-k.r*.2,k.y-k.r*.82,k.r*.7,k.r*.22,0,0,TAU);c.fill();
   if(k.y-k.r<SURF+3){c.strokeStyle=`rgba(240,250,250,${.55*(1-dk*.6)})`;c.lineWidth=1.2;for(let i=0;i<3;i++){const o=(G.t*18+i*9)%26;c.beginPath();c.moveTo(k.x-k.r*1.1-o,SURF+1+i);c.lineTo(k.x-k.r*1.1-o-6,SURF+1.4+i);c.stroke();}}}}
 function drawRiffles(c,dk,vx0,vx1,maxDep){c.strokeStyle=`rgba(245,252,252,${(maxDep>100?.3:.5)*(1-dk*.6)})`;c.lineWidth=1;c.beginPath();
@@ -1898,6 +1983,37 @@ function drawUndercut(c,dk){const x0=WX-70,top=SURF-12;const soil=rgbStr(mix('#5
   c.fillStyle=soil;c.beginPath();c.moveTo(x0,top);c.lineTo(WX+80,top);c.lineTo(WX+80,GROUND+40);c.lineTo(WX-6,GROUND+40);c.lineTo(WX-6,SURF+30);c.quadraticCurveTo(WX-20,SURF+6,x0+6,SURF+5);c.quadraticCurveTo(x0-4,SURF+2,x0,top);c.fill();
   c.fillStyle=rgbStr(mix('#4f7a3a','#0c1a12',dk*.85));c.fillRect(x0-2,top-4,150,5);
   c.strokeStyle=rgbStr(mix('#3a2a1a','#0a0705',dk*.8));c.lineWidth=1;c.lineCap='round';for(let i=0;i<7;i++){const rx=x0+8+i*8,len=8+((i*13)%12);c.beginPath();c.moveTo(rx,SURF+5);c.quadraticCurveTo(rx+2+Math.sin(G.t*.8+i)*1.5,SURF+5+len*.6,rx-1,SURF+5+len);c.stroke();}}
+// A long-dead tree lying on the bottom. The trunk follows the shape of the bottom and sinks into the silt, rising only
+// where the root ball holds the deep end up; bark furrows, knots, a snapped-off top, limbs, moss and slime.
+function drawLog(c,dk,k){const D=v=>dk*.8,wood=rgbStr(mix('#6e5435','#100b06',D())),hi=rgbStr(mix('#8f7350','#140e08',D())),dark=rgbStr(mix('#3a2b1a','#070503',D())),
+  moss=rgbStr(mix('#6e8a44','#0c140a',D()),.85),silt=rgbStr(mix('#55432e','#0e0a05',D()));
+  const x0=k.x-k.r,x1=k.x+k.r,N=18,th=u=>6+u*3,lift=u=>0;
+  const P=[];for(let i=0;i<=N;i++){const u=i/N,x=lerp(x0,x1,u),b=bottomAt(x);P.push({u,x,y:b-th(u)*.42-lift(u),t:th(u)});}
+  // root plate: a fan of thick, tapering roots with a clod of old dirt caught in them
+  // trunk body with top-lit shading
+  const body=()=>{c.beginPath();c.moveTo(P[0].x+1,P[0].y-P[0].t*.8);for(const q of P)c.lineTo(q.x,q.y-q.t);
+    for(let i=N;i>=0;i--){const q=P[i];c.lineTo(q.x,q.y+q.t);}
+    c.lineTo(P[0].x-1.5,P[0].y+P[0].t*.3);c.lineTo(P[0].x+2,P[0].y);c.lineTo(P[0].x-1,P[0].y-P[0].t*.4);c.closePath();}; // jagged snapped end
+  const gy=lerp(P[0].y,P[N].y,.5),g=c.createLinearGradient(0,gy-12,0,gy+12);g.addColorStop(0,hi);g.addColorStop(.45,wood);g.addColorStop(1,dark);
+  c.fillStyle=g;body();c.fill();
+  c.save();body();c.clip();
+  c.strokeStyle=dark;c.lineWidth=.7;for(const f of[-.6,-.25,.15,.5]){c.beginPath();P.forEach((q,i)=>{const y=q.y+f*q.t+Math.sin(i*1.7+f*5)*.6;i?c.lineTo(q.x,y):c.moveTo(q.x,y);});c.stroke();}
+  for(const [u,r] of[[.33,2.2],[.58,2.8],[.8,2]]){const q=P[Math.round(u*N)];c.fillStyle=dark;c.beginPath();c.ellipse(q.x,q.y-q.t*.15,r*1.4,r,0,0,TAU);c.fill();c.strokeStyle=hi;c.lineWidth=.5;c.beginPath();c.ellipse(q.x,q.y-q.t*.15,r*.7,r*.45,0,0,TAU);c.stroke();}
+  c.restore();
+  // the thick end: weathered end grain with growth rings
+  {const q=P[N];c.fillStyle=rgbStr(mix('#7d6242','#120d07',D()));c.beginPath();c.ellipse(q.x,q.y,q.t*.42,q.t*.98,0,0,TAU);c.fill();
+    c.strokeStyle=dark;c.lineWidth=.6;for(const r of[.7,.42,.18]){c.beginPath();c.ellipse(q.x,q.y,q.t*.42*r,q.t*.98*r,0,0,TAU);c.stroke();}
+    c.beginPath();c.moveTo(q.x,q.y-q.t*.9);c.lineTo(q.x+q.t*.1,q.y-q.t*.2);c.stroke();}
+  // broken limbs reaching up
+  c.strokeStyle=wood;for(const [u,len,ang,w] of[[.22,20,-2,2.4],[.47,30,-1.4,3.1],[.69,17,-.85,2.2],[.86,14,-1.15,2]]){const q=P[Math.round(u*N)],bx=q.x,by=q.y-q.t*.85;
+    c.lineWidth=w;c.beginPath();c.moveTo(bx,by);c.lineTo(bx+Math.cos(ang)*len,by+Math.sin(ang)*len);c.stroke();
+    c.lineWidth=w*.55;c.beginPath();c.moveTo(bx+Math.cos(ang)*len*.6,by+Math.sin(ang)*len*.6);c.lineTo(bx+Math.cos(ang-.7)*len*.95,by+Math.sin(ang-.7)*len*.95);c.stroke();}
+  // moss along the top, slime streamers
+  c.strokeStyle=moss;c.lineWidth=2.2;c.beginPath();P.slice(1,N-1).forEach((q,i)=>{i?c.lineTo(q.x,q.y-q.t+1):c.moveTo(q.x,q.y-q.t+1);});c.stroke();
+  c.lineWidth=.8;for(let i=1;i<N-1;i+=2){const q=P[i],sw=Math.sin(G.t*1.2+i)*1.6;c.beginPath();c.moveTo(q.x,q.y-q.t);c.quadraticCurveTo(q.x+sw,q.y-q.t-4,q.x+sw*1.5,q.y-q.t-7-(i%3)*2);c.stroke();}
+  // silt piled along the buried side
+  c.fillStyle=silt;c.beginPath();c.moveTo(P[0].x-5,bottomAt(P[0].x-5)+1);for(const q of P)c.lineTo(q.x,Math.max(q.y+q.t*.62,bottomAt(q.x)-2.5));c.lineTo(P[N].x+6,bottomAt(P[N].x+6)+1);
+  for(let i=N;i>=0;i--)c.lineTo(P[i].x,bottomAt(P[i].x)+2);c.closePath();c.fill();}
 function drawStump(c,dk,k){const wood=rgbStr(mix('#5a4228','#120c06',dk*.8)),dark=rgbStr(mix('#3a2a18','#080503',dk*.8));const b=bottomAt(k.x),top=Math.max(SURF-26,b-k.r*5.5);
   c.fillStyle=wood;c.beginPath();c.moveTo(k.x-k.r*.45,b+2);c.lineTo(k.x-k.r*.3,top);c.lineTo(k.x+k.r*.3,top+4);c.lineTo(k.x+k.r*.45,b+2);c.fill();c.strokeStyle=dark;c.lineWidth=1.6;c.lineCap='round';
   for(const d of[-1,1]){c.beginPath();c.moveTo(k.x+d*k.r*.35,b-k.r*.4);c.quadraticCurveTo(k.x+d*k.r*1.2,b-k.r*.6,k.x+d*k.r*1.6,b+2);c.stroke();}
@@ -2177,10 +2293,73 @@ const ART={piranha:{tail:'fork',dorsal:'soft',anal:'long',adipose:true,iris:'#c0
   catfish:{tail:'deepfork',dorsal:'cat',anal:'long',adipose:true,iris:'#5a5a40',barbels:4,smallEye:true},brownbull:{tail:'square',dorsal:'cat',anal:'long',adipose:true,iris:'#5a4a30',barbels:4,smallEye:true},
   blackbull:{tail:'square',dorsal:'cat',anal:'long',adipose:true,iris:'#3a3a30',barbels:4,smallEye:true},pickerel:{tail:'fork',dorsal:'rear',anal:'rear',iris:'#d9b34a'},
   carp:{tail:'fork',dorsal:'carp',anal:'short',iris:'#d9a83a',barbels:2,lowFin:'#c46a3a'},bowfin:{tail:'round',dorsal:'long',anal:'short',iris:'#8a7a40'}};
+function drawTurtle(c,sp,L,wig,sil){
+  const S0='#0b1714',col=sil?S0:sp.col,skin=sil?S0:sp.skin,rim=sil?S0:sp.rim,id=sp.id,soft=sp.shell==='soft',dome=sp.shell==='dome';
+  const sx=-L*.3,sw=L*.6,base=L*.025,sh=soft?L*.1:dome?L*.27:id==='snapper'?L*.22:L*.2;
+  const topY=u=>base-sh*Math.pow(Math.max(0,Math.sin(Math.PI*u)),soft?.45:dome?.65:.8),X=u=>sx+sw*u;
+  const pd=wig*.8,lw=Math.max(.5,L*.008);
+  // ---- limbs: hind leg pushes back, front flipper reaches forward, in turn; webbed feet with claws
+  const limb=(x,y,ang,len,wid)=>{c.save();c.translate(x,y);c.rotate(ang);c.fillStyle=skin;
+    c.beginPath();c.moveTo(0,-wid*.5);c.quadraticCurveTo(len*.6,-wid*.6,len,-wid*.25);c.lineTo(len*1.18,0);c.lineTo(len,wid*.35);c.quadraticCurveTo(len*.5,wid*.7,0,wid*.5);c.fill();
+    if(!sil){c.strokeStyle=shade(sp.skin,.3);c.lineWidth=lw*.7;c.beginPath();for(const k of[-.18,0,.18]){c.moveTo(len*1.02,k*wid);c.lineTo(len*1.22,k*wid*1.3);}c.stroke();
+      c.fillStyle=shade(sp.skin,-.18);c.beginPath();c.ellipse(len*.35,wid*.15,len*.22,wid*.22,0,0,TAU);c.fill();}
+    c.restore();};
+  const a=Math.sin(pd),b=Math.sin(pd+Math.PI);
+  limb(X(.2),base-L*.005,2.2+b*.45,L*.12,L*.065);                 // far hind leg (behind, darker)
+  limb(X(.8),base-L*.005,.9+a*.55,L*.13,L*.07);                   // far front flipper
+  // ---- tail
+  c.fillStyle=skin;const tl=id==='snapper'?L*.24:L*.08;c.beginPath();c.moveTo(X(.04),base-L*.02);c.quadraticCurveTo(X(0)-tl*.5,base+Math.sin(pd)*L*.01,X(0)-tl,base+L*.005+Math.sin(pd)*L*.012);c.quadraticCurveTo(X(0)-tl*.4,base+L*.03,X(.06),base+L*.02);c.fill();
+  if(id==='snapper'&&!sil){c.fillStyle=shade(sp.skin,-.25);for(let i=1;i<6;i++){const t=i/6,tx=X(.02)-tl*t,ty=base-L*.012+Math.sin(pd)*L*.012*t;c.beginPath();c.moveTo(tx-L*.012,ty+L*.004);c.lineTo(tx-L*.006,ty-L*.018*(1-t*.5));c.lineTo(tx,ty+L*.004);c.fill();}}
+  // ---- neck and head
+  const hx=X(1)+L*(soft?.12:id==='snapper'?.1:.09),hy=base-L*.035+Math.sin(pd*.5)*L*.004,hr=L*(id==='snapper'?.072:dome?.05:.056);
+  c.fillStyle=skin;c.beginPath();c.moveTo(X(.9),base-sh*.55);c.quadraticCurveTo(hx-hr*1.6,hy-hr*1.1,hx-hr*.4,hy-hr*.85);c.lineTo(hx-hr*.4,hy+hr*.85);c.quadraticCurveTo(hx-hr*1.6,hy+hr*1.3,X(.9),base+L*.015);c.fill();
+  c.beginPath();if(soft){c.ellipse(hx,hy,hr*1.05,hr*.78,0,0,TAU);c.fill();c.beginPath();c.moveTo(hx+hr*.8,hy-hr*.45);c.quadraticCurveTo(hx+hr*1.9,hy-hr*.35,hx+hr*2.3,hy-hr*.15);c.lineTo(hx+hr*2.25,hy+hr*.05);c.quadraticCurveTo(hx+hr*1.6,hy+hr*.1,hx+hr*.8,hy+hr*.35);}
+  else{c.moveTo(hx-hr*.6,hy-hr*.85);c.quadraticCurveTo(hx+hr*.6,hy-hr*1.05,hx+hr*1.25,hy-hr*.25);c.quadraticCurveTo(hx+hr*1.45,hy+hr*.05,hx+hr*1.2,hy+hr*.35);
+    if(id==='snapper')c.quadraticCurveTo(hx+hr*1.35,hy+hr*.7,hx+hr*1.05,hy+hr*.55);c.quadraticCurveTo(hx+hr*.3,hy+hr*1.05,hx-hr*.6,hy+hr*.85);}
+  c.fill();
+  if(!sil){c.strokeStyle=shade(sp.skin,-.35);c.lineWidth=lw*.6;c.beginPath();c.moveTo(hx+hr*1.2,hy+hr*.32);c.quadraticCurveTo(hx+hr*.5,hy+hr*.45,hx-hr*.1,hy+hr*.3);c.stroke(); // mouth
+    c.strokeStyle=shade(sp.skin,-.2);c.beginPath();for(const k of[.35,.6])c.moveTo(X(.95)+L*.02*k,hy-hr*.7*(1-k*.2)),c.quadraticCurveTo(hx-hr*1.1,hy,X(.95)+L*.025*k,hy+hr*.8);c.stroke(); // neck folds
+    if(id==='painted'||id==='musk'){c.strokeStyle=sp.stripe;c.lineWidth=Math.max(.6,L*.007);c.beginPath();for(const o of id==='musk'?[-.4,.25]:[-.42,-.05,.32])c.moveTo(hx-hr*2.1,hy+o*hr*1.15),c.quadraticCurveTo(hx-hr*.8,hy+o*hr*1.05,hx+hr*.85,hy+o*hr*.7);c.stroke();}
+    if(id==='yellowspot'){c.fillStyle=sp.stripe;for(const [ox,oy,r] of[[.25,-.45,.26],[.85,-.3,.2],[-.25,-.05,.22],[.45,.25,.16],[1.05,.05,.12]]){c.beginPath();c.arc(hx+hr*ox,hy+hr*oy,hr*r,0,TAU);c.fill();}}
+    if(id==='softshell'){c.strokeStyle='#e6dcc0';c.lineWidth=Math.max(.5,L*.006);c.beginPath();c.moveTo(hx+hr*.7,hy-hr*.1);c.lineTo(X(.98),base-sh*.4);c.stroke();}
+    c.fillStyle=id==='snapper'?'#c9b25a':'#e9d26a';c.beginPath();c.arc(hx+hr*.55,hy-hr*.32,hr*.26,0,TAU);c.fill();
+    c.fillStyle='#111';c.beginPath();c.arc(hx+hr*.6,hy-hr*.32,hr*.15,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.8)';c.beginPath();c.arc(hx+hr*.52,hy-hr*.4,hr*.06,0,TAU);c.fill();}
+  // ---- plastron
+  c.fillStyle=sil?S0:(id==='snapper'?'#b8a874':'#d4c491');c.beginPath();c.moveTo(X(.08),base);c.quadraticCurveTo(X(.5),base+L*.06,X(.94),base);c.closePath();c.fill();
+  // ---- carapace
+  const shellPath=()=>{c.beginPath();c.moveTo(X(0),base);for(let k=1;k<=24;k++){const u=k/24;c.lineTo(X(u),topY(u));}c.lineTo(X(1),base);
+    if(id==='snapper'){for(let k=3;k>=0;k--){const u=k/12;c.lineTo(X(u)+L*.006,base+L*.012);c.lineTo(X(u),base);}}c.closePath();};
+  const g=sil?null:c.createLinearGradient(0,base-sh,0,base);if(g){g.addColorStop(0,shade(sp.col,.22));g.addColorStop(.6,sp.col);g.addColorStop(1,shade(sp.col,-.3));}
+  c.fillStyle=g||col;shellPath();c.fill();
+  if(!sil){c.save();shellPath();c.clip();
+    if(soft){// leathery: soft spots, rough front edge, no scutes
+      c.fillStyle=shade(sp.col,-.28);for(const [u,v,r] of[[.25,.45,.03],[.45,.35,.035],[.65,.42,.03],[.38,.7,.025],[.58,.68,.025],[.78,.6,.02]]){c.beginPath();c.arc(X(u),topY(u)+sh*v*.9,L*r,0,TAU);c.fill();}
+      c.fillStyle=shade(sp.col,.25);for(let k=0;k<5;k++){const u=.78+k*.04;c.beginPath();c.arc(X(u),topY(u)+L*.008,L*.006,0,TAU);c.fill();}}
+    else{const seam=id==='painted'?'#c7b45a':shade(sp.col,-.45),mid=u=>base-(base-topY(u))*.5;
+      // marginal scutes along the rim
+      const mh=sh*.2;c.fillStyle=shade(sp.col,-.12);c.fillRect(X(0),base-mh,sw,mh);
+      c.strokeStyle=seam;c.lineWidth=lw*.8;c.beginPath();c.moveTo(X(0),base-mh);c.lineTo(X(1),base-mh);for(let k=1;k<11;k++){c.moveTo(X(k/11),base-mh);c.lineTo(X(k/11),base);}c.stroke();
+      if(id==='painted'){c.fillStyle='#c8472e';for(let k=0;k<11;k++){c.fillRect(X(k/11)+sw*.02,base-mh*.75,sw/11*.55,mh*.5);}}
+      // vertebral row on top, costal plates on the flanks
+      c.strokeStyle=seam;c.lineWidth=lw;c.beginPath();
+      for(let k=0;k<=24;k++){const u=.1+.8*k/24,y=mid(u);k?c.lineTo(X(u),y):c.moveTo(X(u),y);}
+      for(const u of[.22,.38,.54,.7,.84])c.moveTo(X(u),topY(u)),c.lineTo(X(u+.015),mid(u));
+      for(const u of[.14,.3,.47,.63,.78,.9])c.moveTo(X(u),mid(u)),c.lineTo(X(u-.02),base-mh);
+      c.stroke();
+      if(id==='yellowspot'||id==='musk'){c.fillStyle='rgba(0,0,0,.18)';c.fillRect(X(0),mid(.5),sw,base-mid(.5));}}
+    c.fillStyle='rgba(255,255,255,.14)';c.beginPath();c.ellipse(X(.42),topY(.42)+sh*.22,sw*.2,sh*.1,-.12,0,TAU);c.fill();
+    c.restore();
+    c.strokeStyle=shade(sp.col,-.5);c.lineWidth=lw;shellPath();c.stroke();
+    if(id==='snapper'){c.fillStyle=shade(sp.col,-.15);c.strokeStyle=shade(sp.col,-.5);c.lineWidth=lw*.8;for(const u of[.3,.46,.62,.76]){const y=topY(u);c.beginPath();c.moveTo(X(u)-L*.028,y+L*.008);c.quadraticCurveTo(X(u)-L*.004,y-L*.03,X(u)+L*.02,y+L*.006);c.closePath();c.fill();c.stroke();}}}
+  // ---- near-side limbs in front of the shell
+  limb(X(.24),base+L*.005,2.35+a*.45,L*.13,L*.07);
+  limb(X(.78),base+L*.01,.75+b*.6,L*.14,L*.075);
+}
 function drawFish(c,sp,L,face,wig,alpha,sil){
   c.save();c.globalAlpha=alpha;c.scale(face,1);
   const col=sil?'#0b1714':sp.col,belly=sil?'#0b1714':sp.belly;
   if(sp.shape==='eel'){drawEel(c,sp,L,wig,alpha,sil,col,belly);c.restore();return;}
+  if(sp.turtle){drawTurtle(c,sp,L,wig,sil);c.restore();return;}
   const o=PROF[sp.shape]||PROF.perch,A=ART[sp.id]||{tail:'fork',dorsal:'soft',anal:'short'};
   const h=L*SHAPES[sp.shape].h,H=h/2,nx=L*.5,px=-L*.37,P=h*o.pd,pk=L*o.px,tsw=Math.sin(wig)*h*.2,fl=Math.sin(wig*1.3);
   const topAt=x=>x>=pk?-H*(1-Math.pow((x-pk)/(nx-pk),2)*.75):-(P+(H-P)*(1-Math.pow((pk-x)/(pk-px),2)));
@@ -2296,7 +2475,7 @@ function drawEel(c,sp,L,wig,alpha,sil,col,belly){
 }
 // ---------------- MAIN UPDATE ----------------
 function update(dt){
-  tickChatter(dt);
+  tickChatter(dt);updateFlock(dt);
   if(nickSits()){G.nickT=(G.nickT??12)-dt;if(G.nickT<=0){nickTip();G.nickT=rand(25,40);}}
   if(nickHot()&&G.nickCasts<=0&&G.lure.state==='ready'&&!G.fight&&!G.pending){G.nickActive=false;G.nickTries=0;G.nickT=rand(15,25);{const d=qPick(NICK_DONE);toast(d[0],d[1]);}}
   tickClock(dt);
@@ -2442,7 +2621,7 @@ addEventListener('blur',()=>{G.input.reel=false;if(G.charging)G.charging=false;i
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(G.mode==='play'&&!G.paused)pauseGame();}});
 
 // ---------------- SCREENS ----------------
-const SCREENS=['map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install'];
+const SCREENS=['map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle'];
 function show(id){for(const s of SCREENS)$('#'+s).hidden=s!==id;}
 function open(id){G.stack.push(currentScreen());show(id);render_(id);SFX.ui();}
 function currentScreen(){return SCREENS.find(s=>!$('#'+s).hidden)||null;}
@@ -2773,25 +2952,26 @@ document.querySelectorAll('.ver-tag').forEach(e=>e.addEventListener('click',()=>
   if(G.verTaps>=7){G.verTaps=0;S.dev=!S.dev;if(!S.dev)G.devFish=null;save();devBadge(true);if($('#menu').hidden)toast(S.dev?'Dev tools on':'Dev tools off',S.dev?'They\u2019re at the bottom of Settings':'');SFX.ui();if(!$('#settings').hidden)renderSettings();}}));
 function devBadge(pop){const b=$('#devBadge');b.hidden=!S.dev;b.classList.remove('pop');if(pop&&S.dev){void b.offsetWidth;b.classList.add('pop');}}
 function devFill(){const sel=$('#dvSp');if(sel.options.length)return;
-  for(const sp of SPECIES){const o=document.createElement('option');o.value=sp.id;o.textContent=`${sp.name} (${(sp.locs||['pond']).map(l=>LOCS[l].name).join(', ')})`;sel.append(o);}
+  for(const sp of[...SPECIES,...Object.values(TURTLES)]){const o=document.createElement('option');o.value=sp.id;o.textContent=`${sp.name} (${(sp.locs||['pond']).map(l=>LOCS[l].name).join(', ')})`;sel.append(o);}
   for(let h=0;h<24;h+=1){const o=document.createElement('option');o.value=h;o.textContent=`${(h%12)||12}:00 ${h<12?'AM':'PM'}`;$('#dvHour').append(o);}
   ['Spring','Summer','Fall','Winter'].forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n;$('#dvSeason').append(o);});
   ['clear','rain','fog'].forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent=w[0].toUpperCase()+w.slice(1);$('#dvWx').append(o);});}
-function devLen(){const sp=SPMAP[$('#dvSp').value],u=$('#dvLen').value/100;return+(sp.len[0]+(sp.len[1]-sp.len[0])*u).toFixed(1);}
-function devLabel(){const sp=SPMAP[$('#dvSp').value],len=devLen();$('#dvLenV').textContent=`${fLen(len)} \u00b7 ${fWt(SHAPES[sp.shape].k*Math.pow(len,3))}`;
-  $('#dvFishTxt').textContent=G.devFish?`Armed: ${SPMAP[G.devFish.id].name}, ${fLen(G.devFish.len)}${G.devFish.repeat?', every cast':''}. Cast anywhere.`:'Your next cast hooks this fish, wherever it lands.';}
+function turtleById(id){return Object.values(TURTLES).find(t=>t.id===id);}
+function devLen(){const sp=SPMAP[$('#dvSp').value]||turtleById($('#dvSp').value),u=$('#dvLen').value/100;return+(sp.len[0]+(sp.len[1]-sp.len[0])*u).toFixed(1);}
+function devLabel(){const sp=SPMAP[$('#dvSp').value]||turtleById($('#dvSp').value),len=devLen();$('#dvLenV').textContent=`${fLen(len)} \u00b7 ${fWt(SHAPES[sp.shape].k*Math.pow(len,3))}`;
+  $('#dvFishTxt').textContent=G.devFish?`Armed: ${(SPMAP[G.devFish.id]||turtleById(G.devFish.id)).name}, ${fLen(G.devFish.len)}${G.devFish.repeat?', every cast':''}. Cast anywhere.`:'Your next cast hooks this fish, wherever it lands.';}
 function renderDev(){const on=!!S.dev;$('#devPanel').hidden=!on;if(!on)return;devFill();
   $('#dvHour').value=Math.floor(S.minutes/60)%24;$('#dvSeason').value=seasonIdx();$('#dvWx').value=S.weather;devLabel();}
 $('#dvOff').onclick=()=>{S.dev=false;G.devFish=null;save();devBadge();renderSettings();toast('Dev tools off');};
 $('#dvMax').onclick=()=>{grantAll();for(const id in LOCS){S.unlocked=S.unlocked||{};S.unlocked[id]=1;}save();updateHUD(true);toast('Maxed out','Every place, all gear, top level');};
 function devRearm(){if(G.devFish)G.devFish={id:$('#dvSp').value,len:devLen(),repeat:$('#dvRepeat').checked};devLabel();}
 $('#dvSp').onchange=devRearm;$('#dvLen').oninput=devRearm;$('#dvRepeat').onchange=devRearm;
-$('#dvArm').onclick=()=>{G.devFish={id:$('#dvSp').value,len:devLen(),repeat:$('#dvRepeat').checked};devLabel();SFX.ui();toast('Armed',`${SPMAP[G.devFish.id].name}, ${fLen(G.devFish.len)}. Cast anywhere`);};
+$('#dvArm').onclick=()=>{G.devFish={id:$('#dvSp').value,len:devLen(),repeat:$('#dvRepeat').checked};devLabel();SFX.ui();toast('Armed',`${(SPMAP[G.devFish.id]||turtleById(G.devFish.id)).name}, ${fLen(G.devFish.len)}. Cast anywhere`);};
 $('#dvHour').onchange=()=>{const d=Math.floor(S.minutes/1440);S.minutes=d*1440+(+$('#dvHour').value)*60;save();};
 $('#dvSeason').onchange=()=>{S.yday=(+$('#dvSeason').value)*SEASON_DAYS+((S.yday||0)%SEASON_DAYS);for(const k in SNAPS)delete SNAPS[k];if(G.mode==='play')repopulate();save();};
 $('#dvWx').onchange=()=>{S.weather=$('#dvWx').value;S.wtimer=600;save();};
 // An armed dev fish takes the bait the moment the lure lands.
-function devHook(){const D=G.devFish;if(!D||!S.dev)return false;const L=G.lure,sp=SPMAP[D.id];const f=makeFish(sp,L.x);f.len=D.len;f.L=fishPx(D.len,sp);f.x=L.x;f.y=Math.max(SURF+8,L.y+6);
+function devHook(){const D=G.devFish;if(!D||!S.dev)return false;const L=G.lure,sp=SPMAP[D.id]||turtleById(D.id);const f=makeFish(sp,L.x);f.len=D.len;f.L=fishPx(D.len,sp);f.x=L.x;f.y=Math.max(SURF+8,L.y+6);
   G.fish.push(f);L.fish=f;if(!D.repeat)G.devFish=null;startFight(f,false);return true;}
 // ---------- lure info pages (tap a lure's picture in the shop) ----------
 const LINFO={
@@ -2861,6 +3041,10 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v0.90','Sky',['Geese fly north over the water in spring and south in fall','Pairs of macaws cross the sky in the Amazon']],
+  ['v0.89','Big Rock Lake',['Tall weed beds out in the deep water and a sunken tree on the bottom','Snapping and musk turtles crawl along the bottom; turtles sometimes hang still at the surface']],
+  ['v0.88','Turtles',['Each place has its own turtle, from painted turtles in the pond to snappers in the lake','Turtles cruise slowly, come up for air and love to steal worms','Once in a long while one takes the hook on a worm']],
+  ['v0.87','Nests',['Fish nests vary from season to season: some years a spot is busy, other years it\u2019s bare','Bluegill colonies are less evenly spaced']],
   ['v0.86','Home screen',['An Add to Home Screen button on the main menu, with step-by-step help for iPhone and a one-tap install where the browser supports it']],
   ['v0.85','Lure guide',['Tap a lure\u2019s picture in the shop for how to fish it, what bites it and which rod suits it']],
   ['v0.84','More lures',['Added nine lures: buzzbait, prop bait, spinnerbait, jerkbait, rattlebait, swimbait, plastic worm, grub and a crappie jig','Lures in the shop are grouped into topwater, moving baits, bottom & jigs, and flies','Some lures are weedless and hang up less in rocks']],
