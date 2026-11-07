@@ -718,7 +718,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.92a';
+const VERSION='v0.93a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -758,7 +758,7 @@ const LURES={
   spinner:{name:'Brass Spinner',desc:'Flashes while reeled. Pike and trout chase it.',price:30,sink:34,float:false,rise:.45,color:'#e8d27a'},
   popper:{name:'Pond Popper',desc:'Floats on top. Twitch it to pop the surface. Bass love it.',price:45,sink:0,float:true,rise:0,color:'#e65a3d'},
   jig:{name:'Crayfish Jig',desc:'Heavy. Sinks fast and stays deep while you reel.',price:50,sink:70,float:false,rise:.08,color:'#b5642e'},
-  fly:{name:'Moth Fly',desc:'Feather-light. Drifts down very slowly. Wary fish trust it.',price:25,sink:6,float:false,rise:.6,color:'#ece6cf'},
+  fly:{name:'Moth Fly',desc:'Feather-light. Drifts down very slowly. Wary fish trust it. Fly rod only.',price:25,sink:6,float:false,rise:.6,color:'#ece6cf',flyOnly:true},
   mouse:{name:'Deer-Hair Mouse',desc:'A floating mouse skittered across the surface. Big trout and bass eat real ones after dark.',price:90,sink:0,float:true,rise:0,color:'#7a5a3a'},
   frog:{name:'Topwater Frog',desc:'A floating frog with a weedless hook. Big predators rise for it.',price:300,sink:0,float:true,rise:0,color:'#f2c53b'},
   crank:{name:'Shad Crankbait',desc:'Floats at rest and dives when you reel. Bigger sizes dive deeper.',price:60,sink:-14,float:false,rise:0,crank:true,color:'#b8c4c8'},
@@ -771,10 +771,14 @@ const LURES={
   grub:{name:'Curly-tail Grub',desc:'A soft grub on a small jighead. The tail swims at any speed. Panfish and smallmouth eat it all day.',price:20,sink:40,float:false,rise:.22,color:'#b9b0a0'},
   cjig:{name:'Marabou Crappie Jig',desc:'A tiny feathered jig that breathes in the water. Small and slow, made for crappie.',price:18,sink:28,float:false,rise:.3,color:'#f4f0e6'},
   swim:{name:'Paddle-tail Swimbait',desc:'A big, lifelike baitfish with a thumping tail. Fewer bites, bigger fish.',price:110,sink:32,float:false,rise:.3,color:'#9fb4b8'},
+  dryfly:{name:'Dry Fly',desc:'Elk hair and hackle that rides high on the surface film. Let it sit and fish sip it from below. Fly rod only.',price:30,sink:0,float:true,rise:0,color:'#c9a46a',flyOnly:true},
+  popbug:{name:'Popping Bug',desc:'A little foam popper with rubber legs. Pop it, let the rings fade, pop it again. Fly rod only.',price:30,sink:0,float:true,rise:0,color:'#e8d03a',flyOnly:true},
+  nymph:{name:'Bead-head Nymph',desc:'A small, buggy fly with a brass bead. Sinks slowly like a hatching insect, and fish eat these more than anything on top. Fly rod only.',price:30,sink:20,float:false,rise:.5,color:'#8a5a32',flyOnly:true},
+  bugger:{name:'Woolly Bugger',desc:'A marabou-tailed streamer that pulses when you strip it. Looks like a leech, minnow or crayfish. Fly rod only.',price:35,sink:24,float:false,rise:.38,color:'#5c6a2c',flyOnly:true},
   prop:{name:'Prop Bait',desc:'A topwater stick with spinning props that churn the surface. Peacock bass explode on it.',price:85,sink:0,float:true,rise:0,color:'#e8dcc0'}
 };
 const BAIT_ORDER=['worm','cricket','minnow','liver','dough','corn'];
-const LURE_ORDER=['popper','buzz','prop','frog','mouse','spinner','spinnerbait','spoon','crank','jerk','lipless','swim','jig','plastic','grub','cjig','fly'];
+const LURE_ORDER=['popper','buzz','prop','frog','mouse','spinner','spinnerbait','spoon','crank','jerk','lipless','swim','jig','plastic','grub','cjig','fly','dryfly','popbug','nymph','bugger'];
 // Shop sections: a header goes in front of the first lure of each group.
 const LURE_GROUP={popper:'Topwater',spinner:'Moving baits',jig:'Bottom & jigs',fly:'Flies'};
 const ALL_ORDER=[...BAIT_ORDER,...LURE_ORDER];
@@ -800,6 +804,7 @@ const GEAR={
     lantern:{name:'Brass Lantern',price:110,desc:'Lights the dock and the water at night. Crappie, perch and baitfish gather in the light.'},
     finder:{name:'Fish Finder',price:220,desc:'Labels every fish you’ve caught before, with its depth.'},
     net:{name:'Landing Net',price:60,desc:'Scoops big fish at the dock before they can thrash free in the last few feet.'},
+    leader:{name:'Wire Bite Leader',price:45,desc:'A short wire leader ahead of the hook. Pike, muskie and other toothy fish can\u2019t bite through it, but wary fish notice it.'},
     whistle:{name:'Fish Whistle',price:200,desc:'An old angler’s good-luck charm. Puffs a little smoke now and then and nudges rare fish your way.'}
   }
 };
@@ -821,9 +826,11 @@ const SETUPS={
   heavy:{name:'Heavy Baitcaster',short:'Baitcaster',line:'20 lb braid',price:320,power:3,f:.45,grace:.35,speed:68,vis:.65,cast:[3,8],reach:1.06,sens:.85,tear:1.9,tire:1.25,pull:1.3,spool:850,rod:'#1f2a24',w:3,len:62,
     desc:'Stiff rod with braided line. Throws frogs and jigs far and drags big fish out of the weeds, but rips panfish mouths and wary fish spot the braid.'},
   cat:{name:'Catfish Rod',short:'Catfish',line:'20 lb mono',price:260,power:3,f:.5,grace:.7,speed:54,vis:.45,cast:[3,9],reach:1.15,sens:1,botSens:1.35,tear:1.5,tire:1.2,pull:1.1,spool:1100,rod:'#3c4a6a',w:2.8,len:74,
-    desc:'Long and forgiving. Launches heavy bottom rigs farther than anything, and its tip shows bites on the bottom. Poor with light lures.'}};
-const SETUP_ORDER=['medium','ultra','heavy','cat'];
-const LINE_TEST={medium:[8,10,12],ultra:[4,5,6],heavy:[20,30,50],cat:[20,30,40]};
+    desc:'Long and forgiving. Launches heavy bottom rigs farther than anything, and its tip shows bites on the bottom. Poor with light lures.'},
+  fly:{name:'Fly Rod',short:'Fly rod',line:'5 lb tippet',price:420,power:1,f:.95,grace:.65,speed:40,vis:.05,cast:[.1,1.2],reach:.85,sens:1.3,tear:.5,tire:.7,pull:.8,spool:800,rod:'#7a5232',w:1.5,len:72,fly:true,
+    desc:'A 5-weight with floating line. Lays down flies nothing else can cast and turns every bluegill into a fight. Flies only.'}};
+const SETUP_ORDER=['medium','ultra','heavy','cat','fly'];
+const LINE_TEST={medium:[8,10,12],ultra:[4,5,6],heavy:[20,30,50],cat:[20,30,40],fly:[5,6,8]};
 function lineTest(){return(LINE_TEST[S.setup]||[8,8,8])[curTier()];}
 const TIERS=[{name:'Stock'},{name:'Tuned',desc:'Better reel and fresh line'},{name:'Pro',desc:'Top reel, premium line'}];
 function setupOK(id){const st=S.setups&&S.setups[id];return!!(st&&st.owned);}
@@ -834,10 +841,13 @@ function curRod(){const u=curSetup(),t=curTier();return{grace:u.grace+.12*t,damp
 function curReel(){const u=curSetup();return{speed:u.speed*(1+.12*curTier())};}
 function curLine(){const u=curSetup();return{f:u.f*(1-.08*curTier()),vis:u.vis};}
 function tackleWeight(id=S.lure){const lu=LURES[id];if(!lu)return 1;if(lu.bait){const r=rig();const sk={none:0,split:.8,egg:3,teardrop:2.5,bank:4}[rigSinker()]||0;const base={worm:1,cricket:.5,minnow:1.5,liver:1.5,dough:1.5,corn:1}[id]||1;return base+sk+(r.type==='bobber'?1:0);}
-  const base={spinner:2,spoon:3,popper:2.5,crank:3,jig:2.5,fly:.5,frog:4.5,mouse:2.2,plastic:2,spinnerbait:3,buzz:3.5,jerk:2.2,lipless:3,grub:1.2,cjig:.6,swim:4.5,prop:3}[id]||2;return base*({small:.7,reg:1,large:1.4}[lureVar(id).size]||1);}
+  const base={dryfly:.2,popbug:.4,nymph:.3,bugger:.6,spinner:2,spoon:3,popper:2.5,crank:3,jig:2.5,fly:.5,frog:4.5,mouse:2.2,plastic:2,spinnerbait:3,buzz:3.5,jerk:2.2,lipless:3,grub:1.2,cjig:.6,swim:4.5,prop:3}[id]||2;return base*({small:.7,reg:1,large:1.4}[lureVar(id).size]||1);}
 function castFit(){const u=curSetup(),w=tackleWeight();if(w<u.cast[0])return{m:Math.max(.45,Math.pow(w/u.cast[0],.7)),why:'light'};if(w>u.cast[1])return{m:Math.max(.5,Math.pow(u.cast[1]/w,.8)),why:'heavy'};return{m:1,why:''};}
-function switchSetup(id){if(!setupOK(id)||id===S.setup)return;const o=S.setups[S.setup];if(o){o.lure=S.lure;o.hook=S.hook;o.rig=JSON.parse(JSON.stringify(S.rig||{type:'free'}));}
-  S.setup=id;const n=S.setups[id];if(n.lure&&(S.lures[n.lure]===-1||S.lures[n.lure]>0))S.lure=n.lure;if(n.hook&&S.owned[n.hook])S.hook=n.hook;if(n.rig)S.rig=JSON.parse(JSON.stringify(n.rig));save();updateHUD(true);}
+// The fly rod casts flies only, and flies need the fly rod.
+function lureOK(id,setup=S.setup){const lu=LURES[id];if(!lu)return false;return SETUPS[setup]&&SETUPS[setup].fly?!!lu.flyOnly:!lu.flyOnly;}
+function fallbackLure(){const have=id=>{const c=S.lures[id];return c===-1||c>0;};return ALL_ORDER.find(id=>have(id)&&lureOK(id))||(curSetup().fly?S.lure:'worm');}
+function switchSetup(id){if(!setupOK(id)||id===S.setup)return;G.fc=null;G.charging=false;const o=S.setups[S.setup];if(o){o.lure=S.lure;o.hook=S.hook;o.rig=JSON.parse(JSON.stringify(S.rig||{type:'free'}));}
+  S.setup=id;const n=S.setups[id];if(n.lure&&(S.lures[n.lure]===-1||S.lures[n.lure]>0))S.lure=n.lure;if(n.hook&&S.owned[n.hook])S.hook=n.hook;if(n.rig)S.rig=JSON.parse(JSON.stringify(n.rig));if(!lureOK(S.lure))S.lure=fallbackLure();save();updateHUD(true);}
 GEAR.bobbers={fixed:{name:'Fixed Bobber',price:6,max:6,desc:'Clips onto the line. Shows every nibble clearly. Holds bait up to 6 ft down, but casts shorter when set deep.'},
   slip:{name:'Slip Bobber',price:12,max:18,desc:'Slides to a stop knot. Casts full distance at any depth, down to 18 ft. Lies flat while the bait sinks, then stands up.'}};
 GEAR.terminal={swivel:{name:'Barrel Swivels',price:5,desc:'Joins the main line to a leader. Needed for Carolina and three-way rigs.'}};
@@ -860,7 +870,7 @@ function breakOff(kind){const opts=breakOdds(kind);let x=Math.random()*opts.redu
   for(const o of opts){if((x-=o[1])<=0){lost=o[0];break;}}
   const bits=[],notes=[],P=packs();
   if(lost.includes('hook')){if(isBait()){bits.push('hook',baitNoun());useBait();}
-    else{const nm=LURES[S.lure].name;bits.push(nm);S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];S.lure='worm';notes.push('Out of '+nm+', back to worms');}}}
+    else{const nm=LURES[S.lure].name;bits.push(nm);S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];S.lure=fallbackLure();notes.push('Out of '+nm);}}}
   const pl=n=>/s$|shot$/.test(n)?n:n+'s',bought=[],out=[];
   for(const id of lost){if(id==='hook')continue;const it=packIt(id),nm=it.name.toLowerCase();bits.push(nm.replace(/s$/,''));
     P[id]=Math.max(0,(P[id]??PACK)-1);
@@ -891,47 +901,49 @@ function rigOrderText(r){const out=[];if(r.type==='bobber')out.push(GEAR.bobbers
 
 const SHAPES={turtle:{h:.42,k:1.2e-4},walleye:{h:.22,k:1.15e-5},round:{h:.5,k:2.4e-5},perch:{h:.32,k:1.3e-5},bass:{h:.34,k:1.5e-5},long:{h:.24,k:1.1e-5},cat:{h:.24,k:1e-5},pike:{h:.16,k:.6e-5},carp:{h:.36,k:1.6e-5},eel:{h:.08,k:.25e-5},koi:{h:.3,k:1.4e-5},crappie:{h:.44,k:1.5e-5},bowfin:{h:.22,k:1.2e-5},bullhead:{h:.3,k:1.3e-5}};
 const SPECIES=[
-  {id:'bluegill',locs:['pond','lake'],name:'Bluegill',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.05,.5],lures:['cricket','worm','spinner','fly'],likes:'twitch',power:.22,speed:38,end:.6,bite:.75,rar:10,len:[12,25],price:10,shape:'round',col:'#4f7fa8',belly:'#e8a83a',mark:'bar',school:[4,7],nibbles:[2,4],rises:true,hint:'Small schools near the weeds. Feeds hardest at dawn and dusk and nibbles a few times before it bites.'},
-  {id:'pumpkinseed',name:'Pumpkinseed',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.02,.4],lures:['cricket','worm','fly','spinner'],likes:'still',power:.2,speed:36,end:.6,bite:.75,rar:8,len:[10,22],price:11,shape:'round',col:'#6f7d45',belly:'#f0a030',mark:'pumpkin',school:[2,3],nibbles:[2,4],rises:true,hint:'Pairs and small groups tucked in the weeds. Feeds all day, most in the afternoon. Small hook, still worm.'},
-  {id:'perch',locs:['pond','lake'],name:'Yellow Perch',times:['dawn','day','dusk'],peak:['day'],off:.7,weather:['clear','rain','fog'],band:[.25,.75],lures:['minnow','worm','spinner','jig','spoon'],likes:'move',power:.3,speed:45,end:.8,bite:.62,rar:8,len:[15,36],price:14,shape:'perch',col:'#c8b24a',belly:'#efe3a0',mark:'stripes',school:[5,9],nibbles:[1,2],hint:'Roams in schools by daylight and goes quiet at night. Catch one and cast back: the rest are close by.'},
-  {id:'crappie',locs:['pond','lake'],name:'Black Crappie',times:['dawn','dusk','night'],peak:['dawn'],off:.85,weather:['clear','rain','fog'],band:[.3,.7],lures:['minnow','cricket','worm','jig','spinner'],likes:'still',power:.3,speed:45,end:.8,bite:.6,rar:6,len:[15,38],price:18,shape:'crappie',col:'#9aa392',belly:'#e3e8d6',mark:'speckle',school:[4,7],nibbles:[1,2],paper:true,hint:'Schools around cover, best early in the morning. Paper-thin mouth: keep the tension light or the hook tears out.'},
-  {id:'bass',name:'Largemouth Bass',times:['dawn','day','dusk','night'],peak:['dawn','dusk'],off:.55,weather:['clear','rain','fog'],band:[0,.6],lures:['minnow','worm','popper','spinner','jig','frog','crank','mouse'],likes:'twitch',power:.55,speed:70,end:1.1,bite:.5,rar:6,len:[25,62],price:32,shape:'bass',col:'#5f7f3b',belly:'#d9dca0',mark:'lateral',school:[1,3],nibbles:[1,2],jumps:.45,rises:true,hint:'Cruises the edges of cover alone or in small groups, hunting hardest at dawn and dusk. Jumps when hooked.'},
-  {id:'trout',name:'Rainbow Trout',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.7,weather:['clear','rain','fog'],band:[.3,.75],lures:['worm','corn','cricket','minnow','spinner','fly','spoon'],likes:'move',power:.5,speed:85,end:1,bite:.42,rar:5,len:[25,55],price:36,shape:'long',col:'#9fb3b0',belly:'#f0e6e0',mark:'rainbow',wary:true,nibbles:[1,2],jumps:.5,rises:true,hint:'Stocked fish that hold in cool, deeper water and rise at dawn and dusk. Wary of thick line. Jumps and runs.'},
+  {id:'bluegill',locs:['pond','lake'],name:'Bluegill',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.05,.5],lures:['cricket','worm','spinner','fly','dryfly','popbug','nymph'],likes:'twitch',power:.22,speed:38,end:.6,bite:.75,rar:10,len:[12,25],price:10,shape:'round',col:'#4f7fa8',belly:'#e8a83a',mark:'bar',school:[4,7],nibbles:[2,4],rises:true,hint:'Small schools near the weeds. Feeds hardest at dawn and dusk and nibbles a few times before it bites.'},
+  {id:'pumpkinseed',name:'Pumpkinseed',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.02,.4],lures:['cricket','worm','fly','spinner','dryfly','popbug','nymph'],likes:'still',power:.2,speed:36,end:.6,bite:.75,rar:8,len:[10,22],price:11,shape:'round',col:'#6f7d45',belly:'#f0a030',mark:'pumpkin',school:[2,3],nibbles:[2,4],rises:true,hint:'Pairs and small groups tucked in the weeds. Feeds all day, most in the afternoon. Small hook, still worm.'},
+  {id:'perch',locs:['pond','lake'],name:'Yellow Perch',times:['dawn','day','dusk'],peak:['day'],off:.7,weather:['clear','rain','fog'],band:[.25,.75],lures:['minnow','worm','spinner','jig','spoon','nymph','bugger'],likes:'move',power:.3,speed:45,end:.8,bite:.62,rar:8,len:[15,36],price:14,shape:'perch',col:'#c8b24a',belly:'#efe3a0',mark:'stripes',school:[5,9],nibbles:[1,2],hint:'Roams in schools by daylight and goes quiet at night. Catch one and cast back: the rest are close by.'},
+  {id:'crappie',locs:['pond','lake'],name:'Black Crappie',times:['dawn','dusk','night'],peak:['dawn'],off:.85,weather:['clear','rain','fog'],band:[.3,.7],lures:['minnow','cricket','worm','jig','spinner','nymph','bugger'],likes:'still',power:.3,speed:45,end:.8,bite:.6,rar:6,len:[15,38],price:18,shape:'crappie',col:'#9aa392',belly:'#e3e8d6',mark:'speckle',school:[4,7],nibbles:[1,2],paper:true,hint:'Schools around cover, best early in the morning. Paper-thin mouth: keep the tension light or the hook tears out.'},
+  {id:'bass',name:'Largemouth Bass',times:['dawn','day','dusk','night'],peak:['dawn','dusk'],off:.55,weather:['clear','rain','fog'],band:[0,.6],lures:['minnow','worm','popper','spinner','jig','frog','crank','mouse','popbug','bugger'],likes:'twitch',power:.55,speed:70,end:1.1,bite:.5,rar:6,len:[25,62],price:32,shape:'bass',col:'#5f7f3b',belly:'#d9dca0',mark:'lateral',school:[1,3],nibbles:[1,2],jumps:.45,rises:true,hint:'Cruises the edges of cover alone or in small groups, hunting hardest at dawn and dusk. Jumps when hooked.'},
+  {id:'trout',name:'Rainbow Trout',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.7,weather:['clear','rain','fog'],band:[.3,.75],lures:['worm','corn','cricket','minnow','spinner','fly','spoon','dryfly','nymph','bugger'],likes:'move',power:.5,speed:85,end:1,bite:.42,rar:5,len:[25,55],price:36,shape:'long',col:'#9fb3b0',belly:'#f0e6e0',mark:'rainbow',wary:true,nibbles:[1,2],jumps:.5,rises:true,hint:'Stocked fish that hold in cool, deeper water and rise at dawn and dusk. Wary of thick line. Jumps and runs.'},
   {id:'catfish',locs:['pond','river'],name:'Channel Catfish',times:['dusk','night'],peak:['night'],off:.8,weather:['clear','rain','fog'],band:[.6,1],lures:['liver','minnow','dough','worm','jig'],likes:'still',power:.65,speed:45,end:1.5,bite:.9,rar:6,len:[35,82],price:42,shape:'cat',col:'#6b6a62',belly:'#cfc9b4',mark:'spots',scent:true,deep:true,nibbles:[1,3],hint:'Hunts by smell along the bottom from dusk on. A still worm works even when the water is pitch black. Fights deep.'},
-  {id:'pickerel',name:'Chain Pickerel',times:['dawn','day','dusk'],peak:['day'],off:.7,weather:['clear','rain','fog'],band:[.05,.5],lures:['minnow','spinner','popper','frog','crank','spoon'],likes:'move',power:.6,speed:105,end:1,bite:.4,rar:3.5,len:[35,66],price:50,shape:'pike',col:'#5d7a3a',belly:'#e6e2b0',mark:'chain',ambush:true,nibbles:[1,1],jumps:.3,hint:'Waits in the weeds and darts out at fast-moving lures. A daylight hunter.'},
-  {id:'carp',locs:['pond','river'],name:'Common Carp',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.7,weather:['clear','rain','fog'],band:[.65,1],lures:['dough','corn','worm'],likes:'still',power:.72,speed:40,end:2,bite:.7,rar:4,len:[45,95],price:55,shape:'carp',col:'#9a7a3a',belly:'#e6cf8f',mark:'scales',wary:true,spooky:true,mud:true,school:[2,4],nibbles:[2,4],runs:1.6,hint:'Grubs the bottom in small groups and leaves clouds of mud. Spooky: cast past them, let a worm sit, and hold on for long runs.'},
+  {id:'pickerel',name:'Chain Pickerel',times:['dawn','day','dusk'],peak:['day'],off:.7,weather:['clear','rain','fog'],band:[.05,.5],lures:['minnow','spinner','popper','frog','crank','spoon','bugger'],likes:'move',power:.6,speed:105,end:1,bite:.4,rar:3.5,len:[35,66],price:50,shape:'pike',col:'#5d7a3a',belly:'#e6e2b0',mark:'chain',ambush:true,nibbles:[1,1],jumps:.3,hint:'Waits in the weeds and darts out at fast-moving lures. A daylight hunter.'},
+  {id:'carp',locs:['pond','river'],name:'Common Carp',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.7,weather:['clear','rain','fog'],band:[.65,1],lures:['dough','corn','worm','nymph'],likes:'still',power:.72,speed:40,end:2,bite:.7,rar:4,len:[45,95],price:55,shape:'carp',col:'#9a7a3a',belly:'#e6cf8f',mark:'scales',wary:true,spooky:true,mud:true,school:[2,4],nibbles:[2,4],runs:1.6,hint:'Grubs the bottom in small groups and leaves clouds of mud. Spooky: cast past them, let a worm sit, and hold on for long runs.'},
   {id:'brownbull',name:'Brown Bullhead',times:['dusk','night'],peak:['night'],off:.85,weather:['clear','rain','fog'],band:[.6,1],lures:['liver','corn','worm','jig'],likes:'still',power:.38,speed:40,end:1.1,bite:.85,rar:7,len:[18,38],price:16,shape:'bullhead',col:'#6a5338',belly:'#e3d6a8',mark:'mottle',scent:true,deep:true,nibbles:[2,3],hint:'Noses along soft, weedy bottoms by smell after dark. A still worm on the bottom is all it takes.'},
   {id:'blackbull',name:'Black Bullhead',times:['dusk','night'],peak:['night'],off:.9,weather:['rain','fog','clear'],band:[.65,1],lures:['liver','corn','dough','worm','jig'],likes:'still',power:.34,speed:38,end:1,bite:.85,rar:6,len:[18,32],price:13,shape:'bullhead',col:'#3a3a30',belly:'#d8d2b0',mark:'none',scent:true,deep:true,school:[1,3],nibbles:[2,3],hint:'A muddy-bottom scavenger that eats nearly anything. Bites best after dark and on rainy days.'},
   {id:'eel',name:'American Eel',times:['night'],peak:['night'],weather:['clear','rain','fog'],band:[.75,1],lures:['liver','minnow','worm','jig'],likes:'still',power:.55,speed:60,end:1.4,bite:.55,rar:2.5,len:[45,110],price:60,shape:'eel',col:'#4a4f2e',belly:'#a9a86a',mark:'none',erratic:true,scent:true,spin:true,nibbles:[2,3],hint:'Buries itself in the mud by day and hunts by smell at night. Twists and spins on the line.'},
-  {id:'bowfin',name:'Bowfin',times:['dusk','night'],peak:['night'],weather:['rain','fog'],band:[.05,.5],lures:['minnow','frog','crank'],likes:'twitch',power:1.1,speed:80,end:3,bite:.35,rar:.5,len:[55,90],price:300,shape:'bowfin',col:'#4a5530',belly:'#b5b27a',mark:'bowfin',legend:true,legendName:'Old Mossback!',surface:true,gulp:true,nibbles:[1,1],jumps:.2,hint:'Comes into the weedy shallows after dark and gulps air at the surface. Locals call the big one Old Mossback. It hits frogs.'},
-  {id:'smallmouth',locs:['creek','lake','river'],name:'Smallmouth Bass',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.6,weather:['clear','rain','fog'],band:[.35,1],lures:['crank','spinner','jig','minnow','worm','cricket','popper','spoon','mouse'],likes:'move',power:.62,speed:82,end:1.3,bite:.45,rar:6,len:[25,55],price:34,shape:'bass',col:'#7d6a3c',belly:'#e4d9ad',mark:'vbars',school:[1,2],nibbles:[1,1],jumps:.55,hint:'Holds behind boulders in the current, facing upstream. Hits crankbaits and minnows hard and jumps like crazy.'},
-  {id:'brook',locs:['creek'],name:'Brook Trout',times:['dawn','day','dusk'],peak:['dawn'],off:.75,weather:['clear','rain','fog'],band:[.3,.9],lures:['worm','cricket','fly','spinner','minnow'],likes:'still',power:.32,speed:72,end:.8,bite:.45,rar:8,len:[15,35],price:30,shape:'long',col:'#3f5a3a',belly:'#e8823a',mark:'brookie',wary:true,nibbles:[1,2],jumps:.15,rises:true,hint:'The creek’s native trout. Spooks at thick line. A worm or cricket drifting naturally is perfect.'},
-  {id:'brown',locs:['creek'],name:'Brown Trout',times:['dawn','dusk','night'],peak:['night'],off:.8,weather:['clear','rain','fog'],band:[.4,1],lures:['minnow','spinner','worm','crank','fly','spoon','mouse'],likes:'move',power:.52,speed:85,end:1.1,bite:.4,rar:4,len:[25,60],price:45,shape:'long',col:'#8a6a38',belly:'#efd9a0',mark:'brownie',wary:true,nibbles:[1,1],jumps:.35,hint:'The wariest fish in the creek. Hides deep by day and hunts at dusk and after dark.'},
-  {id:'rockbass',locs:['creek'],name:'Rock Bass',times:['dawn','day','dusk'],peak:['dusk'],off:.85,weather:['clear','rain','fog'],band:[.55,1],lures:['worm','cricket','jig','minnow','spinner'],likes:'still',power:.3,speed:45,end:.8,bite:.65,rar:7,len:[15,28],price:12,shape:'round',col:'#6a5a3a',belly:'#cdbd8e',mark:'rockbass',school:[2,4],nibbles:[1,2],hint:'Lives right among the rocks in small groups. Big mouth for its size and red eyes.'},
-  {id:'fallfish',locs:['creek'],name:'Fallfish',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.2,.7],lures:['fly','spinner','worm','cricket','corn'],likes:'move',power:.3,speed:58,end:.8,bite:.55,rar:6,len:[15,40],price:10,shape:'long',col:'#aeb8b8',belly:'#f2f2ec',mark:'none',school:[4,7],nibbles:[1,2],rises:true,hint:'Silver schools in the open runs. Takes flies and small spinners all day.'},
-  {id:'chub',locs:['creek'],name:'Creek Chub',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.1,.6],lures:['worm','cricket','corn','dough','fly'],likes:'still',power:.2,speed:40,end:.6,bite:.7,rar:6,len:[10,25],price:6,shape:'long',col:'#7e7c5c',belly:'#ebe5ca',mark:'stripe',school:[4,8],nibbles:[2,3],hint:'Bold little schools that grab almost any bait. A small hook helps.'},
+  {id:'bowfin',name:'Bowfin',times:['dusk','night'],peak:['night'],weather:['rain','fog'],band:[.05,.5],lures:['minnow','frog','crank','bugger'],likes:'twitch',power:1.1,speed:80,end:3,bite:.35,rar:.5,len:[55,90],price:300,shape:'bowfin',col:'#4a5530',belly:'#b5b27a',mark:'bowfin',legend:true,legendName:'Old Mossback!',surface:true,gulp:true,nibbles:[1,1],jumps:.2,hint:'Comes into the weedy shallows after dark and gulps air at the surface. Locals call the big one Old Mossback. It hits frogs.'},
+  {id:'smallmouth',locs:['creek','lake','river'],name:'Smallmouth Bass',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.6,weather:['clear','rain','fog'],band:[.35,1],lures:['crank','spinner','jig','minnow','worm','cricket','popper','spoon','mouse','popbug','bugger','nymph'],likes:'move',rises:true,power:.62,speed:82,end:1.3,bite:.45,rar:6,len:[25,55],price:34,shape:'bass',col:'#7d6a3c',belly:'#e4d9ad',mark:'vbars',school:[1,2],nibbles:[1,1],jumps:.55,hint:'Holds behind boulders in the current, facing upstream. Hits crankbaits and minnows hard and jumps like crazy.'},
+  {id:'brook',locs:['creek'],name:'Brook Trout',times:['dawn','day','dusk'],peak:['dawn'],off:.75,weather:['clear','rain','fog'],band:[.3,.9],lures:['worm','cricket','fly','spinner','minnow','dryfly','nymph','bugger'],likes:'still',power:.32,speed:72,end:.8,bite:.45,rar:8,len:[15,35],price:30,shape:'long',col:'#3f5a3a',belly:'#e8823a',mark:'brookie',wary:true,nibbles:[1,2],jumps:.15,rises:true,hint:'The creek’s native trout. Spooks at thick line. A worm or cricket drifting naturally is perfect.'},
+  {id:'brown',locs:['creek'],name:'Brown Trout',times:['dawn','dusk','night'],peak:['night'],off:.8,weather:['clear','rain','fog'],band:[.4,1],lures:['minnow','spinner','worm','crank','fly','spoon','mouse','dryfly','nymph','bugger'],likes:'move',power:.52,speed:85,end:1.1,bite:.4,rar:4,len:[25,60],price:45,shape:'long',col:'#8a6a38',belly:'#efd9a0',mark:'brownie',wary:true,nibbles:[1,1],jumps:.35,hint:'The wariest fish in the creek. Hides deep by day and hunts at dusk and after dark.'},
+  {id:'rockbass',locs:['creek'],name:'Rock Bass',times:['dawn','day','dusk'],peak:['dusk'],off:.85,weather:['clear','rain','fog'],band:[.55,1],lures:['worm','cricket','jig','minnow','spinner','nymph','bugger','popbug'],likes:'still',rises:true,power:.3,speed:45,end:.8,bite:.65,rar:7,len:[15,28],price:12,shape:'round',col:'#6a5a3a',belly:'#cdbd8e',mark:'rockbass',school:[2,4],nibbles:[1,2],hint:'Lives right among the rocks in small groups. Big mouth for its size and red eyes.'},
+  {id:'fallfish',locs:['creek'],name:'Fallfish',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.2,.7],lures:['fly','spinner','worm','cricket','corn','dryfly','nymph'],likes:'move',power:.3,speed:58,end:.8,bite:.55,rar:6,len:[15,40],price:10,shape:'long',col:'#aeb8b8',belly:'#f2f2ec',mark:'none',school:[4,7],nibbles:[1,2],rises:true,hint:'Silver schools in the open runs. Takes flies and small spinners all day.'},
+  {id:'chub',locs:['creek'],name:'Creek Chub',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.1,.6],lures:['worm','cricket','corn','dough','fly','dryfly','nymph'],likes:'still',power:.2,speed:40,end:.6,bite:.7,rar:6,len:[10,25],price:6,shape:'long',col:'#7e7c5c',belly:'#ebe5ca',mark:'stripe',school:[4,8],nibbles:[2,3],hint:'Bold little schools that grab almost any bait. A small hook helps.'},
   {id:'sucker',locs:['creek','river'],name:'White Sucker',times:['day','dusk','night'],peak:['dusk'],off:.85,weather:['clear','rain','fog'],band:[.85,1],lures:['worm','dough','corn'],likes:'still',power:.45,speed:40,end:1.2,bite:.7,rar:6,len:[25,50],price:14,shape:'long',col:'#5c5c4a',belly:'#e9e6da',mark:'none',scent:true,deep:true,school:[3,5],nibbles:[2,4],hint:'Vacuums the bottom of the pools in groups. Let a worm sit still on the bottom.'},
-  {id:'undercut',locs:['creek'],name:'The Undercut',times:['night'],peak:['night'],weather:['clear','rain','fog'],band:[0,.35],lures:['mouse'],likes:'move',power:1.05,speed:82,end:3,bite:.35,rar:.45,len:[70,85],price:400,shape:'long',col:'#6a4e28',belly:'#e6c98a',mark:'brownie',legend:true,legendName:'The Undercut!',surface:true,wary:true,home:'far',nibbles:[1,1],jumps:.3,hint:'An old giant brown trout living under the far bank. It only hunts on dark nights, and big browns eat mice.'},
-  {id:'walleye',locs:['lake','river'],name:'Walleye',times:['dawn','dusk','night'],peak:['dusk'],off:.8,weather:['clear','rain','fog'],band:[.6,1],lures:['minnow','worm','jig','crank','spinner'],likes:'move',power:.5,speed:60,end:1.1,bite:.5,rar:6,len:[30,70],price:40,shape:'walleye',col:'#9a8a3a',belly:'#efe6c4',mark:'walleye',school:[2,5],nibbles:[1,2],hint:'Glassy eyes that hate bright sun. Hangs deep by day and moves up to feed at dusk and after dark. A jig and minnow on the bottom is classic.'},
-  {id:'pike',locs:['lake','river'],name:'Northern Pike',times:['dawn','day','dusk'],peak:['day'],off:.75,weather:['clear','rain','fog'],band:[.1,.6],lures:['spinner','spoon','crank','minnow','frog','popper'],likes:'move',power:.8,speed:110,end:1.3,bite:.38,rar:4,len:[50,110],price:70,shape:'pike',col:'#4d6b3d',belly:'#e3e6c0',mark:'dots',ambush:true,nibbles:[1,1],jumps:.2,hint:'Lurks along the weed edges and smashes flashy, fast lures. Sharp teeth and big runs.'},
-  {id:'whitebass',locs:['lake','river'],name:'White Bass',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.1,.6],lures:['spinner','spoon','minnow','crank','jig'],likes:'move',power:.4,speed:80,end:.9,bite:.5,rar:4.5,len:[25,45],price:18,shape:'bass',col:'#b4bcbe',belly:'#f2f2ee',mark:'wbstripes',school:[5,9],nibbles:[1,1],hint:'Silver schools that chase baitfish. Find one and you’ll catch a pile on spinners and spoons.'},
+  {id:'undercut',locs:['creek'],name:'The Undercut',times:['night'],peak:['night'],weather:['clear','rain','fog'],band:[0,.35],lures:['mouse','bugger'],likes:'move',power:1.05,speed:82,end:3,bite:.35,rar:.45,len:[70,85],price:400,shape:'long',col:'#6a4e28',belly:'#e6c98a',mark:'brownie',legend:true,legendName:'The Undercut!',surface:true,wary:true,home:'far',nibbles:[1,1],jumps:.3,hint:'An old giant brown trout living under the far bank. It only hunts on dark nights, and big browns eat mice.'},
+  {id:'walleye',locs:['lake','river'],name:'Walleye',times:['dawn','dusk','night'],peak:['dusk'],off:.8,weather:['clear','rain','fog'],band:[.6,1],lures:['minnow','worm','jig','crank','spinner','bugger'],likes:'move',power:.5,speed:60,end:1.1,bite:.5,rar:6,len:[30,70],price:40,shape:'walleye',col:'#9a8a3a',belly:'#efe6c4',mark:'walleye',school:[2,5],nibbles:[1,2],hint:'Glassy eyes that hate bright sun. Hangs deep by day and moves up to feed at dusk and after dark. A jig and minnow on the bottom is classic.'},
+  {id:'pike',locs:['lake','river'],name:'Northern Pike',times:['dawn','day','dusk'],peak:['day'],off:.75,weather:['clear','rain','fog'],band:[.1,.6],lures:['spinner','spoon','crank','minnow','frog','popper','bugger'],likes:'move',power:.8,speed:110,end:1.3,bite:.38,rar:4,len:[50,110],price:70,shape:'pike',col:'#4d6b3d',belly:'#e3e6c0',mark:'dots',ambush:true,nibbles:[1,1],jumps:.2,hint:'Lurks along the weed edges and smashes flashy, fast lures. Sharp teeth and big runs.'},
+  {id:'whitebass',locs:['lake','river'],name:'White Bass',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.1,.6],lures:['spinner','spoon','minnow','crank','jig','bugger'],likes:'move',power:.4,speed:80,end:.9,bite:.5,rar:4.5,len:[25,45],price:18,shape:'bass',col:'#b4bcbe',belly:'#f2f2ee',mark:'wbstripes',school:[5,9],nibbles:[1,1],hint:'Silver schools that chase baitfish. Find one and you’ll catch a pile on spinners and spoons.'},
   {id:'drum',locs:['river'],name:'Freshwater Drum',times:['day','dusk','night'],peak:['dusk'],off:.85,weather:['clear','rain','fog'],band:[.7,1],lures:['worm','minnow','jig','crank','corn'],likes:'still',power:.6,speed:55,end:1.4,bite:.65,rar:6,len:[30,70],price:22,shape:'carp',col:'#a3a596',belly:'#eeeae0',mark:'none',school:[2,4],nibbles:[2,3],hint:'Grunts and crunches mussels on the river bottom. Pulls hard for its size.'},
-  {id:'tigermuskie',locs:['lake'],name:'Tiger Muskie',times:['dawn','day','dusk'],peak:['dusk'],weather:['rain','fog'],band:[.1,.6],lures:['crank','spinner','frog','popper','minnow'],likes:'move',power:1.15,speed:115,end:3.2,bite:.32,rar:.45,len:[90,125],price:450,shape:'pike',col:'#7a7a48',belly:'#ecebd0',mark:'tiger',legend:true,legendName:'The Tiger!',ambush:true,bigOnly:true,nibbles:[1,1],jumps:.25,hint:'The fish of ten thousand casts. A stocked pike-and-muskie hybrid that prowls the weed edge on gray, rainy days and only hits big lures or a live minnow.'},
+  {id:'tigermuskie',locs:['lake'],name:'Tiger Muskie',times:['dawn','day','dusk'],peak:['dusk'],weather:['rain','fog'],band:[.1,.6],lures:['crank','spinner','frog','popper','minnow','bugger'],likes:'move',power:1.15,speed:115,end:3.2,bite:.32,rar:.45,len:[90,125],price:450,shape:'pike',col:'#7a7a48',belly:'#ecebd0',mark:'tiger',legend:true,legendName:'The Tiger!',ambush:true,bigOnly:true,nibbles:[1,1],jumps:.25,hint:'The fish of ten thousand casts. A stocked pike-and-muskie hybrid that prowls the weed edge on gray, rainy days and only hits big lures or a live minnow.'},
   {id:'flathead',locs:['river'],name:'The Ferryman',times:['night'],peak:['night'],weather:['clear','rain','fog'],band:[.85,1],lures:['minnow'],likes:'still',power:1.2,speed:55,end:3.6,bite:.5,rar:.45,len:[85,120],price:450,shape:'cat',col:'#7a6236',belly:'#e8d9a8',mark:'mottle',legend:true,legendName:'The Ferryman!',scent:true,deep:true,home:'far',nibbles:[1,2],hint:'A giant flathead catfish in the deep hole by the far bank. Flatheads only eat live fish, and only after dark.'},
-  {id:'piranha',locs:['amazon'],name:'Red-bellied Piranha',times:['dawn','day','dusk','night'],peak:['day','dusk'],off:.9,weather:['clear','rain','fog'],band:[.2,.8],lures:['worm','minnow','liver','spinner','cricket'],likes:'twitch',power:.3,speed:70,end:.7,bite:.75,rar:10,len:[15,32],price:12,shape:'round',col:'#8a9a9c',belly:'#d8432a',mark:'speckle',school:[5,8],nibbles:[1,2],hint:'Travels in hungry schools. Toss in some meat and hang on. Sharp teeth!'},
-  {id:'peacock',locs:['amazon'],name:'Peacock Bass',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.85,weather:['clear','rain','fog'],band:[0,.6],lures:['spinner','crank','popper','frog','minnow','spoon','jig'],likes:'move',power:.6,speed:90,end:1.1,bite:.6,rar:7,len:[30,70],price:40,shape:'bass',col:'#a7b23a',belly:'#e8b33a',mark:'peacock',school:[1,3],nibbles:[1,1],jumps:.5,hint:'Bright and bold. Smashes fast lures near the flooded trees and jumps when hooked.'},
-  {id:'arowana',locs:['amazon'],name:'Silver Arowana',times:['dawn','day','dusk'],peak:['day'],off:.85,weather:['clear','rain','fog'],band:[0,.2],lures:['popper','frog','fly','cricket','spinner'],likes:'twitch',power:.5,speed:80,end:1,bite:.6,rar:5,len:[50,90],price:45,shape:'long',col:'#c9d2d2',belly:'#f2f2ee',mark:'scales',surface:true,nibbles:[1,1],jumps:.7,hint:'Cruises right under the surface and leaps out of the water to catch bugs. Try something on top.'},
+  {id:'piranha',locs:['amazon'],name:'Red-bellied Piranha',times:['dawn','day','dusk','night'],peak:['day','dusk'],off:.9,weather:['clear','rain','fog'],band:[.2,.8],lures:['worm','minnow','liver','spinner','cricket','bugger'],likes:'twitch',power:.3,speed:70,end:.7,bite:.75,rar:10,len:[15,32],price:12,shape:'round',col:'#8a9a9c',belly:'#d8432a',mark:'speckle',school:[5,8],nibbles:[1,2],hint:'Travels in hungry schools. Toss in some meat and hang on. Sharp teeth!'},
+  {id:'peacock',locs:['amazon'],name:'Peacock Bass',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.85,weather:['clear','rain','fog'],band:[0,.6],lures:['spinner','crank','popper','frog','minnow','spoon','jig','bugger','popbug'],likes:'move',power:.6,speed:90,end:1.1,bite:.6,rar:7,len:[30,70],price:40,shape:'bass',col:'#a7b23a',belly:'#e8b33a',mark:'peacock',school:[1,3],nibbles:[1,1],jumps:.5,hint:'Bright and bold. Smashes fast lures near the flooded trees and jumps when hooked.'},
+  {id:'arowana',locs:['amazon'],name:'Silver Arowana',times:['dawn','day','dusk'],peak:['day'],off:.85,weather:['clear','rain','fog'],band:[0,.2],lures:['popper','frog','fly','cricket','spinner','popbug','dryfly'],likes:'twitch',power:.5,speed:80,end:1,bite:.6,rar:5,len:[50,90],price:45,shape:'long',col:'#c9d2d2',belly:'#f2f2ee',mark:'scales',surface:true,nibbles:[1,1],jumps:.7,hint:'Cruises right under the surface and leaps out of the water to catch bugs. Try something on top.'},
   {id:'pacu',locs:['amazon'],name:'Pacu',times:['dawn','day','dusk'],peak:['day'],off:.85,weather:['clear','rain','fog'],band:[.3,.9],lures:['corn','dough','worm','cricket'],likes:'still',power:.55,speed:50,end:1.2,bite:.75,rar:6,len:[30,65],price:30,shape:'round',col:'#5a6066',belly:'#e0603a',mark:'none',school:[2,4],nibbles:[2,3],hint:'A gentle cousin of the piranha that eats fruit and nuts that fall in the water. Sweet corn or dough works great.'},
-  {id:'oscar',locs:['amazon'],name:'Oscar',times:['dawn','day','dusk'],peak:['dusk'],off:.9,weather:['clear','rain','fog'],band:[.3,.85],lures:['worm','cricket','spinner','minnow'],likes:'still',power:.3,speed:45,end:.8,bite:.75,rar:7,len:[15,35],price:15,shape:'round',col:'#3e3a2e',belly:'#d9783a',mark:'oscar',school:[1,3],nibbles:[1,2],hint:'Hides by the stumps. Look for the orange spot on its tail.'},
+  {id:'oscar',locs:['amazon'],name:'Oscar',times:['dawn','day','dusk'],peak:['dusk'],off:.9,weather:['clear','rain','fog'],band:[.3,.85],lures:['worm','cricket','spinner','minnow','bugger'],likes:'still',power:.3,speed:45,end:.8,bite:.75,rar:7,len:[15,35],price:15,shape:'round',col:'#3e3a2e',belly:'#d9783a',mark:'oscar',school:[1,3],nibbles:[1,2],hint:'Hides by the stumps. Look for the orange spot on its tail.'},
   {id:'redtail',locs:['amazon'],name:'Redtail Catfish',times:['dusk','night','day'],peak:['night'],off:.8,weather:['clear','rain','fog'],band:[.75,1],lures:['liver','minnow','worm','dough'],likes:'still',power:.75,speed:50,end:1.5,bite:.8,rar:5,len:[50,110],price:55,shape:'cat',col:'#3a3c3e',belly:'#efe9d8',mark:'none',scent:true,deep:true,nibbles:[1,2],hint:'A big whiskered catfish with a bright red tail. Sniffs out bait on the bottom.'},
   {id:'arapaima',locs:['amazon'],name:'Arapaima',times:['dawn','day','dusk'],peak:['dusk'],weather:['clear','rain','fog'],band:[0,.5],lures:['minnow','frog','crank','popper'],likes:'move',power:1.1,speed:75,end:3,bite:.6,rar:1.4,len:[150,250],price:500,shape:'bowfin',col:'#5d6a4e',belly:'#d9c6a0',mark:'arapaima',legend:true,legendName:'Arapaima!',surface:true,gulp:true,nibbles:[1,1],jumps:.35,hint:'One of the biggest freshwater fish in the world. It comes up to gulp air, so watch for the bubbles. Try a live minnow.'}
 ];
 LURES.worm.bait=true;
-const LHOOK={spinner:1,spoon:1,popper:1,crank:1,jig:1,fly:1,frog:2,mouse:2,plastic:2,spinnerbait:2,buzz:2,jerk:1,lipless:1,grub:1,cjig:0,swim:2,prop:2};
-const SHORT={mouse:'Mouse',cricket:'Crickets',minnow:'Minnow',liver:'Liver',dough:'Dough',corn:'Corn',worm:'Worm',spinner:'Spinner',spoon:'Spoon',popper:'Popper',crank:'Crankbait',jig:'Jig',fly:'Fly',frog:'Frog',plastic:'Plastic Worm',spinnerbait:'Spinnerbait',buzz:'Buzzbait',jerk:'Jerkbait',lipless:'Rattlebait',grub:'Grub',cjig:'Crappie Jig',swim:'Swimbait',prop:'Prop Bait'};for(const k in SHORT)LURES[k].short=SHORT[k];
+const LHOOK={dryfly:0,popbug:0,nymph:0,bugger:1,spinner:1,spoon:1,popper:1,crank:1,jig:1,fly:1,frog:2,mouse:2,plastic:2,spinnerbait:2,buzz:2,jerk:1,lipless:1,grub:1,cjig:0,swim:2,prop:2};
+const SHORT={dryfly:'Dry Fly',popbug:'Pop Bug',nymph:'Nymph',bugger:'Bugger',mouse:'Mouse',cricket:'Crickets',minnow:'Minnow',liver:'Liver',dough:'Dough',corn:'Corn',worm:'Worm',spinner:'Spinner',spoon:'Spoon',popper:'Popper',crank:'Crankbait',jig:'Jig',fly:'Moth Fly',frog:'Frog',plastic:'Plastic Worm',spinnerbait:'Spinnerbait',buzz:'Buzzbait',jerk:'Jerkbait',lipless:'Rattlebait',grub:'Grub',cjig:'Crappie Jig',swim:'Swimbait',prop:'Prop Bait'};for(const k in SHORT)LURES[k].short=SHORT[k];
 const CKEYS=['natural','bright','dark'];
 const CINFO={natural:'Clear daylight',bright:'Rain & fog',dark:'Dusk & night'};
-const PAL={spinner:[['Silver','#c9d3d8'],['Chartreuse','#c8e83a'],['Black','#3a3a46']],spoon:[['Nickel','#d0d6d8'],['Red & White','#e8574a'],['Black','#3a3a46']],
+const PAL={dryfly:[['Caddis','#c9a46a'],['Royal Wulff','#d8463a'],['Black Gnat','#2e2a26']],popbug:[['Yellow','#e8d03a'],['Chartreuse','#c8e83a'],['Black','#2e2a26']],
+  nymph:[['Pheasant Tail','#8a5a32'],['Hot Bead','#e8803a'],['Black','#2e2a26']],bugger:[['Olive','#5c6a2c'],['White','#ece8dc'],['Black','#2e2a26']],
+  spinner:[['Silver','#c9d3d8'],['Chartreuse','#c8e83a'],['Black','#3a3a46']],spoon:[['Nickel','#d0d6d8'],['Red & White','#e8574a'],['Black','#3a3a46']],
   popper:[['Frog','#7c9c3e'],['Firetiger','#f08a1e'],['Black','#3a3a46']],crank:[['Shad','#b8c4c8'],['Firetiger','#f08a1e'],['Black','#3a3a46']],
   jig:[['Crawdad','#b5642e'],['Chartreuse','#c8e83a'],['Black & Blue','#33386a']],fly:[['Moth','#ece6cf'],['Royal','#e04a6a'],['Woolly','#4a3a2a']],
   frog:[['Gold','#f2c53b'],['Neon','#9cff3a'],['Midnight','#2f4030']],mouse:[['Field','#8a6a44'],['Tan','#c9a77a'],['Black','#2e2a26']],
@@ -943,6 +955,8 @@ const PAL={spinner:[['Silver','#c9d3d8'],['Chartreuse','#c8e83a'],['Black','#3a3
 const SIZES={small:{name:'Small',tag:'Panfish',hook:-1,sink:.8,draw:.8,mouth:[1.4,1,.65],dive:45},reg:{name:'Regular',tag:'All-round',hook:0,sink:1,draw:1,mouth:[1,1,1],dive:70},large:{name:'Large',tag:'Big fish',hook:1,sink:1.2,draw:1.3,mouth:[.45,.9,1.4],dive:100}};for(const k in LHOOK)LURES[k].hook=LHOOK[k];
 const MOUTH={piranha:1,peacock:2,arowana:2,pacu:1,oscar:1,redtail:2,arapaima:2,walleye:2,pike:2,whitebass:1,drum:1,tigermuskie:2,flathead:2,smallmouth:2,brook:1,brown:1,rockbass:1,fallfish:1,chub:0,sucker:0,undercut:2,brownbull:1,blackbull:1,pumpkinseed:0,crappie:1,pickerel:2,bowfin:2,bluegill:0,perch:0,trout:1,carp:1,eel:1,koi:1,bass:2,catfish:2,pike:2,mossback:2};SPECIES.forEach(s=>s.mouth=MOUTH[s.id]);
 const MOUTHN=['Small','Medium','Large'];
+// Fish with teeth that can cut light line.
+const TEETH={pike:1,tigermuskie:1.2,pickerel:.8,bowfin:.7,piranha:1.5,walleye:.3};
 // New lures (v0.84): which fish take them, added to each species' list.
 const LURE_TAKERS={plastic:['bass','smallmouth','peacock','rockbass'],spinnerbait:['bass','smallmouth','pickerel','pike','tigermuskie','peacock','bowfin'],buzz:['bass','pickerel','pike','tigermuskie','bowfin','peacock'],jerk:['walleye','smallmouth','bass','pike','brown','whitebass','trout','tigermuskie'],lipless:['whitebass','bass','smallmouth','drum','peacock','pike','walleye'],grub:['crappie','perch','rockbass','smallmouth','walleye','whitebass'],cjig:['crappie','perch','bluegill','pumpkinseed','trout','rockbass','whitebass'],swim:['bass','pike','tigermuskie','walleye','peacock','arowana','smallmouth','bowfin','arapaima'],prop:['peacock','arowana','bass','tigermuskie']};
 for(const lu in LURE_TAKERS)for(const id of LURE_TAKERS[lu]){const sp=SPECIES.find(x=>x.id===id);if(sp&&!sp.lures.includes(lu))sp.lures.push(lu);}
@@ -1306,6 +1320,9 @@ function tickClock(dt){
   if(period()!==before&&period()==='night'&&nameIs('lucy'))setTimeout(()=>{if(G.mode==='play'&&S.settings.chatter!==false)say('Just one more cast…');},1800);
   if(period()!==before&&period()==='dawn')questDawn();
   if(period()!==before)updateNests();
+  // Hatches: some dawns and dusks, bugs come off the water and fish rise all over. Not in winter or the jungle.
+  if(period()!==before){G.hatch=null;if((period()==='dawn'||period()==='dusk')&&seasonIdx()!==3&&!LOC().jungle&&SPECIES.some(sp=>sp.rises&&(sp.locs||['pond']).includes(S.loc))&&Math.random()<.45){const k=['Caddis','Mayfly','Midge'][Math.floor(Math.random()*3)];G.hatch={kind:k,left:rand(35,70)};setTimeout(()=>toast(k+' hatch!','Fish are rising to bugs on top'),2600);}}
+  if(G.hatch){G.hatch.left-=dt*MIN_PER_SEC;if(G.hatch.left<=0)G.hatch=null;}
   if(period()!==before){toast(PNAME[period()],period()==='dawn'?`${seasonName()} \u00b7 day ${seasonDay()} of ${SEASON_DAYS}`:{dawn:'The pond wakes up',day:'Sun’s high',dusk:'Shadows stretch over the water',night:'Things move in the deep'}[period()]);for(const f of G.fish)if(f.state==='wander')newWanderTarget(f);spawnTick(false);}
 }
 function weatherSub(){return{clear:'Good visibility',rain:'Catfish, trout and bass get bold',fog:'Shy fish come out'}[S.weather];}
@@ -1315,7 +1332,8 @@ function fmtClock(m){const h=Math.floor(m/60)%24,mm=Math.floor(m%60);const ap=h<
 function tip(){
   const hx=44,hy=dockY()-30;let ang=-.95,len=curSetup().len;
   const F=G.fight,L=G.lure;
-  if(G.charging)ang=lerp(-1.2,-2.3,G.power);
+  if(G.fc){const e=G.fc.s<.5?2*G.fc.s*G.fc.s:1-2*(1-G.fc.s)*(1-G.fc.s);ang=G.fc.ph==='back'?lerp(-.8,-2.15,Math.min(1,e*1.4)):lerp(-2.15,-.75,Math.min(1,e*1.4));}
+  else if(G.charging)ang=lerp(-1.2,-2.3,G.power);
   else if(F){ang=-.62+F.tension*.42+G.input.tilt*.35;}
   else if(L.state==='water'&&G.input.reel)ang=-.8;
   return{x:hx+Math.cos(ang)*len,y:hy+Math.sin(ang)*len,hx,hy,ang};
@@ -1376,16 +1394,26 @@ function cast(){spookAtBoat();
   const L=G.lure,t=tip(),p=G.power;
   L.rockLuck=rand(.4,1.6);L.onRock=null;
   L.state='flying';L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
+  if(curSetup().fly){L.fd=.7+p*.5;L.bl=G.fcLen?G.fcLen*.6:30+p*90;}
   SFX.cast();
 }
 function landLure(){
   const L=G.lure;L.state='water';L.y=SURF+1;G.bob=null;if(G.devFish&&S.dev){L.lastTwitch=G.t;setTimeout(devHook,350);return;}
-  if(isBait()&&rig().type==='bobber'){const r=rig(),dp=r.depth*pxPerFt();G.bob={x:L.x,th:r.bob==='fixed'?1.1:0,out:r.bob==='fixed'?dp:0,tilt:r.bob==='slip'?1:0};if(r.bob==='fixed')L.x+=Math.min(dp*.9,40);}L.lastTwitch=G.t-3;gainXP(1);if(L.flung){L.flung=false;L.bare=true;useBait();toast('The liver flew off the hook','Soft bait. Cast a little gentler');refreshControls();}splash(L.x,LURES[S.lure].float?.6:.8);
-  for(const f of G.fish){if(f.state==='wander'&&dist(f.x,f.y,L.x,L.y)<(f.sp.spooky?70:26)+(isBait()?(rig().type==='bobber'?12:['bank','egg'].includes(rigSinker())?8:0):0)&&Math.random()<(f.sp.spooky?.65:.3)*(1-.85*farZ(f.x))&&!(S.lure==='popper'||S.lure==='frog')){flee(f,3);} }
+  if(isBait()&&rig().type==='bobber'){const r=rig(),dp=r.depth*pxPerFt();G.bob={x:L.x,th:r.bob==='fixed'?1.1:0,out:r.bob==='fixed'?dp:0,tilt:r.bob==='slip'?1:0};if(r.bob==='fixed')L.x+=Math.min(dp*.9,40);}L.lastTwitch=G.t-3;gainXP(1);if(L.flung){L.flung=false;L.bare=true;useBait();toast('The liver flew off the hook','Soft bait. Cast a little gentler');refreshControls();}splash(L.x,curSetup().fly?.3:LURES[S.lure].float?.6:.8);
+  for(const f of G.fish){if(f.state==='wander'&&dist(f.x,f.y,L.x,L.y)<(f.sp.spooky?70:26)+(isBait()?(rig().type==='bobber'?12:['bank','egg'].includes(rigSinker())?8:0):0)&&Math.random()<(f.sp.spooky?.65:.3)*(1-.85*farZ(f.x))*(curSetup().fly?.35:1)&&!(S.lure==='popper'||S.lure==='frog')){flee(f,3);} }
 }
 function retrieve(){const L=G.lure;L.bare=false;G.bob=null;if(L.fish&&L.fish.state!=='fight'){L.fish.state='wander';newWanderTarget(L.fish);}L.fish=null;L.state='ready';refreshControls();}
+// Fly rod: pick the line up off the water to cast again. Ripping it off the surface can spook fish close to the fly.
+function pickUp(){const L=G.lure;if(L.state!=='water'||G.fight)return;
+  for(const f of G.fish)if(f.state!=='fight'&&dist(f.x,f.y,L.x,L.y)<45&&Math.random()<.4)flee(f,2);
+  ripple(L.x,.6);SFX.plip();retrieve();}
+// With the fly rod each tap of STRIP pulls in about a foot and a half of line by hand, which also makes the fly dart.
+function stripFly(){const L=G.lure,lu=LURES[S.lure];if(L.state!=='water')return;L.x=Math.max(DOCKX+14,L.x-20);if(!lu.float)L.y=Math.max(SURF+1,L.y-6);L.lastTwitch=G.t;L.jig=.2;if(lu.float||L.y<SURF+6){SFX.pop();ripple(L.x,lu.id==='popbug'||S.lure==='popbug'?1:.4);}else SFX.plip();
+  if(L.fish&&L.fish.state==='nibble'&&Math.random()<.15)spook(L.fish,'Spooked it!');if(L.x<=DOCKX+16)retrieve();refreshControls();}
 function twitch(){
   const L=G.lure,lu=LURES[S.lure];if(L.state!=='water')return;
+  if(curSetup().fly){stripFly();return;}
+
   L.x=Math.max(DOCKX+14,L.x-8);if(!lu.float)L.y=Math.max(SURF+1,L.y-10);L.lastTwitch=G.t;L.jig=.25;
   if(lu.float||L.y<SURF+6){SFX.pop();ripple(L.x,1);}else SFX.plip();
   if(L.fish&&L.fish.state==='nibble'&&isBait()&&Math.random()<.3*(1-.7*farZ(L.fish.x)))spook(L.fish,'Spooked it!');
@@ -1393,7 +1421,10 @@ function twitch(){
 function updateLure(dt){
   const L=G.lure,lu=LURES[S.lure];G.bobJig=Math.max(0,(G.bobJig||0)-dt);
   L.jig=Math.max(0,L.jig-dt);if(L.state==='water'&&!L.bare&&(S.lure==='minnow'||S.lure==='cricket')&&Math.random()<dt*2)L.jig=.15;
-  if(L.state==='flying'){L.ft+=dt;const k=Math.min(1,L.ft/L.fd);L.x=lerp(L.sx,L.tx,k);L.y=lerp(L.sy,SURF,k)-Math.sin(k*Math.PI)*L.arc;if(k>=1)landLure();return;}
+  if(L.state==='flying'){L.ft+=dt;const k=Math.min(1,L.ft/L.fd);
+    // A fly cast: the loop rolls out ahead and the fly trails on the top leg until the line turns over and lays it down.
+    if(curSetup().fly){const t=tip();L.lpx=lerp(t.x,L.tx,Math.min(1,k*1.15));L.lpy=lerp(t.y,SURF-5,k);L.lph=3+20*(1-k);L.x=lerp(L.sx-(L.bl||60),L.tx,Math.pow(k,1.7));L.y=Math.min(SURF,L.lpy-L.lph+Math.max(0,k-.85)/.15*L.lph);}
+    else{L.x=lerp(L.sx,L.tx,k);L.y=lerp(L.sy,SURF,k)-Math.sin(k*Math.PI)*L.arc;}if(k>=1)landLure();return;}
   if(L.state!=='water')return;
   const bot=bottomAt(L.x)-3;L.moving=false;
   if(G.bob&&L.fish&&L.fish.state==='bite')G.bob.x+=(L.x-G.bob.x)*Math.min(1,dt*1.5);
@@ -1496,12 +1527,17 @@ function spook(f,msg){flee(f,8);f.wise=true;if(msg)toast(msg);SFX.lose();refresh
 function checkNotice(f,dt){
   const L=G.lure,sp=f.sp,hot=nickHot();if(f.wise||L.bare||(!hot&&!sp.lures.includes(S.lure)))return;
   if(L.fish&&L.fish!==f&&L.fish.L>f.L*1.7&&dist(f.x,f.y,L.x,L.y)<L.fish.L*2+40)return;
-  const d=dist(f.x,f.y,L.x,L.y);let sight=mods().sight*(sp.id===mods().fav?mods().favSight:1)*(sp.legend?190:135)*(sp.scent?1:(.6+.4*visMul()))*(hot?1.7:1);if(sp.scent&&isBait())sight*=S.lure==='liver'?1.7:1.3;if(sp.ambush)sight*=.7;if(d>sight)return;
-  if(!sp.surface&&!hot){const [a,b]=bandRange(sp,L.x);if(L.y<a-45||L.y>b+45)return;}
+  const upTop=sp.rises&&LURES[S.lure].float&&L.y<SURF+6;
+  // A rising fish spots a bug on top from well below, so depth counts for less than distance across.
+  const d=upTop?Math.hypot(f.x-L.x,(f.y-L.y)*.4):dist(f.x,f.y,L.x,L.y);let sight=mods().sight*(sp.id===mods().fav?mods().favSight:1)*(sp.legend?190:135)*(sp.scent?1:(.6+.4*visMul()))*(hot?1.7:1);if(sp.scent&&isBait())sight*=S.lure==='liver'?1.7:1.3;if(sp.ambush)sight*=.7;if(d>sight)return;
+  // Fish that rise will come up from their depth for something floating on top, the way trout take a dry fly.
+  if(!sp.surface&&!hot&&!upTop){const [a,b]=bandRange(sp,L.x);if(L.y<a-45||L.y>b+45)return;}
   let action=(G.t-L.lastTwitch<1.6)?'twitch':L.moving?'move':'still';if(action==='still'&&S.lure==='minnow')action='move';if(action==='still'&&S.lure==='cricket'&&Math.sin(G.t*1.3)>.55)action='twitch';
   let m=action===sp.likes?1.8:(action==='still'?.65:.95);
   if(S.lure==='spinner'&&action==='move')m*=1.3;
   if(S.lure==='frog')m*=1.4;m*=lureAppeal(sp);
+  if(G.hatch&&sp.rises)m*=['dryfly','popbug','fly'].includes(S.lure)?1.8:S.lure==='nymph'?1.3:.85;
+  if(gearOn('leader')&&sp.wary)m*=.7;
   if(LOC().current&&isBait()&&!L.moving)m*=['free','split','bobber'].includes(rig().type)?1.35:.8;
   {const am=actMul(sp);if(am<=0&&!hot)return;m*=Math.max(am,hot?.3:0);}
   if(sp.id===mods().fav)m*=mods().favBite;if(sp.ambush&&L.moving)m*=1.6;
@@ -1531,7 +1567,7 @@ function updateFish(f,dt){
     case'wander':
       f.timer-=dt;if(f.timer<=0||dist(f.x,f.y,f.tx,f.ty)<8)newWanderTarget(f);
       {const ld=schoolLead(f);if(!isActive(sp))spd=sp.speed*.14;if(ld&&ld!==f){if(!f.off)f.off={dx:rand(-42,42),dy:rand(-18,18)};tx=ld.x+f.off.dx+Math.sin(G.t*.7+f.wig*.05)*4;ty=ld.y+f.off.dy;spd=Math.max(sp.speed*(isActive(sp)?.4:.15),Math.hypot(ld.vx,ld.vy)*1.2);}}
-      if(isActive(sp)&&sp.rises&&f.y<SURF+70&&f.alpha>.8&&Math.random()<dt*.05){ripple(f.x+f.face*f.L*.4,.3);for(let i=0;i<3;i++)G.parts.push({k:'drop',x:f.x+f.face*f.L*.4,y:SURF,vx:rand(-15,15),vy:rand(-50,-20),life:.45,r:1});}
+      if(isActive(sp)&&sp.rises&&(f.y<SURF+70||G.hatch)&&f.alpha>.8&&Math.random()<dt*(G.hatch?.35:.05)){ripple(f.x+f.face*f.L*.4,.3);for(let i=0;i<3;i++)G.parts.push({k:'drop',x:f.x+f.face*f.L*.4,y:SURF,vx:rand(-15,15),vy:rand(-50,-20),life:.45,r:1});}
       if(isActive(sp)&&sp.mud&&f.y>bottomAt(f.x)-36&&Math.random()<dt*.45)G.parts.push({k:'mud',x:f.x+f.face*f.L*.45,y:f.y+f.L*.12,r:3,life:2.6});
       if(isActive(sp)&&sp.gulp){f.gulpT=(f.gulpT??rand(6,16))-dt;if(f.gulpT<=0){ty=SURF+5;tx=f.x+f.face*20;spd=sp.speed*.55;if(f.y<SURF+12){ripple(f.x,.6);for(let i=0;i<6;i++)G.parts.push({k:'bub',x:f.x+rand(-4,4),y:f.y+rand(0,6),vy:-20,life:.8,r:1+Math.random()*1.5});f.gulpT=rand(10,22);}}}
       if(G.mode==='play'&&L.state==='water'&&f.cool<=0)checkNotice(f,dt);
@@ -1629,6 +1665,8 @@ function updateFight(dt){
   F.t+=dt;F.phaseT-=dt;if(F.phaseT<=0)nextPhase(F);
   if(F.thrown){lostFish('It threw the hook mid-jump!','Keep reeling through a jump so the line stays tight');return;}
   const running=F.phase==='run';
+  // Toothy fish can bite through light line. Heavier line helps; a wire leader stops it.
+  {const tz=TEETH[sp.id];if(tz&&!sp.turtle&&!gearOn('leader')){const r=tz*.012*Math.max(0,1-lineTest()/30)*(running||F.phase==='air'?1.6:1);if(Math.random()<r*dt){snap('Toothy fish can cut light line. A wire leader stops it','Bit through the line!');return;}}}
   f.wig+=dt*(running?20:8+F.stamina*4);
   if(running){F.thrashT-=dt;if(F.thrashT<=0){F.thrash=.45;F.thrashT=rand(.9,1.8);SFX.thrash();vib(35);if(f.y<SURF+30)splash(f.x,.5);}}
   if(F.thrash>0)F.thrash-=dt;
@@ -1875,6 +1913,7 @@ function render(){
   drawDock(c,dk);
   // line & lure
   drawLine(c);
+  if(G.hatch)drawHatch(c,vx0,vx1);
   // particles
   for(const p of G.parts){if(p.k==='drop'){c.fillStyle=`rgba(225,245,250,${p.life})`;c.fillRect(p.x,p.y,p.r,p.r);}else if(p.k==='smoke'){const a=Math.min(1,p.life/3)*Math.min(1,(3.4-p.life)*3)*.5;c.fillStyle=`rgba(${dk>.5?'170,175,185':'225,228,230'},${a})`;c.beginPath();c.arc(p.x,p.y,p.r,0,TAU);c.fill();}else if(p.k==='mud'){c.fillStyle=`rgba(120,98,66,${Math.min(1,p.life/2.6)*.22*(1-dk*.6)})`;c.beginPath();c.arc(p.x,p.y,p.r,0,TAU);c.fill();}else{c.strokeStyle=`rgba(210,240,240,${Math.min(1,p.life)*.5})`;c.lineWidth=.7;c.beginPath();c.arc(p.x,p.y,p.r,0,TAU);c.stroke();}}
   c.restore();
@@ -1895,7 +1934,7 @@ function render(){
   c.save();c.translate(-cam,0);
   if(G.mode==='play'){
     if(L.fish&&L.fish.state==='bite'&&L.state==='water'){const bx=L.x,by=SURF-26+Math.sin(G.t*30)*1.5;c.fillStyle='#f2a93b';c.strokeStyle='#2a1903';c.lineWidth=2;c.beginPath();c.arc(bx,by,11,0,TAU);c.fill();c.stroke();c.fillStyle='#2a1903';c.font='22px "Lilita One",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('!',bx,by+1);c.textBaseline='alphabetic';}
-    if(G.charging){const t=tip();let cx=t.hx+6,cy=t.hy-70;const top=(60*UI)/SC+26;if(cy<top){cy=top;cx=Math.max(cx,DOCKX+44);}c.lineWidth=6;c.lineCap='round';c.strokeStyle='rgba(0,0,0,.45)';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*2.2);c.stroke();c.strokeStyle=G.power>.92?'#ffe08a':'#f2a93b';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*.8+Math.PI*1.4*G.power);c.stroke();c.fillStyle='#e1ead2';c.font='600 10px "IBM Plex Mono",monospace';c.textAlign='center';c.fillText(Math.round(G.power*100)+'%',cx,cy+4);}
+    if(G.charging){const t=tip();let cx=t.hx+(G.fc?84:6),cy=t.hy-(G.fc?92:70);const top=(60*UI)/SC+26;if(cy<top){cy=top;cx=Math.max(cx,DOCKX+44);}c.lineWidth=6;c.lineCap='round';c.strokeStyle='rgba(0,0,0,.45)';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*2.2);c.stroke();c.strokeStyle=G.power>.92?'#ffe08a':'#f2a93b';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*.8+Math.PI*1.4*G.power);c.stroke();c.fillStyle='#e1ead2';c.font='600 10px "IBM Plex Mono",monospace';c.textAlign='center';c.fillText(Math.round(G.power*100)+'%',cx,cy+4);}
     if(G.fight){const F=G.fight,f=F.f,bx=f.x,by=f.y-f.L*SHAPES[f.sp.shape].h*.5-18;
       const jump=F.phase==='surge'||F.phase==='air';const col=jump?'#8cc6d8':F.phase==='run'?'#e65a3d':F.phase==='tell'?(Math.sin(G.t*40)>0?'#f2a93b':'#e65a3d'):'#86ab5c';
       c.fillStyle=col;c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=1.5;c.beginPath();c.arc(bx,by,9,0,TAU);c.fill();c.stroke();
@@ -2028,6 +2067,8 @@ function drawReeds(c,dk){
     c.strokeStyle=leaf;c.lineWidth=1.2;c.beginPath();c.moveTo(rd.x+.5,b);c.quadraticCurveTo(rd.x+4+sw,SURF-rd.h*.45,rd.x+7+sw*1.5,SURF-rd.h*.6);c.stroke();
     if(rd.head){c.fillStyle=head;c.beginPath();c.ellipse(tx-rd.lean*3,topY+4,1.5,3.6,rd.lean,0,TAU);c.fill();c.strokeStyle=stem;c.lineWidth=.6;c.beginPath();c.moveTo(tx-rd.lean*3,topY+.5);c.lineTo(tx,topY-3);c.stroke();}}
 }
+function drawHatch(c,vx0,vx1){c.fillStyle=darkness()>.35?'rgba(240,236,210,.85)':'rgba(60,52,36,.85)';
+  for(let i=0;i<55;i++){const span=vx1-vx0+40,x=vx0-20+((i*97.3+G.t*(8+i%5*3))%span),y=SURF-5-((i*37)%52)-Math.abs(Math.sin(G.t*2.2+i))*9,fl=Math.sin(G.t*25+i)>0;c.fillRect(x-1,y,fl?2.6:1.6,fl?1.2:2);}}
 function drawSpecks(c,dk,vx0,vx1){c.fillStyle=`rgba(225,240,230,${.22*(1-dk*.6)})`;for(const p of specks){let x=p.x+Math.sin(G.t*.3+p.ph)*6;if(LOC().current)x=(((x-G.t*LOC().current*.75*p.v/3)%WX)+WX)%WX;if(x<vx0||x>vx1)continue;const y=p.y+Math.sin(G.t*.2*p.v+p.ph)*5;c.fillRect(x,y,p.s,p.s);}}
 function drawPads(c,dk,vx0,vx1){
   const Zp=sea();if(Zp.pads<.03)return;
@@ -2227,11 +2268,13 @@ function drawLine(c){
   if(L.state==='ready'){lx=t.x;ly=t.y+14+Math.sin(G.t*2)*1;}
   else{lx=L.x;ly=L.y;if(L.jig>0){lx+=Math.sin(G.t*60)*1.4;ly+=Math.sin(G.t*47)*1.4;}}
   const lineCol=darkness()>.5?'rgba(230,235,220,.5)':'rgba(240,245,235,.7)';
+  if(curSetup().fly&&(L.state==='flying'||G.charging||G.fc)){drawFlyLine(c,t,L);return;}
   const geo=L.state==='water'&&isBait()?rigGeom(lx,ly):null;const ax=geo?geo.anchor[0]:lx,ay=geo?geo.anchor[1]:ly;
   const taut=G.input.reel||(L.fish&&L.fish.state==='bite');
   const tk=L.state==='flying'?1.03:G.fight?1+(1-G.fight.tension)*.2:taut?1:(geo&&geo.bob?1.14:1.1);
   const P=stepRope(t.x,t.y,ax,ay,tk,L.state==='ready'?Math.max(4,Math.hypot(ax-t.x,ay-t.y)):null);
-  c.strokeStyle=lineCol;c.lineWidth=.7;c.lineJoin='round';c.beginPath();c.moveTo(P[0][0],P[0][1]);
+  const flyL=!!curSetup().fly;if(flyL&&L.state==='water'){const n=P.length;for(let i=0;i<n*.8;i++)P[i][1]=Math.min(P[i][1],SURF+.5);}
+  c.strokeStyle=flyL?(darkness()>.5?'rgba(238,226,160,.55)':'rgba(246,232,150,.85)'):lineCol;c.lineWidth=flyL?1.1:.7;c.lineJoin='round';c.beginPath();c.moveTo(P[0][0],P[0][1]);
   for(let i=1;i<P.length-1;i++){const mx=(P[i][0]+P[i+1][0])/2,my=(P[i][1]+P[i+1][1])/2;c.quadraticCurveTo(P[i][0],P[i][1],mx,my);}c.lineTo(ax,ay);c.stroke();
   const cx=P[P.length-3][0],cy=P[P.length-3][1];
   if(L.state==='hooked')return;
@@ -2244,9 +2287,21 @@ function drawLine(c){
     if(lu.crank&&L.state==='water'){const atTop=ly<SURF+3&&Math.abs(L.svy||0)<4;ang=Math.PI-(atTop?0:clamp((L.svy||0)/40,-.7,.75))+(L.moving?Math.sin(G.t*30)*.13:Math.sin(G.t*2)*.04);}
     const sk=isBait()?rigSinker():'none';if(isBait()&&L.state!=='ready'&&sk!=='none'){const d=Math.min(30,rig().shot/12*pxPerFt());drawSinker(c,lx+Math.cos(ang)*(sk==='split'?d:9),ly+Math.sin(ang)*(sk==='split'?d:9),sk);}
     if(isBait()&&L.state==='ready'&&rig().type==='bobber')drawBobber(c,lx,ly-9,rig().bob,.8);}
-  const lsc=isBait()?1:SIZES[lureVar().size].draw,nose=({spinner:6,spoon:5.4,popper:4.6,crank:4.6,jig:3.8,fly:2.6,frog:4.8,mouse:5}[S.lure]||1)*lsc;
+  const lsc=isBait()?1:SIZES[lureVar().size].draw,nose=({dryfly:2.4,popbug:3.2,nymph:2.2,bugger:3.4,spinner:6,spoon:5.4,popper:4.6,crank:4.6,jig:3.8,fly:2.6,frog:4.8,mouse:5}[S.lure]||1)*lsc;
   drawLure(c,L.bare?'bare':S.lure,lx-Math.cos(ang)*nose,ly-Math.sin(ang)*nose,lsc,lureColor(),ang);
 }
+// Fly line: thicker and brighter than mono. Holding to cast throws a back-cast behind you; on release the loop rolls out over the water.
+function drawFlyLine(c,t,L){
+  let fx,fy;c.strokeStyle=darkness()>.5?'rgba(238,226,160,.6)':'rgba(246,232,150,.92)';c.lineWidth=1.3;c.lineCap='round';c.beginPath();c.moveTo(t.x,t.y);
+  if(G.fc&&L.state!=='flying'){const F=G.fc,s2=Math.min(1,F.s),dir=F.ph==='back'?-1:1,endX=t.x+dir*F.len*(dir<0?.6:1),airY=t.y-5;
+    const lx=lerp(t.x,endX,Math.min(1,s2*1.15)),ly=airY-5*Math.sin(s2*Math.PI),h=3+16*(1-s2);
+    fx=lerp(F.from.x,endX,Math.pow(s2,1.7));fy=s2<.85?lerp(F.from.y,ly-h,Math.min(1,s2*1.8)):lerp(ly-h,airY,(s2-.85)/.15);
+    c.quadraticCurveTo((t.x+lx)/2,ly+3,lx,ly);if(dir*(fx-lx)<-2){c.bezierCurveTo(lx+dir*h*.7,ly,lx+dir*h*.7,ly-h,lx,ly-h);}c.lineTo(fx,fy);
+    c.stroke();drawLure(c,S.lure,fx,fy,SIZES[lureVar().size].draw,lureColor(),dir>0?0:Math.PI);return;}
+  if(L.state==='flying'){const lx=L.lpx,ly=L.lpy,h=L.lph;c.quadraticCurveTo((t.x+lx)/2,ly+4,lx,ly);
+    if(L.x<lx-2){c.bezierCurveTo(lx+h*.7,ly,lx+h*.7,ly-h,lx,ly-h);c.lineTo(L.x,L.y);}else c.lineTo(L.x,L.y);fx=L.x;fy=L.y;}
+  else{const bl=20+G.power*90,ex=t.x-bl,ey=t.y-4-G.power*12+Math.sin(G.t*9)*1.5;c.quadraticCurveTo(t.x-bl*.4,t.y-10-G.power*8,ex,ey);fx=ex;fy=ey;}
+  c.stroke();const lsc=SIZES[lureVar().size].draw;drawLure(c,S.lure,fx,fy,lsc,lureColor(),L.state==='flying'?0:Math.PI);}
 function drawRigDiagram(cv,r){
   const c=cv.getContext('2d'),W2=320,H2=110;c.setTransform(2,0,0,2,0,0);c.clearRect(0,0,W2,H2);
   const surf=18,bot=96;c.fillStyle='rgba(47,128,134,.35)';c.fillRect(0,surf,W2,bot-surf);c.fillStyle='rgba(91,73,51,.9)';c.fillRect(0,bot,W2,H2-bot);
@@ -2362,6 +2417,22 @@ function drawLure(c,id,x,y,s,col,ang=0){
       c.fillStyle=K;c.beginPath();c.arc(3,0,2.3,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.3)';c.beginPath();c.arc(2.4,-.9,.8,0,TAU);c.fill();
       c.fillStyle='#f2c53b';c.beginPath();c.arc(3.9,-.5,.7,0,TAU);c.fill();c.fillStyle='#111';c.beginPath();c.arc(4,-.5,.35,0,TAU);c.fill();
       c.strokeStyle='#c9cfd4';c.lineWidth=.5;c.beginPath();c.arc(3.6,-2.6,.7,0,TAU);c.stroke();break;}
+    case'dryfly':{lureHook(c,2.2,.4);c.fillStyle=shade(K,-.15);c.beginPath();c.ellipse(-.3,0,2.4,.9,0,0,TAU);c.fill();
+      c.fillStyle=rgbStr(hexRgb(K),.95);c.beginPath();c.moveTo(1.4,-.6);c.quadraticCurveTo(-1.5,-3.4,-4.2,-2.6);c.quadraticCurveTo(-1.6,-1.2,1.4,-.2);c.fill();
+      c.strokeStyle='#7a5a32';c.lineWidth=.4;c.beginPath();for(let i=0;i<10;i++){const a2=i/10*TAU;c.moveTo(1.8,0);c.lineTo(1.8+Math.cos(a2)*2.1,Math.sin(a2)*2.1);}c.stroke();
+      c.strokeStyle=shade(K,-.3);c.lineWidth=.35;c.beginPath();c.moveTo(-2.6,0);c.lineTo(-5,-.4);c.moveTo(-2.6,0);c.lineTo(-5,.3);c.stroke();break;}
+    case'popbug':{lureHook(c,.2,1.2);c.fillStyle=K;c.beginPath();c.moveTo(2.6,-1.8);c.lineTo(2.6,1.8);c.lineTo(-1.2,1.1);c.lineTo(-1.2,-1.1);c.closePath();c.fill();
+      c.fillStyle=shade(K,-.35);c.beginPath();c.ellipse(2.6,0,.5,1.8,0,0,TAU);c.fill();c.fillStyle='#111';c.beginPath();c.arc(1.6,-.7,.35,0,TAU);c.fill();
+      c.strokeStyle='#e8e2d0';c.lineWidth=.35;const wv=mv?Math.sin(G.t*20)*.5:0;c.beginPath();c.moveTo(.6,.9);c.lineTo(-1.4,3+wv);c.moveTo(.2,.9);c.lineTo(-2.4,2.4-wv);c.moveTo(-1,0);c.lineTo(-4.2,-.6+wv);c.moveTo(-1,.3);c.lineTo(-4,1-wv);c.stroke();break;}
+    case'nymph':{lureHook(c,2.2,0);c.fillStyle=K;c.beginPath();c.moveTo(1.6,-1.1);c.quadraticCurveTo(-1,-1.3,-2.8,-.4);c.lineTo(-2.8,.4);c.quadraticCurveTo(-1,1.3,1.6,1.1);c.fill();
+      c.strokeStyle=shade(K,.35);c.lineWidth=.3;c.beginPath();for(let i=0;i<4;i++){c.moveTo(.8-i*.9,-1);c.lineTo(.8-i*.9,1);}c.stroke();
+      c.fillStyle=K==='#e8803a'?'#ff9a4a':'#d9b24a';c.beginPath();c.arc(2.3,0,1.1,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.6)';c.beginPath();c.arc(2,-.4,.35,0,TAU);c.fill();
+      c.strokeStyle=shade(K,-.3);c.lineWidth=.3;c.beginPath();c.moveTo(-2.8,0);c.lineTo(-4.6,-.5);c.moveTo(-2.8,0);c.lineTo(-4.6,.5);c.stroke();break;}
+    case'bugger':{lureHook(c,2.6,0);const wg=mv?Math.sin(G.t*14)*1.1:Math.sin(G.t*3)*.3;
+      c.fillStyle=rgbStr(hexRgb(K),.8);c.beginPath();c.moveTo(-2.2,-.8);c.quadraticCurveTo(-5,-1.4+wg,-8,-.2+wg*1.4);c.quadraticCurveTo(-5,1.2+wg,-2.2,.8);c.fill();
+      c.fillStyle=shade(K,-.1);c.beginPath();c.ellipse(.2,0,2.6,1.3,0,0,TAU);c.fill();
+      c.strokeStyle=shade(K,-.4);c.lineWidth=.35;c.beginPath();for(let i=0;i<6;i++){const x2=2-i*.8;c.moveTo(x2,-1.2);c.lineTo(x2-.6,-2);c.moveTo(x2,1.2);c.lineTo(x2-.6,2);}c.stroke();
+      c.fillStyle='#2a2620';c.beginPath();c.arc(2.8,0,.9,0,TAU);c.fill();break;}
     case'fly':{lureHook(c,2.5,0);c.strokeStyle=shade(K,-.45);c.lineWidth=1.3;c.beginPath();c.moveTo(1.8,0);c.lineTo(-2.5,0);c.stroke();
       c.fillStyle=rgbStr(hexRgb(K),.85);c.beginPath();c.ellipse(-1.5,-1.7,3.6,1.2,.32,0,TAU);c.fill();c.fillStyle=rgbStr(hexRgb(K),.6);c.beginPath();c.ellipse(-1.8,-.9,3.4,1,.12,0,TAU);c.fill();
       c.strokeStyle='#8a6a42';c.lineWidth=.45;c.beginPath();for(let i=0;i<9;i++){const a=i/9*TAU;c.moveTo(2,0);c.lineTo(2+Math.cos(a)*1.9,Math.sin(a)*1.9);}c.stroke();
@@ -2579,7 +2650,15 @@ function update(dt){
   const kt=G.input.keyTilt;
   if(kt)G.input.tiltTarget=kt;
   G.input.tilt+=(G.input.tiltTarget-G.input.tilt)*Math.min(1,dt*10);
-  if(G.charging){G.chargeT+=dt;const ph=(G.chargeT/1.05)%2;G.power=ph<1?ph:2-ph;}
+  if(G.charging){G.chargeT+=dt;const ph=(G.chargeT/1.05)%2;G.power=ph<1?ph:2-ph;}else G.tapCast=null;
+  // False casting: the line rolls back behind you, then forward over the water, again and again, shooting a little more line each time.
+  // Once you pick the power it keeps going until the next back cast ends, then the forward stroke is the real cast.
+  if(G.fc&&!G.charging&&G.fc.sel==null)G.fc=null;
+  if(G.fc){const F=G.fc,t=tip();F.s+=dt/F.T;
+    if(F.s>=1){if(F.ph==='back'){if(F.sel!=null){G.power=F.sel;G.fcLen=F.len;G.fc=null;G.charging=false;cast();G.fcLen=null;refreshControls();}
+        else{F.ph='fwd';F.from={x:t.x-F.len*.6,y:t.y-4};F.s=0;}}
+      else{F.ph='back';F.from={x:t.x+F.len,y:t.y-4};F.len=Math.min(170,F.len+28);F.s=0;F.T=.45+F.len/450;}}
+    if(G.mode!=='play'||G.lure.state!=='ready')G.fc=null;}
   updateLure(dt);
   fishSocial(dt);for(const f of G.fish)updateFish(f,dt);
   G.fish=G.fish.filter(f=>!f.dead);
@@ -2620,13 +2699,13 @@ function updateFightHud(){
   const used=lineOut(F)/spoolCap(),lr=$('#lineRow');lr.hidden=used<.5;if(!lr.hidden){const lb=$('#lineBar');lb.querySelector('i').style.width=Math.max(0,(1-used)*100)+'%';lb.className='bar'+(used>.85?' crit':used>.7?' hot':'');}
   const sy=$('#fightSay');if(used>.75&&F.phase==='run'){sy.textContent='It\u2019s almost spooled you! Tighten up or turn it';sy.dataset.k='hot';}else if(F.slip){sy.textContent=F.twist>1.2?'Stop cranking! The line is twisting':'Drag is slipping. It\u2019s taking line';sy.dataset.k=F.twist>1.2?'run':'jump';}else{sy.textContent=F.say;sy.dataset.k=F.sayK;}
 }
-function refreshControls(){
+function refreshControls(){{const rl=document.querySelector('#bReel span:last-child');if(rl)rl.textContent=curSetup().fly&&!G.fight?'STRIP':'REEL';}
   const L=G.lure,act=$('#bAction'),lbl=$('#bActionLbl'),fight=!!G.fight;
   act.hidden=fight;$('#bReel').hidden=fight;$('#controls').classList.toggle('fighting',fight);$('#shopBtn').hidden=fight||G.mode!=='play';$('#questBtn').hidden=fight||G.mode!=='play';$('#tilt').hidden=!fight;$('#hint').hidden=fight;
   act.classList.remove('strike','wait');
   if(L.state==='ready')lbl.textContent='CAST';
   else if(L.state==='flying'){lbl.textContent='CAST';act.classList.add('wait');}
-  else if(L.state==='water')lbl.textContent='TWITCH';
+  else if(L.state==='water')lbl.textContent=curSetup().fly?'RECAST':'TWITCH';
   const hk=$('#bHook'),inWater=L.state==='water'&&!fight;hk.hidden=!inWater;
   const engaged=inWater&&L.fish&&(L.fish.state==='nibble'||L.fish.state==='bite');
   hk.classList.toggle('idle',!engaged);hk.classList.toggle('strike',!!(inWater&&L.fish&&L.fish.state==='bite'&&S.settings.hints));
@@ -2638,17 +2717,18 @@ function updateHint(){
   if(G.fight){updateFightHud();return;}
   const L=G.lure;let k='';
   if(!S.settings.hints)k='';
-  else if(G.charging)k='Let go at the top of the swing';
-  else if(L.state==='ready')k=nickSits()?NICK_HINTS[Math.floor(G.t/14)%NICK_HINTS.length]:G.schoolHint?`The school is still here. Cast back for another ${G.schoolHint.toLowerCase()}`:nickHot()?`Nick is up! ${G.nickCasts} cast${G.nickCasts===1?'':'s'} left`:S.stats.caught===0?'Hold CAST, then release at full power':`${LURES[S.lure].name} ready · drag the water to look around`;
+  else if(G.fc&&G.fc.sel!=null)k='Laying it out on the next forward cast…';
+  else if(G.charging)k=G.tapCast?'False casting… tap CAST at the power you want':'Let go at the top of the swing';
+  else if(L.state==='ready')k=nickSits()?NICK_HINTS[Math.floor(G.t/14)%NICK_HINTS.length]:G.schoolHint?`The school is still here. Cast back for another ${G.schoolHint.toLowerCase()}`:nickHot()?`Nick is up! ${G.nickCasts} cast${G.nickCasts===1?'':'s'} left`:S.stats.caught===0&&!curSetup().fly?'Hold CAST, then release at full power':curSetup().fly?`${LURES[S.lure].name} ready · tap CAST to start false casting`:`${LURES[S.lure].name} ready · drag the water to look around`;
   else if(L.state==='water'){
     if(L.bare)k='Bait\u2019s gone. Reel in to rebait';
     else if(L.fish?.state==='bite')k=!isBait()&&G.input.reel?'Strike! Keep reeling and tap HOOK!':'Now! Tap HOOK!';
     else if(L.fish?.state==='nibble')k='Something’s nibbling. Hold still…';
     else if(L.fish?.state==='approach')k=G.input.reel?'A fish is chasing it! Slow down so it can catch up':'A fish is coming for it…';
-    else k=LURES[S.lure].crank?'Reel to make it dive, stop to let it float':'Reel, twitch, or let it sink';
+    else k=curSetup().fly?(LURES[S.lure].float?'Let it sit, or STRIP it a little. RECAST to throw again':'Let it sink, then STRIP it in. RECAST to throw again'):LURES[S.lure].crank?'Reel to make it dive, stop to let it float':'Reel, twitch, or let it sink';
   }
   if(k!==G.hintKey){G.hintKey=k;$('#hint').textContent=k;}
-  const want=L.state==='water'?'TWITCH':'CAST',fs=L.state==='water'&&L.fish?L.fish.state:'',hk=$('#bHook');
+  const want=L.state==='water'?(curSetup().fly?'RECAST':'TWITCH'):'CAST',fs=L.state==='water'&&L.fish?L.fish.state:'',hk=$('#bHook');
   if($('#bActionLbl').textContent!==want||hk.hidden!==(L.state!=='water')||hk.dataset.fs!==fs){hk.dataset.fs=fs;refreshControls();}
 }
 let toastTimer=0;
@@ -2657,10 +2737,16 @@ function toast(msg,sub){const t=$('#toast');t.innerHTML='';t.append(msg);if(sub)
 // ---------------- INPUT ----------------
 function actionDown(){
   if(G.mode!=='play'||G.paused)return;audio();
+  if(G.charging&&G.tapCast==='free'){G.tapCast=null;if(G.fc){G.fc.sel=G.power;G.charging=false;refreshControls();}else releaseCast();return;}
+  if(G.fc)return;
   const L=G.lure;if(isNick()&&L.state==='ready'&&!G.nickActive){nickRefuse();return;}if(nickHot()&&L.state==='ready'&&G.nickCasts<=0)return;
-  if(L.state==='ready'){G.charging=true;G.chargeT=0;G.power=0;}
+  if(L.state==='ready'){const hv=S.lures[S.lure];if(!(hv===-1||hv>0)){toast(curSetup().fly?'Out of flies':'Out of that lure',curSetup().fly?'Buy more in the tackle shop':'Pick another in the tackle box');return;}if(!lureOK(S.lure)){toast(curSetup().fly?'Tie on a fly':'That needs the fly rod',curSetup().fly?'Flies are in the tackle shop':'Switch rods in the tackle box');return;}G.charging=true;G.chargeT=0;G.power=0;
+    // Fly rod: the first cast winds up just like a recast, false casting from the rod tip until you pick the power.
+    if(curSetup().fly){const t=tip();G.tapCast='armed';G.fc={ph:'back',s:0,len:40,T:.5,from:{x:t.x,y:t.y+14},sel:null};refreshControls();}}
   else if(L.state==='water'){
     if(L.fish&&L.fish.state==='bite')return;
+    // Fly rod: RECAST lifts the line and goes straight into false casting. The meter keeps swinging until you tap again.
+    if(curSetup().fly){const fx=L.x,fy=L.y;pickUp();G.charging=true;G.chargeT=0;G.power=0;G.tapCast='armed';G.fc={ph:'back',s:0,len:60,T:.55,from:{x:fx,y:Math.min(fy,SURF)},sel:null};refreshControls();return;}
     twitch();
   }
 }
@@ -2671,7 +2757,8 @@ function hookDown(){
   else if(f&&f.state==='nibble'){toast('Too early!','Wait for the lure to plunge');spook(f);}
   else{toast('Nothing on yet');SFX.ui();}
 }
-function actionUp(){if(G.charging){G.charging=false;if(G.power<.06){return;}cast();refreshControls();}}
+function actionUp(){if(G.tapCast==='armed'){G.tapCast='free';return;}if(G.tapCast)return;releaseCast();}
+function releaseCast(){if(G.charging){G.charging=false;if(G.power<.06){return;}cast();refreshControls();}}
 function holdBtn(el,down,up){
   el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}el.classList.add('down');down();});
   const end=e=>{if(!el.classList.contains('down'))return;el.classList.remove('down');up();};
@@ -2688,7 +2775,7 @@ const panEnd=e=>{if(!panS||e.pointerId!==panS.id)return;const s0=panS;panS=null;
 cv.addEventListener('pointerup',panEnd);cv.addEventListener('pointercancel',panEnd);
 function openAngler(){G.paused=true;G.input.reel=false;G.charging=false;$('#bReel').classList.remove('down');G.stack=[];open('log');G.stack=[];}
 holdBtn($('#bHook'),hookDown,()=>{});
-holdBtn($('#bReel'),()=>{audio();G.input.reel=true;},()=>{G.input.reel=false;});
+holdBtn($('#bReel'),()=>{audio();if(curSetup().fly&&!G.fight){stripFly();return;}G.input.reel=true;},()=>{G.input.reel=false;});
 for(const [id,dv] of [['#dragDn',-.1],['#dragUp',.1]]){const b=$(id);b.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();setDrag(dragSet()+dv);});b.addEventListener('click',e=>e.stopPropagation());}
 (()=>{const pad=$('#tilt');let id=null,sx=0;
   pad.addEventListener('pointerdown',e=>{e.preventDefault();if(id!==null)return;id=e.pointerId;sx=e.clientX;try{pad.setPointerCapture(id);}catch(_){}G.input.reel=true;G.input.tiltTarget=0;pad.classList.add('down');$('#padLbl').textContent='REELING';audio();});
@@ -2703,7 +2790,7 @@ addEventListener('keydown',e=>{if(G.fight&&(e.code==='BracketLeft'||e.code==='Mi
   if(G.mode!=='play'||G.paused)return;
   if(e.code==='Space'||e.code==='Enter'){e.preventDefault();if(!keys.sp){keys.sp=1;$('#bAction').classList.add('down');actionDown();}}
   if(e.code==='ArrowUp'||e.code==='KeyH'){e.preventDefault();hookDown();}
-  if(e.code==='ArrowDown'||e.code==='KeyS'){e.preventDefault();G.input.reel=true;$('#bReel').classList.add('down');audio();}
+  if(e.code==='ArrowDown'||e.code==='KeyS'){e.preventDefault();if(curSetup().fly&&!G.fight){stripFly();return;}G.input.reel=true;$('#bReel').classList.add('down');audio();}
   if(e.code==='ArrowLeft'){keys.l=1;G.input.keyTilt=-1;}
   if(e.code==='ArrowRight'){keys.r=1;G.input.keyTilt=1;}
 });
@@ -2882,6 +2969,8 @@ $('#tutNext').onclick=()=>{SFX.ui();if(G.tut>=TUT.length-1)tutEnd();else{G.tut++
 $('#tutSkip').onclick=()=>{SFX.ui();tutEnd();};
 function startGame(){
   // Leaderboard: bests caught before it existed count too. (Old Nick saves came with a handed-out Fish Log: drop it.)
+  // The Moth Fly became fly-rod only. Anglers without a fly rod get their coins back for any they had.
+  if(!S.mothFix){S.mothFix=1;const n=S.lures.fly>0?S.lures.fly:0;if(n&&!setupOK('fly')){const amt=n*LURES.fly.price;delete S.lures.fly;S.coins+=amt;if(S.lure==='fly')S.lure=fallbackLure();setTimeout(()=>toast(`Moth Flies refunded: +${amt} coins`,'Flies now need the fly rod'),1500);}save();}
   if(S.nickLog){for(const k in S.log)if(S.log[k].n<=1&&!(S.landed&&S.landed[k]))delete S.log[k];delete S.nickLog;save();}
   if(!S.landed&&!S.nickLog){S.landed={};for(const k in S.log)if(S.log[k].best>0)S.landed[k]=S.log[k].best;}setTimeout(sbSync,3000);
   G.nickT=12;G.mode='play';G.paused=false;G.stack=[];S.started=true;show(null);inGameUI(true);
@@ -2909,7 +2998,7 @@ document.querySelectorAll('#restBtns button').forEach(b=>b.onclick=()=>{
 });
 
 // Lure picker
-$('#lureChip').onclick=()=>{if(G.mode!=='play')return;if(G.lure.state!=='ready'){toast('Reel in first','You can only swap lures on the dock');return;}G.paused=true;G.stack=[];open('lurePick');G.stack=[];};
+$('#lureChip').onclick=()=>{if(G.mode!=='play')return;if(G.lure.state!=='ready'||G.fc||G.charging){toast('Reel in first','You can only swap lures on the dock');return;}G.paused=true;G.stack=[];open('lurePick');G.stack=[];};
 $('#lurePick [data-close]').onclick=()=>{resume();};
 function lureIcon(id,size=40,col){const c=document.createElement('canvas');c.width=c.height=size*2;const x=c.getContext('2d');x.scale(size*2/16,size*2/16);drawLure(x,id,8,8,1,col);return c;}
 function renderLurePick(){
@@ -2919,12 +3008,13 @@ function renderLurePick(){
     box.append(l,row);}}
   // Bait and lures live on separate tabs so the box stays short; the tab follows what's on the line.
   if(!G.tbTab)G.tbTab=LURES[S.lure].bait?'bait':'lures';
-  const have=id=>{const ct=S.lures[id];return ct===-1||ct>0;},nB=ALL_ORDER.filter(id=>have(id)&&LURES[id].bait).length,nL=ALL_ORDER.filter(id=>have(id)&&!LURES[id].bait).length;
+  const have=id=>{const ct=S.lures[id];return ct===-1||ct>0;},nB=ALL_ORDER.filter(id=>have(id)&&LURES[id].bait&&lureOK(id)).length,nL=ALL_ORDER.filter(id=>have(id)&&!LURES[id].bait&&lureOK(id)).length;
   {const tabs=document.createElement('div');tabs.className='tabs tb-tabs';tabs.setAttribute('role','tablist');
-    for(const [k,n,c] of [['bait','Bait',nB],['rig','Rig',null],['lures','Lures',nL]]){const b=document.createElement('button');b.setAttribute('role','tab');b.setAttribute('aria-selected',G.tbTab===k);b.textContent=c==null?n:`${n} (${c})`;b.onclick=()=>{G.tbTab=k;SFX.ui();renderLurePick();};tabs.append(b);}
+    for(const [k,n,c] of (curSetup().fly?[['lures','Flies',ALL_ORDER.filter(id=>have(id)&&lureOK(id)).length]]:[['bait','Bait',nB],['rig','Rig',null],['lures','Lures',nL]])){const b=document.createElement('button');b.setAttribute('role','tab');b.setAttribute('aria-selected',G.tbTab===k);b.textContent=c==null?n:`${n} (${c})`;b.onclick=()=>{G.tbTab=k;SFX.ui();renderLurePick();};tabs.append(b);}
     box.append(tabs);}
   const grid=document.createElement('div');grid.className='tb-grid';
-  for(const id of ALL_ORDER){const ct=S.lures[id];if(!(ct===-1||ct>0))continue;const lu=LURES[id];if(!!lu.bait!==(G.tbTab==='bait'))continue;
+  const flyR=!!curSetup().fly;if(flyR)G.tbTab='lures';
+  for(const id of ALL_ORDER){const ct=S.lures[id];if(!(ct===-1||ct>0))continue;const lu=LURES[id];if(!lureOK(id))continue;if(!!lu.bait!==(G.tbTab==='bait'))continue;
     const b=document.createElement('button');b.className='tb-tile';b.setAttribute('aria-pressed',S.lure===id);b.setAttribute('aria-label',lu.name);
     const nm=document.createElement('span');nm.textContent=lu.short;const n=document.createElement('span');n.className='ct';n.textContent=ct===-1?'∞':'×'+ct;
     b.append(lureIcon(id,40,lureColor(id)),nm,n);b.onclick=()=>{S.lure=id;save();updateHUD(true);SFX.ui();renderLurePick();};grid.append(b);}
@@ -2933,7 +3023,7 @@ function renderLurePick(){
   if(G.tbTab==='rig'&&!lu.bait){const p0=document.createElement('p');p0.className='tb-cond';p0.textContent=`Rigs are for bait. Your ${lu.name} ties straight onto the line.`;opts.append(p0);box.append(opts);return;}
   if(G.tbTab!=='rig'&&!!lu.bait!==(G.tbTab==='bait')){const p0=document.createElement('p');p0.className='tb-cond';p0.textContent=`On your line now: ${lu.name}. Tap ${G.tbTab==='bait'?'a bait':'a lure'} above to switch.`;opts.append(p0);box.append(opts);return;}
   if(G.tbTab!=='rig'){const head=document.createElement('div');head.className='tb-head';head.innerHTML='<b></b><span></span>';head.querySelector('b').textContent=lu.name;head.querySelector('span').textContent=lu.desc;opts.append(head);
-  {const cf=castFit(),u=curSetup(),p2=document.createElement('p');p2.className='tb-cond';p2.innerHTML=cf.why?`Casting: <b>short</b>. This is ${cf.why==='light'?'too light':'too heavy'} for the ${u.short.toLowerCase()} rod (${Math.round(cf.m*100)}% distance).`:`Casting: <b>good fit</b> for the ${u.short.toLowerCase()} rod.`;opts.append(p2);}}
+  {const cf=castFit(),u=curSetup(),p2=document.createElement('p');p2.className='tb-cond';p2.innerHTML=cf.why?`Casting: <b>short</b>. This is ${cf.why==='light'?'too light':'too heavy'} for the ${u.short.toLowerCase().replace(/ rod$/,'')} rod (${Math.round(cf.m*100)}% distance).`:`Casting: <b>good fit</b> for the ${u.short.toLowerCase().replace(/ rod$/,'')} rod.`;opts.append(p2);}}
   const seg=(label,items)=>{const l=document.createElement('span');l.className='label';l.textContent=label;const row=document.createElement('div');row.className='seg';
     for(const it of items){const b=document.createElement('button');b.setAttribute('aria-pressed',!!it.on);b.innerHTML=it.html;if(it.dis)b.disabled=true;b.onclick=()=>{it.pick();save();updateHUD(true);SFX.ui();renderLurePick();};row.append(b);}
     opts.append(l,row);};
@@ -2980,11 +3070,11 @@ function renderShop(){
     for(const id of(shopTab==='bait'?BAIT_ORDER:LURE_ORDER)){const lu=LURES[id];const ct=S.lures[id]||0,pk=lu.pack||1;
       if(shopTab==='lures'&&LURE_GROUP[id]){const h=document.createElement('div');h.className='shop-sec';h.textContent=LURE_GROUP[id];box.append(h);}
       const targets=SPECIES.filter(s=>s.lures.includes(id)&&S.log[s.id]).map(s=>s.name);
-      const stat=lu.bait?(id==='worm'?'Use with your hook and weight rig':`Pack of ${pk} \u00b7 best for ${Object.keys(BAITPULL[id]||{}).slice(0,3).map(k=>SPMAP[k].name).join(', ')}`):lu.float?'Floats on the surface':lu.buzz?'Runs on top while you reel':lu.crank?(lu.sink>-3?'Hangs still at rest, dives when reeled':'Floats at rest, dives when reeled'):`Sink rate ${lu.sink}${lu.weedless?' \u00b7 Weedless':''}`;
+      const stat=(lu.flyOnly?'Fly rod only \u00b7 ':'')+(lu.bait?(id==='worm'?'Use with your hook and weight rig':`Pack of ${pk} \u00b7 best for ${Object.keys(BAITPULL[id]||{}).slice(0,3).map(k=>SPMAP[k].name).join(', ')}`):lu.float?'Floats on the surface':lu.buzz?'Runs on top while you reel':lu.crank?(lu.sink>-3?'Hangs still at rest, dives when reeled':'Floats at rest, dives when reeled'):`Sink rate ${lu.sink}${lu.weedless?' \u00b7 Weedless':''}`);
       const own=document.createElement('span');own.className='own';own.textContent=id==='worm'?'Unlimited':lu.bait?`${ct} left`:`Owned ×${ct}`;
       const acts=[own];const has=S.lures[id]===-1||S.lures[id]>0;
       if(has&&S.lure===id)acts.unshift(pill('on','In use',()=>{},true));
-      else if(has)acts.unshift(pill('equip','Use',()=>{if(G.lure.state!=='ready'){toast('Reel in first');return;}S.lure=id;save();SFX.ui();updateHUD(true);renderShop();}));
+      else if(has)acts.unshift(pill('equip','Use',()=>{if(G.lure.state!=='ready'){toast('Reel in first');return;}if(!lureOK(id)){toast(LURES[id].flyOnly?'Needs the fly rod':'Not on the fly rod',LURES[id].flyOnly?'Flies only cast on a fly rod':'The fly rod casts flies only');return;}S.lure=id;save();SFX.ui();updateHUD(true);renderShop();}));
       if(id!=='worm')acts.unshift(pill('buy',buyHtml(lu.price),()=>buy(()=>{S.lures[id]=(S.lures[id]||0)+pk;},lu.price),S.coins<lu.price));
       row(lureIcon(id),lu.name,lu.desc,stat+(targets.length?` · Caught: ${targets.length>3?targets.length+' species':targets.join(', ')}`:''),acts);
       {const ic=box.lastElementChild.querySelector('.ic');ic.classList.add('tap');ic.setAttribute('role','button');ic.setAttribute('aria-label',lu.name+' info');ic.onclick=()=>openLureInfo(id);}}
@@ -2993,7 +3083,7 @@ function renderShop(){
     for(const id of SETUP_ORDER){const u=SETUPS[id],st=(S.setups||{})[id],own=!!(st&&st.owned),lvl=own?st.lvl||0:0;
       const ic=document.createElement('canvas');ic.width=ic.height=80;const x=ic.getContext('2d');x.strokeStyle=u.rod;x.lineWidth=u.w*1.6;x.lineCap='round';x.beginPath();x.moveTo(8,72);x.lineTo(72,8);x.stroke();x.fillStyle='#9aa3a8';x.beginPath();x.arc(20,60,5,0,TAU);x.fill();
       const acts=[];
-      if(!own)acts.push(pill('buy',buyHtml(u.price),()=>buy(()=>{S.setups[id]={owned:true,lvl:0};switchSetup(id);},u.price),S.coins<u.price));
+      if(!own)acts.push(pill('buy',buyHtml(u.price),()=>buy(()=>{S.setups[id]={owned:true,lvl:0};if(u.fly)S.lures.dryfly=(S.lures.dryfly>0?S.lures.dryfly:0)+5;switchSetup(id);if(u.fly)toast('Fly rod','Comes with 5 dry flies');},u.price),S.coins<u.price));
       else{acts.push(S.setup===id?pill('on','In hand',()=>{},true):pill('equip','Use',()=>{if(G.lure.state!=='ready'){toast('Reel in first');return;}switchSetup(id);SFX.ui();renderShop();}));
         if(lvl<2){const c2=tierCost(id,lvl+1);acts.push(pill('buy',`Upgrade <span class="coin"></span>${c2}`,()=>buy(()=>{st.lvl=lvl+1;},c2),S.coins<c2));}
         const o=document.createElement('span');o.className='own';o.textContent=TIERS[lvl].name;acts.push(o);}
@@ -3027,7 +3117,7 @@ function renderLog(){
     <div class="ang-grid">${st('Cast reach',fDist(castReach()*curSetup().reach/10))}${st('Hook set (matched)',Math.round(Math.min(.97,.92*hookSkill())*100)+'%')}${st('Cast accuracy','\u00b1'+Math.round(lerp(18,3,skillT()))+'%')}${st('Species',n+' / '+SPECIES.length)}
     ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
     <div class="ang-gear">${curSetup().name} (${TIERS[curTier()].name}) \u00b7 ${curSetup().line}</div>
-    <div class="ang-kit"><span class="label">Gear</span>${['finder','shades','lantern','whistle'].map(id=>{const it=GEAR.gear[id];return`<div class="row"><div><b>${it.name}</b><p>${it.desc}</p></div>${S.owned[id]?`<button class="tog" role="switch" data-kit="${id}" aria-label="${it.name}" aria-checked="${gearOn(id)}"></button>`:`<span class="kit-shop"><span class="coin"></span>${it.price} in shop</span>`}</div>`;}).join('')}</div>`;
+    <div class="ang-kit"><span class="label">Gear</span>${['finder','shades','lantern','leader','whistle'].map(id=>{const it=GEAR.gear[id];return`<div class="row"><div><b>${it.name}</b><p>${it.desc}</p></div>${S.owned[id]?`<button class="tog" role="switch" data-kit="${id}" aria-label="${it.name}" aria-checked="${gearOn(id)}"></button>`:`<span class="kit-shop"><span class="coin"></span>${it.price} in shop</span>`}</div>`;}).join('')}</div>`;
   $('#renameBtn').onclick=()=>askName(null);
   $('#logSum').querySelectorAll('[data-kit]').forEach(b=>b.onclick=()=>{const id=b.dataset.kit;S.settings[id]=!gearOn(id);save();SFX.ui();renderLog();renderSettings();});
   const grid=$('#logGrid');grid.innerHTML='';
@@ -3083,7 +3173,11 @@ const LINFO={
   popper:{how:'Cast it out and let the rings fade. Twitch it to pop the surface, pause, then twitch again.',reg:['bass','smallmouth','arowana','peacock']},
   crank:{how:'Reel to make it dive and wobble; stop and it floats back up. Bump it off rocks and logs for strikes.',reg:['bass','smallmouth','walleye','pike','peacock']},
   jig:{how:'Let it sink to the bottom, then hop it with short twitches like a fleeing crawfish. Most bites come as it falls.',reg:['bass','smallmouth','rockbass','walleye','drum']},
-  fly:{how:'Barely weighs a thing. Let it drift down slowly near the surface with tiny twitches. Wary fish trust it.',reg:['trout','brook','bluegill','pumpkinseed','fallfish']},
+  dryfly:{how:'Cast it out and leave it. It sits on the film like a bug, and fish come up to sip it. A tiny twitch now and then, no more.',reg:['trout','brook','brown','bluegill','pumpkinseed','fallfish'],rod:'Fly Rod only. Flies are too light to cast on spinning gear.'},
+  popbug:{how:'Pop it once, then let it sit until the rings fade. Pop, wait, pop. Most hits come while it sits still.',reg:['bluegill','pumpkinseed','bass','smallmouth','rockbass'],rod:'Fly Rod only. Flies are too light to cast on spinning gear.'},
+  nymph:{how:'Let it sink and drift down slowly. Strip it in short, slow pulls. Watch your line for the take; it\u2019s often just a little tick.',reg:['trout','brook','brown','bluegill','fallfish','perch'],rod:'Fly Rod only. Flies are too light to cast on spinning gear.'},
+  bugger:{how:'Let it sink a few feet, then strip it back in short, quick pulls with pauses. The tail pulses like a leech or a fleeing minnow.',reg:['bass','smallmouth','trout','brown','pike','crappie'],rod:'Fly Rod only. Flies are too light to cast on spinning gear.'},
+  fly:{how:'Barely weighs a thing. Let it drift down slowly near the surface with tiny twitches. Wary fish trust it.',reg:['trout','brook','bluegill','pumpkinseed','fallfish'],rod:'Fly Rod only. Flies are too light to cast on spinning gear.'},
   frog:{how:'Cast over weeds and pads and walk it back with twitches. When a fish blows up on it, wait a beat before setting the hook.',reg:['bass','pike','pickerel','bowfin']},
   mouse:{how:'Skitter it slowly across the top, mostly after dark. Big fish eat real mice that fall in.',reg:['bass','brown']},
   plastic:{how:'Let it sink to the bottom on a slack line, then crawl it slowly with small lifts. It slips through rocks and weeds.',reg:['bass','smallmouth','peacock']},
@@ -3102,7 +3196,7 @@ function renderLureInfo(){if(G.riId){renderRodInfo();return;}const id=G.liId,lu=
   const occ=takers.filter(sp=>!reg.includes(sp.id)),legend=SPECIES.some(sp=>sp.lures.includes(id)&&sp.legend);
   const chip=sp=>`<span class="${S.log[sp.id]?'':'new'}">${esc(sp.name)}</span>`;
   // Rods that cast it well, from its weight against each rod's range
-  const w=tackleWeight(id),fits=SETUP_ORDER.filter(k=>w>=SETUPS[k].cast[0]&&w<=SETUPS[k].cast[1]);
+  const w=tackleWeight(id),fits=SETUP_ORDER.filter(k=>lureOK(id,k)&&w>=SETUPS[k].cast[0]&&w<=SETUPS[k].cast[1]);
   const heavyFish=reg.some(k=>{const sp=SPMAP[k];return sp&&SHAPES[sp.shape].k*Math.pow(sp.len[1],3)*2.2046>15;});
   const pick=fits.length?(heavyFish&&fits.find(k=>SETUPS[k].power>=3))||fits.find(k=>k==='medium')||fits[0]:(w<SETUPS.medium.cast[0]?'ultra':'heavy');
   const rodTxt=inf.rod?esc(inf.rod):`<b>${SETUPS[pick].name}</b>`+(fits.length>1?`. Also casts well on ${fits.filter(k=>k!==pick).map(k=>SETUPS[k].name).join(' and ')}.`:fits.length?'.':'.')
@@ -3120,6 +3214,7 @@ const RINFO={
   medium:{good:'Bass, carp, catfish on worms, panfish. Throws most medium lures and baits well enough.',weak:'Light line for pike, muskie and big catfish. A long run from a big fish can reach the end of the reel.'},
   ultra:{good:'Crappie, perch, bluegill and trout on tiny lures and baits. Feels the lightest nibble and keeps paper-mouthed crappie hooked.',weak:'Small reel and thin line. A big fish can break it or run it to the end of the spool.'},
   heavy:{good:'Pike, muskie and big bass around weeds and wood. Strong braid turns big fish before they get going.',weak:'Rips the hook out of small mouths, and wary fish can see the braid.'},
+  fly:{good:'Trout, sunfish and bass on flies. Small flies sit on the water or sink slowly the way real bugs do, and even small fish pull hard on the soft rod.',weak:'Flies only, and light tippet. A big pike or catfish can break it, and it doesn\u2019t cast as far as spinning gear.'},
   cat:{good:'Catfish, carp and drum on heavy bottom rigs. Casts farther than anything, and the tip shows bites on the bottom.',weak:'Light lures barely cast.'}};
 function openRodInfo(id){G.riId=id;SFX.ui();open('lureInfo');}
 function renderRodInfo(){const id=G.riId,u=SETUPS[id],inf=RINFO[id]||{},st=(S.setups||{})[id],own=!!(st&&st.owned),lvl=own?st.lvl||0:-1;
@@ -3159,6 +3254,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
   ['v0.92','Fight rework',['Fish can only take line when they pull past your drag; below it, cranking always gains line','Big fish run harder the more they outweigh your line','Runs are shorter and stay on screen more often','Some runs come straight at you, so reel fast to keep the line tight','Each rod\u2019s reel holds its own amount of line','In Willow Creek a fish that reaches the far bank can wrap you in the roots','Tap a rod in the shop to see what it\u2019s good for and what each upgrade does','A real night sky: constellations turn slowly overhead and change with the seasons','Satellites now and then drift across clear nights']],
   ['v0.91','Spooky fish',['Casting scares fish near the boat; wary fish rarely hang right under you','Hooked fish often make one more run when they see you near the boat','Fish can swim behind weeds and the flooded trunks in the Amazon']],
   ['v0.90','Sky',['Geese fly north over the water in spring and south in fall','Pairs of macaws cross the sky in the Amazon']],
@@ -3278,7 +3374,7 @@ function makeQuest(type){
   else if(type==='size'){const sp=qPick(easy.filter(x=>TROPHY[x.id]));q.sp=sp.id;q.len=TROPHY[sp.id][0];r=sp.price*2.5+50;}
   else if(type==='when'){const c=[];for(const sp of easy)for(const pd of sp.times)c.push([sp,pd]);const [sp,pd]=qPick(c);q.sp=sp.id;q.per=pd;q.n=sp.school&&Math.random()<.5?2:1;r=sp.price*1.4*q.n+35;}
   else if(type==='spot'){q.loc=qPick(qLocs());q.n=5+Math.floor(Math.random()*4);r=12*q.n+(LOCS[q.loc].lv||1)*4+20;}
-  else if(type==='lure'){const own=Object.keys(S.lures).filter(k=>LURES[k]&&(k==='worm'||!LURES[k].bait)&&(S.lures[k]===-1||S.lures[k]>0)&&sps.some(sp=>sp.lures.includes(k)));q.lure=qPick(own.length?own:['worm']);q.n=2+Math.floor(Math.random()*3);r=18*q.n+25;}
+  else if(type==='lure'){const own=Object.keys(S.lures).filter(k=>LURES[k]&&(k==='worm'||!LURES[k].bait)&&(S.lures[k]===-1||S.lures[k]>0)&&SETUP_ORDER.some(st=>setupOK(st)&&lureOK(k,st))&&sps.some(sp=>sp.lures.includes(k)));q.lure=qPick(own.length?own:['worm']);q.n=2+Math.floor(Math.random()*3);r=18*q.n+25;}
   else if(type==='variety'){q.n=3+Math.floor(Math.random()*2);q.kinds=[];r=30*q.n+20;}
   q.reward=Math.max(5,Math.round(r*(1+.05*(lvlInfo().l-1))/5)*5);q.xp=Math.round(q.reward*.6);return q;}
 function newQuest(list){
