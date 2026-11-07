@@ -229,6 +229,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .li-top canvas{width:96px;height:96px;flex:none;background:rgba(0,0,0,.25);border-radius:14px}.li-top p{margin:4px 0 0;opacity:.8;font-size:14px;line-height:1.4}
 .li-sec{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:12px 14px}.li-sec h3{margin:0 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--amber)}
 .li-sec p{margin:0;line-height:1.45}.li-chips{display:flex;flex-wrap:wrap;gap:6px}.li-chips span{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.07);font-size:13px;font-weight:700}
+.ri-tab{width:100%;border-collapse:collapse;font-size:13px}.ri-tab th,.ri-tab td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--line)}.ri-tab th{font-size:12px;opacity:.8}.ri-tab th small{display:block;font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.05em}.ri-tab .rl{text-align:left;opacity:.75;font-weight:700}.ri-tab .cur{background:rgba(255,190,80,.12);font-weight:800}.ri-note{margin-top:8px!important;font-size:13px;opacity:.75}
 .li-leg{margin:8px 4px 0;font-size:13px;font-style:italic;opacity:.75}
 .li-chips span.new{opacity:.55;font-weight:600}.item .ic.tap{cursor:pointer;position:relative}.item .ic.tap::after{content:'i';position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:var(--amber);color:#1b1406;font:900 11px/16px sans-serif;text-align:center}
 .tu-card{text-align:center}.tu-card .eyebrow{color:var(--amber);letter-spacing:.2em;text-transform:uppercase;font-size:12px;font-weight:800;margin-top:6px}
@@ -717,7 +718,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.90a';
+const VERSION='v0.92a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -813,13 +814,13 @@ GEAR.sinkers={
   teardrop:{name:'Teardrop Sinker',short:'drop',add:65,rise:.3,price:8,desc:'Tied at the very end of the line for drop-shotting.'},
   bank:{name:'Bank Sinker',short:'bank',add:90,rise:.2,price:8,desc:'Heavy and grippy. Pins a three-way rig to the bottom.'}};
 const SETUPS={
-  medium:{name:'All-Round Spinning',short:'All-round',line:'8 lb mono',price:0,power:2,f:.8,grace:.45,speed:50,vis:.2,cast:[1.2,4.5],reach:1,sens:1,tear:1,tire:1,pull:1,rod:'#5a3a1e',w:2.4,len:64,
+  medium:{name:'All-Round Spinning',short:'All-round',line:'8 lb mono',price:0,power:2,f:.8,grace:.45,speed:50,vis:.2,cast:[1.2,4.5],reach:1,sens:1,tear:1,tire:1,pull:1,spool:900,rod:'#5a3a1e',w:2.4,len:64,
     desc:'The rod you started with. Handles a bit of everything and excels at nothing.'},
-  ultra:{name:'Ultralight Spinning',short:'Ultralight',line:'4 lb fluoro',price:140,power:1,f:1,grace:.55,speed:44,vis:.02,cast:[.4,2.4],reach:1,sens:1.35,tear:.4,tire:.75,pull:.85,rod:'#a8a39a',w:1.6,len:60,
+  ultra:{name:'Ultralight Spinning',short:'Ultralight',line:'4 lb fluoro',price:140,power:1,f:1,grace:.55,speed:44,vis:.02,cast:[.4,2.4],reach:1,sens:1.35,tear:.4,tire:.75,pull:.85,spool:700,rod:'#a8a39a',w:1.6,len:60,
     desc:'Whippy rod and near-invisible line. Casts tiny baits a mile, feels every nibble and keeps crappie hooked. Big fish will break it off.'},
-  heavy:{name:'Heavy Baitcaster',short:'Baitcaster',line:'20 lb braid',price:320,power:3,f:.45,grace:.35,speed:68,vis:.65,cast:[3,8],reach:1.06,sens:.85,tear:1.9,tire:1.25,pull:1.3,rod:'#1f2a24',w:3,len:62,
+  heavy:{name:'Heavy Baitcaster',short:'Baitcaster',line:'20 lb braid',price:320,power:3,f:.45,grace:.35,speed:68,vis:.65,cast:[3,8],reach:1.06,sens:.85,tear:1.9,tire:1.25,pull:1.3,spool:850,rod:'#1f2a24',w:3,len:62,
     desc:'Stiff rod with braided line. Throws frogs and jigs far and drags big fish out of the weeds, but rips panfish mouths and wary fish spot the braid.'},
-  cat:{name:'Catfish Rod',short:'Catfish',line:'20 lb mono',price:260,power:3,f:.5,grace:.7,speed:54,vis:.45,cast:[3,9],reach:1.15,sens:1,botSens:1.35,tear:1.5,tire:1.2,pull:1.1,rod:'#3c4a6a',w:2.8,len:74,
+  cat:{name:'Catfish Rod',short:'Catfish',line:'20 lb mono',price:260,power:3,f:.5,grace:.7,speed:54,vis:.45,cast:[3,9],reach:1.15,sens:1,botSens:1.35,tear:1.5,tire:1.2,pull:1.1,spool:1100,rod:'#3c4a6a',w:2.8,len:74,
     desc:'Long and forgiving. Launches heavy bottom rigs farther than anything, and its tip shows bites on the bottom. Poor with light lures.'}};
 const SETUP_ORDER=['medium','ultra','heavy','cat'];
 const LINE_TEST={medium:[8,10,12],ultra:[4,5,6],heavy:[20,30,50],cat:[20,30,40]};
@@ -1056,7 +1057,7 @@ function nestZoneW(u){let w=0;for(const z of LOC().nests||[])w=Math.max(w,smooth
 function ftToY(ft){return SURF+ft*pxPerFt();}
 function dockY(){return SURF-14;}
 const LOCS={pond:{north:-1,name:'Mossback Pond',tag:'Dockside fishing',desc:'A quiet pond with an old dock, lily pads and a weedy bottom.',seed:7,nests:[{a:.24,b:.6,d:5,ids:['pumpkinseed','bluegill']},{a:.74,b:1.06,d:9,ids:['crappie','bass']}],maxDepth:6,lv:1,shore:'dock',water:['#2f8086','#3f6f72','#0f3a40'],preview:18.3},
-  creek:{north:1,name:'Willow Creek',tag:'A rocky trout stream',desc:'A shallow stream of riffles, boulders and deep pools under a hardwood forest. The current carries your bait downstream.',seed:23,nests:[{a:.98,b:1.28,d:4,ids:['smallmouth'],rocks:true},{a:1.4,b:1.74,d:3.5,ids:['rockbass'],rocks:true}],maxDepth:2.6,lv:5,fee:250,feeName:'Trout Stamp',feeWhy:'Willow Creek is a designated trout stream, so you need a trout stamp to fish it.',current:16,shore:'boulder',rocky:true,snags:1,riffles:true,undercut:true,noPads:true,deciduous:true,water:['#4d8a7a','#5c7a6a','#2a4436'],preview:9,boulders:[.57,.75,.92,1.33,1.37,1.69,1.79],holds:[.84,1.8]},
+  creek:{north:1,tight:true,name:'Willow Creek',tag:'A rocky trout stream',desc:'A shallow stream of riffles, boulders and deep pools under a hardwood forest. The current carries your bait downstream.',seed:23,nests:[{a:.98,b:1.28,d:4,ids:['smallmouth'],rocks:true},{a:1.4,b:1.74,d:3.5,ids:['rockbass'],rocks:true}],maxDepth:2.6,lv:5,fee:250,feeName:'Trout Stamp',feeWhy:'Willow Creek is a designated trout stream, so you need a trout stamp to fish it.',current:16,shore:'boulder',rocky:true,snags:1,riffles:true,undercut:true,noPads:true,deciduous:true,water:['#4d8a7a','#5c7a6a','#2a4436'],preview:9,boulders:[.57,.75,.92,1.33,1.37,1.69,1.79],holds:[.84,1.8]},
   lake:{north:1,name:'Big Rock Lake',tag:'Open water from a rented boat',desc:'A deep, clear lake with a weedy shelf, a rocky point and a cold basin far out. Walleye, pike and the odd tiger muskie roam it.',seed:41,nests:[{a:.24,b:.6,d:6,ids:['crappie','bluegill']},{a:.76,b:1.08,d:11,ids:['smallmouth'],rocks:true}],maxDepth:9,lv:10,fee:40,feeName:'Boat Rental',perTrip:true,feeWhy:'You rent a boat at the marina each trip.',shore:'boat',noPads:true,snags:.3,water:['#2c6f8f','#4a7486','#0a2a40'],preview:7.4,boulders:[.93],holds:[.82,1.2,1.6],sunken:[1.36],deepWeeds:[[1.1,1.28],[1.6,1.84]]},
   river:{north:-1,name:'Iron Ferry River',tag:'A big, muddy working river',desc:'A wide river with a gravel bar, a strong current and a deep channel. Catfish, walleye and drum hold in the seams and holes.',seed:57,maxDepth:5,nests:[{a:.28,b:.6,d:8,ids:['smallmouth'],rocks:true}],lv:15,fee:400,feeName:'Chest Waders',feeWhy:'You need chest waders to wade out on the gravel bar.',current:24,shore:'gravel',rocky:true,snags:1.2,flow:true,noPads:true,deciduous:true,riverbank:true,water:['#6b7c55','#77826a','#2e3524'],preview:18.6,boulders:[.62,.7,1.32,1.4,1.72],holds:[1.05,1.25,1.85]},
   amazon:{north:0,name:'Carter\u2019s Adventure',tag:'Deep in the Amazon rainforest',desc:'Carter found it first. A tea-colored backwater deep in the Amazon rainforest, full of flooded trees, piranhas and peacock bass. Fish bite eagerly here.',seed:77,maxDepth:4,nests:[{a:.98,b:1.28,d:9,ids:['peacock'],rocks:true}],lv:20,fee:1500,feeName:'Bush Plane Charter',feeWhy:'It\u2019s a long way to the Amazon. A bush pilot flies you in and leaves you a dugout canoe.',freeFor:'carter',easy:true,shore:'canoe',noPads:false,deciduous:true,jungle:true,stumps:true,water:['#7a6230','#7d6a40','#2c200c'],preview:16.5,boulders:[.55,.72,.92,1.32,1.55],holds:[.85,1.2,1.7]}};
@@ -1235,7 +1236,7 @@ function makeFish(sp,x){
 }
 function fishFloor(f,hk){const L=f.L,hh=L*(SHAPES[f.sp.shape]||{h:.2}).h*hk;let m=Infinity;for(const k of[-.5,-.25,0,.25,.5])m=Math.min(m,bottomAt(f.x+k*L));return m-hh;}
 function pushFromBank(f){for(let i=0;i<6;i++){if(fishFloor(f,.2)>SURF+6)break;f.x+=i<2?2:4;}if(f.tx!=null&&bottomAt(f.tx)-SURF<f.L*.5)f.tx=f.x+30;}
-function newWanderTarget(f){_nwt(f);if(G.beds&&!f.bed)for(const b of G.beds)if(b.guard&&Math.abs(f.tx-b.x)<b.r+40&&f.ty>b.y-60){f.tx=clamp(b.x+(f.x<b.x?-1:1)*(b.r+50+rand(0,30)),DOCKX+30,WX-15);}}
+function newWanderTarget(f){_nwt(f);if((f.sp.wary||f.sp.spooky||f.L>60)&&!f.bed&&f.tx<DOCKX+80&&Math.random()<.75)f.tx=DOCKX+80+rand(0,80);if(G.beds&&!f.bed)for(const b of G.beds)if(b.guard&&Math.abs(f.tx-b.x)<b.r+40&&f.ty>b.y-60){f.tx=clamp(b.x+(f.x<b.x?-1:1)*(b.r+50+rand(0,30)),DOCKX+30,WX-15);}}
 function _nwt(f){const L=G.lure;if(holds.length&&isActive(f.sp)&&!f.sp.legend&&Math.random()<.65){const cand=holds.filter(h=>Math.abs(h.x-f.x)<280);if(cand.length){const h=cand[Math.floor(Math.random()*cand.length)];f.tx=clamp(h.x+rand(-10,10),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=clamp(h.y+rand(-8,8),a,b);f.timer=rand(5,10);return;}}if(!isActive(f.sp)){f.tx=clamp(f.x+rand(-25,25),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx,true);f.ty=rand(a,b);f.timer=rand(6,14);return;}if(G.mode==='play'&&L.state==='water'&&!L.bare&&!f.wise&&f.sp.lures.includes(S.lure)&&Math.random()<.45){f.tx=clamp(L.x+rand(-50,50),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=clamp(L.y+rand(-30,30),a,b);f.timer=rand(2,5);return;}f.tx=clamp(f.x+rand(-130,130),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=rand(a,b);f.timer=rand(3,8);}
 function pickSpecies(x){const z=farZ(x);
   const pool=SPECIES.filter(sp=>(sp.locs||['pond']).includes(S.loc||'pond')).filter(sp=>!(sp.legend&&G.fish.some(f=>f.sp===sp)));
@@ -1365,7 +1366,11 @@ function stealCheck(f){
   if(Math.random()<p){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10);f.wise=true;SFX.lose();toast(`It stole your ${bn}`,d>0?'That hook is too big for its mouth':'A quick nibbler');refreshControls();return true;}
   return false;
 }
-function cast(){
+// The swing of a cast scares fish close to the angler: skittish and wary fish almost always bolt, big fish usually do.
+function spookAtBoat(){for(const f of G.fish){if(f.state==='fight'||f.bed||f.dead||G.lure.fish===f||f.sp.turtle)continue;const d=f.x-DOCKX;if(d>140)continue;
+  const sp=f.sp,ch=(sp.spooky?.95:sp.wary?.85:sp.power>=.6||f.L>60?.6:.25)*(d<70?1:.6);
+  if(Math.random()<ch){f.state='flee';f.timer=2.4;f.cool=rand(10,18);f.tx=clamp(DOCKX+160+rand(0,140),DOCKX+30,WX-10);const [a,b]=bandRange(sp,f.tx);f.ty=rand(a,b);if(f.school)for(const m of f.school.m)if(m!==f&&m.state!=='fight'){m.state='flee';m.timer=2.4;m.cool=f.cool;m.tx=f.tx+rand(-20,20);m.ty=f.ty+rand(-10,10);}}}}
+function cast(){spookAtBoat();
   G.schoolHint=null;G.dry=(G.dry||0)+1;if(G.dry>=5&&G.dry%3===2)chatter('drought',.7);
   if(nickHot())G.nickCasts--;
   const L=G.lure,t=tip(),p=G.power;
@@ -1616,7 +1621,7 @@ function nextPhase(F){
   else if(F.phase==='surge'){F.phase='air';F.phaseT=rand(.75,.95);F.airDur=F.phaseT;F.airT=0;F.airSlack=0;F.airX0=F.f.x;F.airDx=rand(-30,30);splash(F.f.x,1.1);vib(40);}
   else if(F.phase==='air'){splash(F.f.x,1.4);vib(60);if(F.airSlack>.3&&!F.gut&&Math.random()<.55)F.thrown=true;F.phase='rest';F.phaseT=rand(1,1.8);}
   else if(F.phase==='tell'){F.phase='run';F.phaseT=rand(.9,2)*(.5+.6*tired)*(sp.erratic?.7:1)*(sp.runs||1);F.thrashT=rand(.3,.8);
-    F.dir=F.f.x>WX-60?-1:1;F.ty=fightTy(sp,F.f.x);if(F.f.y<SURF+30)splash(F.f.x,.5);}
+    const out=F.f.x-DOCKX,tc=out<110?0:out>400?.42:.3;F.dir=F.f.x>WX-60||Math.random()<tc?-1:1;F.ty=fightTy(sp,F.f.x);if(F.f.y<SURF+30)splash(F.f.x,.5);}
   else{F.phase='rest';F.phaseT=rand(1.3,2.5)*(1.4-.5*tired);F.dir=Math.random()<.5?-1:1;}
 }
 function updateFight(dt){
@@ -1635,7 +1640,12 @@ function updateFight(dt){
   const reeling=G.input.reel;
   // Cranking against a running fish loads the line, more so the closer the fish is to the line's rating.
   const wk=Math.min(1.2,fishLb(f)/lineTest());
-  const target=reeling?(.14+p*1.5+(running?.5*wk:0)):(p*(running?.8:.6)),DL=dragLimit();F.slip=target>DL&&DL<1;F.excess=F.slip?target-DL:0;
+  const charge=running&&F.dir<0;
+  const swim=sp.speed*.4*tired*(running?1.3*Math.min(1.8,Math.sqrt(F.lbDrag||1)):.35);
+  const crank=reeling?reel.speed*(sp.power>=.5?U.pull:1):0;
+  // A fish swimming at you puts no load on the drag. Crank faster than it swims to stay tight; otherwise the line goes slack.
+  const runF=running&&!charge?wk*(.45+.75*F.stamina):0;
+  const target=charge?(crank>swim*.9?.18+.1*F.stamina:.02):(reeling?(.14+p*1.5+.2*F.stamina*Math.min(1,wk)):p*.6)+runF,DL=dragLimit();F.slip=target>DL&&DL<1;F.excess=F.slip?target-DL:0;
   const tg=F.slip?DL+dragRough()*(Math.random()*1.6-.5):target;
   F.tension+=(tg-F.tension)*Math.min(1,dt*2.6);
   if(F.slip){G.dragT=(G.dragT||0)-dt;if(G.dragT<=0){SFX.click();G.dragT=.035;}
@@ -1646,20 +1656,22 @@ function updateFight(dt){
   if(F.tension>=1){F.over+=dt;if(F.over>rod.grace+mods().snapGrace){snap();return;}}else F.over=Math.max(0,F.over-dt*2);
   if(U.power>=3&&sp.mouth===0&&!sp.paper&&!F.gut&&reeling&&Math.random()<dt*.35){lostFish('The hook tore out','That heavy rod is too stiff for a small mouth');return;}
   const soft=sp.paper;if(soft&&!F.gut){F.tear=F.tension>(sp.paper?.7:.8)/Math.sqrt(U.tear)?(F.tear||0)+dt:Math.max(0,(F.tear||0)-dt*.7);if(F.tear>.35/U.tear&&Math.random()<dt*3*U.tear){lostFish('The hook tore out',sp.paper?'Crappie have paper-thin mouths. Keep the tension light':'That heavy rod is too stiff for a small mouth');return;}}
-  if(F.tension<.05&&!reeling){F.slack+=dt;if(F.slack>3.2&&!F.gut){lostFish('It threw the hook','Keep a little tension on the line');return;}}else F.slack=Math.max(0,F.slack-dt*2);
+  if(F.tension<.05&&(!reeling||charge)){F.slack+=dt*(charge?1.2:1);if(F.slack>3.2&&!F.gut){lostFish('It threw the hook','Keep a little tension on the line');return;}}else F.slack=Math.max(0,F.slack-dt*2);
   F.stamina=Math.max(0,F.stamina-dt*.085*(.3+F.tension)*(running?1.7:1)*U.tire/sp.end/(F.lbTire||1)/(1+Math.min(2,fishLb(f)/12)));
   if(F.phase==='air'){
     F.airT+=dt;F.lx=null;const u=clamp(F.airT/F.airDur,0,1);f.y=SURF+3-Math.sin(u*Math.PI)*(38+30*size+f.L*.3);f.x=clamp(F.airX0+F.airDx*u,DOCKX+30,WX-12);
     f.face=F.airDx>=0?1:-1;F.airAng=-.9*Math.cos(u*Math.PI);if(!reeling)F.airSlack+=dt;
     if(Math.random()<dt*20)G.parts.push({k:'drop',x:f.x+rand(-6,6),y:f.y+rand(-3,3),vx:rand(-20,20),vy:rand(-30,10),life:rand(.4,.7),r:rand(1,2)});
   }else{
-    const swim=sp.speed*.4*tired*(running?1.3*Math.min(1.8,Math.sqrt(F.lbDrag||1)):.35);
-    // A fresh fish near the line's rating can't just be winched in: it gives ground slowly until it tires.
-    const green=1-.6*F.stamina*Math.min(1,fishLb(f)/lineTest());
-    const reelPull=reeling&&F.tension<.99&&!F.slip?reel.speed*(running?.3:1)*(sp.power>=.5?U.pull:1)/(F.lbDrag||1)*green:0;
-    const vx=F.dir*swim*(reeling&&running&&!F.slip?.6:1)-reelPull+(F.slip?slipSpeed(F):0);
+    // Below the drag setting the fish can't take line: cranking brings it in at reel speed, and a stopped reel holds it. Only a slipping drag gives line.
+    const reelPull=F.slip?0:crank;
+    const toward=F.dir<0?swim:0;
+    const vx=F.slip?slipSpeed(F):-Math.max(reelPull,toward);
     // F.lx is where the fish really is along the line; past the edge of the water it keeps taking line out of view.
-    F.lx=Math.max(DOCKX+10,(F.lx??f.x)+vx*dt);f.x=clamp(F.lx,DOCKX+10,WX-12);
+    F.lx=Math.max(DOCKX+10,(F.lx??f.x)+vx*dt);
+    if(charge&&F.lx<DOCKX+95&&!reeling){F.phase='rest';F.phaseT=rand(.6,1.2);F.dir=1;}
+    // In tight water the far bank stops a run. Pulling into the roots and rocks there can wrap the line.
+    if(LOC().tight&&F.lx>WX-24){F.lx=WX-24;if(F.slip||running&&F.dir>0){F.wrap=(F.wrap||0)+dt;if(F.wrap>1.2&&Math.random()<dt*2){F.wrap=0;snap('Turn it before it reaches the bank','Wrapped in the roots! It snapped');return;}}}else F.wrap=Math.max(0,(F.wrap||0)-dt);f.x=clamp(F.lx,DOCKX+10,WX-12);
     if(F.phase==='surge')f.y+=(SURF+4-f.y)*Math.min(1,dt*5);
     else{const k=clamp((f.x-DOCKX)/180,0,1);const want=lerp(SURF+10,F.ty,k);f.y+=(want-f.y)*dt*1.4;}
     // Near the shore a hooked fish is being dragged up at the surface, so don't push it back out over shallow banks.
@@ -1671,9 +1683,11 @@ function updateFight(dt){
   if(reeling)reelClick(dt);
   if(Math.random()<dt*(running?5:1.5))G.parts.push({k:'bub',x:f.x,y:f.y,vy:-25,life:1.4,r:1.5});
   F.sayK=F.tension>.9?'hot':F.phase==='surge'||F.phase==='air'?'jump':running?'run':F.phase==='tell'?'tell':'rest';
-  F.say=F.tension>.9?'Ease off!':F.phase==='surge'?'It\u2019s heading for the surface!':F.phase==='air'?'It\u2019s jumping! Keep reeling!':running?'It’s running! Let it go':F.phase==='tell'?'It’s about to run…':F.slack>1?'Reel! The line’s slack':F.stamina<.25?'It’s worn out. Reel!':'It’s resting. Reel!';
+  F.say=F.wrap>.5?'It’s in the roots! Turn it!':F.tension>.9?'Ease off!':F.phase==='surge'?'It\u2019s heading for the surface!':F.phase==='air'?'It\u2019s jumping! Keep reeling!':charge?'It’s coming at you! Reel fast!':running?'It’s running! Let it go':F.phase==='tell'?'It’s about to run…':F.slack>1?'Reel! The line’s slack':F.stamina<.25?'It’s worn out. Reel!':'It’s resting. Reel!';
   if(sp.spin&&running)F.say='It\u2019s spinning on the line!';
   if(sp.paper&&F.tension>.62&&F.phase!=='air'){F.say='Easy! Its mouth is paper-thin';F.sayK='hot';}
+  if(f.x<DOCKX+75&&!F.sawYou&&F.phase!=='air'){F.sawYou=true;const ch=(sp.spooky?.9:sp.wary?.8:sp.power>=.5||f.L>55?.55:.15)*(F.stamina>.08?1:.5);
+    if(Math.random()<ch){F.dir=1;F.phase='run';F.phaseT=rand(1.4,2.6);F.stamina=Math.min(1,F.stamina+.12);}}
   if(f.x<DOCKX+28){const big=sp.power>=.5||f.len>mods().dockBigLen;if(big&&!F.dockTry&&!F.gut){F.dockTry=true;const sz=clamp((f.len-sp.len[0])/Math.max(1,sp.len[1]-sp.len[0]),0,1);if(!gearOn('net')&&Math.random()<(.18+.25*sz*(.4+.6*F.stamina))*mods().dockEscape){F.dir=1;F.phase='run';F.phaseT=.4;f.x=DOCKX+34;if(Math.random()<(mods().dockEscape>1?.8:.55)){chatter('net',1);lostFish('It thrashed free at the dock','A landing net stops that');return;}toast('It thrashes at the dock!');}}
     if(f.x<DOCKX+28){if(gearOn('net')&&big)toast('Netted!');landFish();}}
 }
@@ -1694,9 +1708,10 @@ function endFight(){G.input.reel=false;G.padEnd&&G.padEnd();$('#bReel').classLis
 function dragSet(){return clamp(S.drag??.55,0,1);}
 function dragLimit(){return .42+.62*dragSet();}
 // How fast a slipping drag gives line: the harder the fish pulls past the drag, the faster it peels off.
-function slipSpeed(F){return Math.min(160,20+F.excess*120*Math.sqrt(F.lbDrag||1));}
+function slipSpeed(F){return Math.min(105,13+F.excess*78*Math.sqrt(F.lbDrag||1));}
 // Line on the spool (metres x10, the same units as the water): better reels hold more.
-function spoolCap(){return[1300,1600,2000][curTier()]||1300;}
+// Each rod's reel holds its own amount. Upgrades put on stronger line and a better reel, which roughly evens out, so capacity stays the same.
+function spoolCap(){return curSetup().spool||900;}
 function lineOut(F){return Math.max(0,(F.lx??F.f.x)-DOCKX);}
 function dragRough(){return[.14,.08,.03][curTier()]||.08;}
 function dragName(d=dragSet()){return d<.25?'Loose':d<.5?'Light':d<.7?'Medium':d<.9?'Firm':'Locked';}
@@ -1704,10 +1719,10 @@ function setDrag(v){S.drag=Math.round(clamp(v,0,1)*10)/10;updateDragUI();save();
 function updateDragUI(){const d=dragSet();const f=$('#dragFill');if(f)f.style.width=(d*100)+'%';const l=$('#dragLbl');if(l)l.textContent='Drag \u00b7 '+dragName(d);const m=$('#dragMark');if(m)m.style.left=Math.min(99,dragLimit()*100)+'%';}
 function fishLb(f){return SHAPES[f.sp.shape].k*Math.pow(f.len,3)*2.2046;}
 function heftOf(f){const R=fishLb(f)/(lineTest()*2.5)*(mods().fightPull<1?.75:1);return{R,m:1+.36*Math.max(0,R-.7)+.3*Math.pow(Math.max(0,R-3.2),1.5)};}
-function snap(why){chatter('snap',.7);
+function snap(why,title){chatter('snap',.7);
   const F=G.fight,f=F.f;SFX.snap();vib(120);S.stats.snapped++;
   const adv=why||((F.heftR||0)>2.5?`Way too much fish for ${lineTest()} lb line`:(F.heftR||0)>1.2?`Heavy fish for ${lineTest()} lb line, let it run`:'');
-  const sub=breakOff('snap');f.state='wander';flee(f,12);endFight();toast(why?'Line twist! It snapped':'Line snapped!',adv?adv+'. '+sub:sub);save();updateHUD(true);
+  const sub=breakOff('snap');f.state='wander';flee(f,12);endFight();toast(title||(why?'Line twist! It snapped':'Line snapped!'),adv?adv+'. '+sub:sub);save();updateHUD(true);
 }
 function lostFish(msg,sub){chatter('lost',.55);if(S.lure!=='worm'&&isBait())useBait();const f=G.fight.f;f.state='wander';flee(f,10);SFX.lose();endFight();toast(msg,sub);}
 function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const qHits=questCatch(G.fight.f.sp,G.fight.f.len);{const F0=G.fight,f0=F0.f,big0=medalFor(f0.sp.id,f0.len)>=1||f0.sp.legend;chatter(big0?'big':'catch',big0?.85:.3);}
@@ -1744,6 +1759,52 @@ function updateAmbient(dt){
 }
 
 // ---------------- RENDER ----------------
+// ---------- night sky ----------
+// Real stars by right ascension (hours), declination (degrees) and magnitude. They wheel around the pole with the game clock,
+// and which ones are up shifts with the season, the same way the real sky does.
+const STARS=(()=>{const L=[
+  // Big Dipper
+  [11.06,61.75,1.8],[11.03,56.38,2.4],[11.90,53.69,2.4],[12.26,57.03,3.3],[12.90,55.96,1.8],[13.40,54.93,2.2],[13.79,49.31,1.9],
+  [2.53,89.26,2.0],// Polaris
+  // Cassiopeia
+  [0.15,59.15,2.3],[0.68,56.54,2.2],[0.95,60.72,2.4],[1.43,60.24,2.7],[1.91,63.67,3.4],
+  // Orion and Sirius
+  [5.92,7.41,.5],[5.42,6.35,1.6],[5.68,-1.94,1.8],[5.60,-1.20,1.7],[5.53,-.30,2.2],[5.80,-9.67,2.1],[5.24,-8.20,.1],[5.59,9.93,3.4],[6.75,-16.72,-1.4],
+  // Pleiades
+  [3.75,24.1,3.7],[3.77,24.37,3.9],[3.79,24.05,2.9],[3.82,23.95,3.6],[3.74,24.28,4.2],[3.81,24.2,4.3],
+  // Summer Triangle and Cygnus
+  [18.62,38.78,0],[20.69,45.28,1.3],[19.85,8.87,.8],[20.37,40.26,2.2],[20.77,33.97,2.5],[19.75,45.13,2.9],[19.51,27.96,3.1],
+  // Scorpius
+  [16.49,-26.43,1],[16.01,-22.62,2.3],[16.09,-19.81,2.6],[16.60,-28.22,2.8],[16.84,-34.29,2.3],[16.86,-38.05,3],[17.56,-37.10,1.6],[17.62,-43,1.9],[17.71,-39.03,2.4],
+  // Leo and Arcturus
+  [10.14,11.97,1.4],[11.82,14.57,2.1],[10.33,19.84,2],[11.24,20.52,2.6],[10.12,16.76,3.5],[9.76,23.77,3],[14.26,19.18,-.05],
+  // Southern Cross
+  [12.44,-63.1,.8],[12.80,-59.69,1.3],[12.52,-57.11,1.6],[12.25,-58.75,2.8]];
+  const r=seeded(3);for(let i=0;i<1300;i++)L.push([r()*24,Math.asin(r()*2-1)*180/Math.PI,3.4+Math.pow(r(),.6)*2.2]);
+  return L.map(([ra,de,m])=>({ra:ra*Math.PI/12,sd:Math.sin(de*Math.PI/180),cd:Math.cos(de*Math.PI/180),m}));})();
+function drawStars(c,dk){
+  const D=Math.PI/180,h=S.minutes/60,doy=80+yearPos()*365.25;
+  const lst=((h+12+24*(doy-80)/365.25)%24)*Math.PI/12;
+  const lat=(LOC().jungle?-3:40)*D,sl=Math.sin(lat),cl=Math.cos(lat);
+  // Left of the screen is north at some spots and south at others, so you face east or west.
+  const az0=(LOC().north>0?270:90)*D,k=SURF/75/D,top=dk-.3;
+  for(const st of STARS){const H=lst-st.ra,cH=Math.cos(H);
+    const sa=sl*st.sd+cl*st.cd*cH;if(sa<.01)continue;const alt=Math.asin(sa);
+    const az=Math.atan2(-st.cd*Math.sin(H),st.sd*cl-st.cd*sl*cH);let da=((az-az0+3*Math.PI)%(2*Math.PI))-Math.PI;
+    const x=W/2+da*k,y=SURF-alt*k;if(x<-2||x>W+2||y<-2)continue;
+    const a=Math.min(1,top*2.4-Math.max(0,st.m-2)*.08)*(st.m<3?1:.85)*Math.min(1,alt/(8*D));if(a<=.02)continue;
+    const sz=Math.max(1,2.8-.38*st.m);c.fillStyle=`rgba(255,253,240,${a})`;c.fillRect(x-sz/2,y-sz/2,sz,sz);
+    if(st.m<1.6){c.fillStyle=`rgba(255,250,235,${a*.18})`;c.fillRect(x-sz*1.2,y-sz*1.2,sz*2.4,sz*2.4);}}}
+// Now and then a satellite drifts across a clear night sky: a steady point of light, no twinkle, in any direction.
+function satEdge(e,H){return e===0?[-4,rand(8,H)]:e===1?[W+4,rand(8,H)]:[rand(0,W),-4];}
+function drawSatellite(c,dk,hidden){
+  if(dk<=.5||hidden){G.sat=null;return;}
+  if(G.satNext==null)G.satNext=G.t+rand(15,50);
+  if(!G.sat&&G.t>=G.satNext){const H=SURF*.7,e0=Math.floor(Math.random()*3);let e1=Math.floor(Math.random()*3);if(e1===e0)e1=(e0+1+Math.floor(Math.random()*2))%3;
+    const a=satEdge(e0,H),b=satEdge(e1,H),d=Math.hypot(b[0]-a[0],b[1]-a[1]);G.sat={a,b,t0:G.t,dur:d/rand(7,12)};}
+  const S1=G.sat;if(!S1)return;const u=(G.t-S1.t0)/S1.dur;
+  if(u>=1||u<0){G.sat=null;G.satNext=G.t+rand(30,100);return;}
+  const x=lerp(S1.a[0],S1.b[0],u),y=lerp(S1.a[1],S1.b[1],u);c.fillStyle=`rgba(255,255,245,${Math.min(.95,(dk-.3)*1.1)})`;c.fillRect(x,y,1.3,1.3);}
 const SKY=[[0,'#0a1230','#1a2448'],[4.5,'#141a3c','#2c2c55'],[5.8,'#33386a','#d78a6a'],[7,'#6fa4d8','#f3c18a'],[9,'#5aa0e0','#c4e5ef'],[16,'#5f9fd8','#d3e8ee'],[18,'#3d4f8a','#f29a5e'],[19.5,'#1e2350','#7a4a6a'],[21,'#0a1230','#1a2448'],[24,'#0a1230','#1a2448']];
 function skyCols(h){for(let i=0;i<SKY.length-1;i++){const a=SKY[i],b=SKY[i+1];if(h>=a[0]&&h<=b[0]){const t=(h-a[0])/(b[0]-a[0]);return[mix(a[1],b[1],t),mix(a[2],b[2],t)];}}return[hexRgb('#0a1230'),hexRgb('#1a2448')];}
 function render(){
@@ -1753,7 +1814,8 @@ function render(){
   let g=c.createLinearGradient(0,0,0,SURF);g.addColorStop(0,rgbStr(st));g.addColorStop(1,rgbStr(sb));c.fillStyle=g;c.fillRect(0,0,W,SURF+2);
   if(rain||fog){c.fillStyle=rain?'rgba(70,80,90,.35)':'rgba(190,200,200,.25)';c.fillRect(0,0,W,SURF+2);}
   // stars
-  if(dk>.3&&!fog){c.fillStyle=`rgba(255,255,240,${(dk-.3)*.9})`;const r=seeded(3);for(let i=0;i<60;i++){const x=r()*W,y=r()*SURF*.8,s=r()*1.3+.3;if(Math.sin(G.t*2+i)>-.7)c.fillRect(x,y,s,s);}}
+  if(dk>.3&&!fog)drawStars(c,dk);
+  drawSatellite(c,dk,fog||rain);
   // sun / moon
   const sunT=(h-6)/12;if(sunT>-.05&&sunT<1.05&&!rain){const sx=lerp(W*.95,W*.1,sunT),sy=SURF-Math.sin(clamp(sunT,0,1)*Math.PI)*SURF*.75;c.fillStyle=fog?'rgba(255,240,200,.35)':'#ffe7a6';c.beginPath();c.arc(sx,sy,16,0,TAU);c.fill();c.fillStyle='rgba(255,220,150,.15)';c.beginPath();c.arc(sx,sy,30,0,TAU);c.fill();}
   let mt=((h+24-18)%24)/12;if(mt<1.05&&dk>.2&&!rain){const mx=lerp(W*.9,W*.15,mt),my=SURF-Math.sin(clamp(mt,0,1)*Math.PI)*SURF*.7;c.fillStyle=`rgba(235,240,255,${fog?.3:.9})`;c.beginPath();c.arc(mx,my,11,0,TAU);c.fill();c.fillStyle=rgbStr(st);c.beginPath();c.arc(mx+5,my-3,10,0,TAU);c.fill();}
@@ -1773,7 +1835,8 @@ function render(){
   c.save();c.translate(-cam,0);const vx0=cam-60,vx1=cam+W+60;
   // weeds
   c.lineCap='round';
-  for(const w of weeds){if(w.x<vx0||w.x>vx1)continue;
+  // weeds: about a third of the taller clumps stand in front of the fish, so fish slip behind them
+  const drawWeed=w=>{
     const Zw=sea(),base=w.type==='ribbon'?(w.c<.5?'#3c7a3e':'#5a8a35'):w.type==='coontail'?'#2f6a3a':'#6a8a3a';const col=rgbStr(mx(mx(base,'#6a5a30',(1-Zw.weed)*.8),'#10241a',dk*.7)),col2=rgbStr(mix('#7fae55','#14301c',dk*.7),.7);
     for(const bl of w.blades){const x=w.x+bl.dx,b=bottomAt(x)+3,top=Math.max(SURF+6,b-bl.h*Zw.weed),sw=Math.sin(G.t*1.2+bl.ph)*(4+bl.h*.06)-(LOC().current?bl.h*.25:0),tx=x+sw,mx=x+sw*.45,my=(b+top)/2;
       c.strokeStyle=col;c.lineWidth=bl.w;c.beginPath();c.moveTo(x,b);c.quadraticCurveTo(mx,my,tx,top);c.stroke();
@@ -1782,15 +1845,20 @@ function render(){
         c.strokeStyle=col;c.lineWidth=w.type==='coontail'?.9:1.6;c.beginPath();
         if(w.type==='coontail'){c.moveTo(px-L,py-L*.4);c.lineTo(px+L,py+L*.4);c.moveTo(px-L,py+L*.4);c.lineTo(px+L,py-L*.4);}
         else{c.fillStyle=col;c.ellipse(px+(k%2?L*.6:-L*.6),py,L*.7,L*.28,k%2?-.5:.5,0,TAU);c.fill();}
-        c.stroke();}}}}
-  if(cboulders.length)drawBoulders(c,dk,vx0,vx1);
-  // fish
+        c.stroke();}}}};
+  const isFront=w=>w.front??(w.front=Math.random()<.32&&w.blades.some(bl=>bl.h>28));
+  for(const w of weeds){if(w.x<vx0||w.x>vx1||isFront(w))continue;drawWeed(w);}
+  // fish: in the flooded forest some fish pass behind the trunks, so they're drawn before the trunks and the rest after
   const vis=visMul();const L=G.lure,lbls=[];
-  for(const f of G.fish){if(f.x<vx0-60||f.x>vx1+60)continue;let a=f.alpha*(.25+.75*vis);const depth=(f.y-SURF)/(GROUND-SURF);a*=1-depth*.35;if(f.sp.bury&&f.state==='wander'&&!isActive(f.sp))a*=.3;if(f.state==='fight')a=Math.max(a,.85);
+  const dF=f=>{if(f.x<vx0-60||f.x>vx1+60)return;let a=f.alpha*(.25+.75*vis);const depth=(f.y-SURF)/(GROUND-SURF);a*=1-depth*.35;if(f.sp.bury&&f.state==='wander'&&!isActive(f.sp))a*=.3;if(f.state==='fight')a=Math.max(a,.85);
     c.save();c.translate(f.x,f.y);if(f.state==='fight'&&G.fight&&G.fight.phase==='air'){c.rotate(G.fight.airAng*f.face);}else if(f.state==='fight'&&G.fight){c.rotate(G.fight.dir*.12+Math.sin(G.t*20)*.04*(G.fight.thrash>0?2:1)+(f.sp.spin&&G.fight.phase==='run'?Math.sin(G.t*28)*.5:0));}else c.rotate((f.pitch||0)*f.face);
     drawFish(c,f.sp,f.L,f.face,f.wig,a,false);c.restore();
-    if(gearOn('finder')&&S.log[f.sp.id]&&f.state!=='fight'&&G.mode==='play'&&(!f.school||schoolLead(f)===f)&&!(f.bed&&G.fish.some(o=>o!==f&&o.bed&&o.sp===f.sp&&Math.abs(o.bed.x-f.bed.x)<60&&o.bed.x<f.bed.x))){const cnt=f.bed?G.fish.filter(o=>o.bed&&o.sp===f.sp&&Math.abs(o.bed.x-f.bed.x)<130).length:f.school?f.school.m.filter(m=>!m.dead&&m.state!=='leave').length:1;c.font='600 8px "IBM Plex Mono",monospace';c.textAlign='center';const lt=`${f.sp.name}${cnt>1?' ×'+cnt:''} · ${fDist(depthM(f.y),imp()?0:1)}${f.bed?' · guarding nest':isActive(f.sp)?'':' · resting'}`,ly=f.y-f.L*SHAPES[f.sp.shape].h*.5-5,lw=c.measureText(lt).width+6,lx=clamp(f.x,cam+lw/2+2,cam+W-lw/2-2);if(!lbls.some(r=>Math.abs(r[0]-lx)<(r[2]+lw)/2&&Math.abs(r[1]-ly)<10)){lbls.push([lx,ly,lw]);c.fillStyle='rgba(225,234,210,.75)';c.fillText(lt,lx,ly);}}
-  }
+    if(gearOn('finder')&&S.log[f.sp.id]&&f.state!=='fight'&&G.mode==='play'&&(!f.school||schoolLead(f)===f)&&!(f.bed&&G.fish.some(o=>o!==f&&o.bed&&o.sp===f.sp&&Math.abs(o.bed.x-f.bed.x)<60&&o.bed.x<f.bed.x))){const cnt=f.bed?G.fish.filter(o=>o.bed&&o.sp===f.sp&&Math.abs(o.bed.x-f.bed.x)<130).length:f.school?f.school.m.filter(m=>!m.dead&&m.state!=='leave').length:1;c.font='600 8px "IBM Plex Mono",monospace';c.textAlign='center';const lt=`${f.sp.name}${cnt>1?' ×'+cnt:''} · ${fDist(depthM(f.y),imp()?0:1)}${f.bed?' · guarding nest':isActive(f.sp)?'':' · resting'}`,ly=f.y-f.L*SHAPES[f.sp.shape].h*.5-5,lw=c.measureText(lt).width+6,lx=clamp(f.x,cam+lw/2+2,cam+W-lw/2-2);if(!lbls.some(r=>Math.abs(r[0]-lx)<(r[2]+lw)/2&&Math.abs(r[1]-ly)<10)){lbls.push([lx,ly,lw]);c.fillStyle='rgba(225,234,210,.75)';c.fillText(lt,lx,ly);}}};
+  const back=LOC().stumps?G.fish.filter(f=>f.state!=='fight'&&L.fish!==f&&(f.back??(f.back=Math.random()<.45))):[];
+  for(const f of back)dF(f);
+  if(cboulders.length)drawBoulders(c,dk,vx0,vx1);
+  for(const f of G.fish)if(!back.includes(f))dF(f);
+  for(const w of weeds){if(w.x<vx0||w.x>vx1||!w.front)continue;drawWeed(w);}
   drawSpecks(c,dk,vx0,vx1);
   // ground
   if(LOC().shore==='dock')drawPilings(c,dk);
@@ -2014,10 +2082,38 @@ function drawLog(c,dk,k){const D=v=>dk*.8,wood=rgbStr(mix('#6e5435','#100b06',D(
   // silt piled along the buried side
   c.fillStyle=silt;c.beginPath();c.moveTo(P[0].x-5,bottomAt(P[0].x-5)+1);for(const q of P)c.lineTo(q.x,Math.max(q.y+q.t*.62,bottomAt(q.x)-2.5));c.lineTo(P[N].x+6,bottomAt(P[N].x+6)+1);
   for(let i=N;i>=0;i--)c.lineTo(P[i].x,bottomAt(P[i].x)+2);c.closePath();c.fill();}
-function drawStump(c,dk,k){const wood=rgbStr(mix('#5a4228','#120c06',dk*.8)),dark=rgbStr(mix('#3a2a18','#080503',dk*.8));const b=bottomAt(k.x),top=Math.max(SURF-26,b-k.r*5.5);
-  c.fillStyle=wood;c.beginPath();c.moveTo(k.x-k.r*.45,b+2);c.lineTo(k.x-k.r*.3,top);c.lineTo(k.x+k.r*.3,top+4);c.lineTo(k.x+k.r*.45,b+2);c.fill();c.strokeStyle=dark;c.lineWidth=1.6;c.lineCap='round';
-  for(const d of[-1,1]){c.beginPath();c.moveTo(k.x+d*k.r*.35,b-k.r*.4);c.quadraticCurveTo(k.x+d*k.r*1.2,b-k.r*.6,k.x+d*k.r*1.6,b+2);c.stroke();}
-  c.beginPath();c.moveTo(k.x,top+12);c.lineTo(k.x+k.r*1.1,top-2);c.stroke();c.fillStyle=rgbStr(mix('#4f7a3a','#0c1a12',dk*.8),.6);c.beginPath();c.ellipse(k.x-k.r*.1,SURF+1,k.r*.6,2,0,0,TAU);c.fill();}
+// Drowned flooded-forest trees, reduced to broken trunks: each is built from a seed tied to its position, so they all differ
+// (height, lean, thickness, wood colour, jagged top, hollow, cracks, knots, moss) but stay the same every visit.
+function drawStump(c,dk,k){const R=seeded(Math.round(k.x*7.3)+11),rr=(a,b)=>a+(b-a)*R();
+  const tall=R()<.3;
+  const tints=[['#5a4228','#3a2a18','#7a5e3e'],['#6e6252','#463c30','#8e8270'],['#4a3420','#2c1e10','#664a30'],['#62503a','#3e3020','#82705a']],tn=tints[Math.floor(R()*tints.length)];
+  const wood=rgbStr(mix(tn[0],'#120c06',dk*.8)),dark=rgbStr(mix(tn[1],'#080503',dk*.8)),hi=rgbStr(mix(tn[2],'#160f08',dk*.8)),
+    moss=rgbStr(mix('#4f7a3a','#0c1a12',dk*.8),.7),inner=rgbStr(mix('#2a1c10','#050302',dk*.8));
+  const b=bottomAt(k.x),w0=k.r*rr(.55,.85),lean=rr(-.08,.08),curve=rr(-.06,.06);
+  const h=tall?Math.min(b-SURF+rr(6,22),b-(SURF-30)):(b-SURF)*rr(.18,.5);
+  const top=b-h,w1=w0*rr(.62,.85);
+  const at=t=>({x:k.x+lean*h*t+Math.sin(t*Math.PI)*curve*h,y:lerp(b,top,t),w:lerp(w0,w1,Math.pow(t,.8))});
+  // roots spreading into the mud
+  c.strokeStyle=dark;c.lineCap='round';for(const d of[-1,1])for(let i=0;i<1+Math.floor(R()*2);i++){const l=w0*rr(1.6,2.6)+i*w0*.7;c.lineWidth=rr(1.6,2.6);
+    c.beginPath();c.moveTo(k.x+d*w0*.75,b-w0*rr(.4,.9));c.quadraticCurveTo(k.x+d*l*.6,b-w0*rr(.3,.6),k.x+d*l,bottomAt(k.x+d*l)+2);c.stroke();}
+  // trunk: slightly flared base, wavy sides, a jagged broken top
+  const N=10,Lp=[],Rp=[];for(let i=0;i<=N;i++){const t=i/N,q=at(t),fl=1+.35*Math.pow(1-t,4),wl=Math.sin(i*1.7+k.x)*q.w*.06,wr=Math.sin(i*2.1+k.x*1.3)*q.w*.06;
+    Lp.push([q.x-q.w*fl+wl,q.y]);Rp.push([q.x+q.w*fl+wr,q.y]);}
+  const tp=at(1),nj=3+Math.floor(R()*4),jag=[];for(let i=0;i<=nj;i++){const u=i/nj,hgt=i===0||i===nj?rr(0,3):rr(2,tall?14:9)*(i%2?1:.45);jag.push([tp.x-tp.w+u*tp.w*2,tp.y-hgt]);}
+  const g=c.createLinearGradient(k.x-w0,0,k.x+w0,0);g.addColorStop(0,dark);g.addColorStop(.3,hi);g.addColorStop(.65,wood);g.addColorStop(1,dark);
+  c.fillStyle=g;c.beginPath();c.moveTo(Lp[0][0],b+3);for(const p of Lp)c.lineTo(p[0],p[1]);for(const p of jag)c.lineTo(p[0],p[1]);for(let i=N;i>=0;i--)c.lineTo(Rp[i][0],Rp[i][1]);c.lineTo(Rp[0][0],b+3);c.closePath();c.fill();
+  // hollow top on some
+  if(R()<.45){c.fillStyle=inner;c.beginPath();c.ellipse(tp.x,tp.y+1.5,tp.w*.55,1.8,0,0,TAU);c.fill();}
+  // bark furrows following the trunk
+  c.strokeStyle=dark;c.lineWidth=.6;const nf=3+Math.floor(R()*2);for(let f=0;f<nf;f++){const off=-.7+1.4*(f+.5)/nf+rr(-.08,.08),t0=rr(0,.15),t1=rr(.75,1);c.beginPath();
+    for(let i=0;i<=12;i++){const t=lerp(t0,t1,i/12),q=at(t),x=q.x+off*q.w+Math.sin(t*9+f*2)*.5;i?c.lineTo(x,q.y):c.moveTo(x,q.y);}c.stroke();}
+  // a long crack on some, knots on most
+  if(R()<.5){const off=rr(-.3,.3),t0=rr(.35,.6);c.strokeStyle=inner;c.lineWidth=1.1;c.beginPath();for(let i=0;i<=8;i++){const t=lerp(t0,1,i/8),q=at(t);const x=q.x+off*q.w+(i%2?.6:-.6);i?c.lineTo(x,q.y-(i===8?3:0)):c.moveTo(x,q.y);}c.stroke();}
+  for(let i=0;i<Math.floor(R()*3);i++){const q=at(rr(.2,.8)),x=q.x+rr(-.4,.4)*q.w;c.fillStyle=dark;c.beginPath();c.ellipse(x,q.y,1.8,2.6,0,0,TAU);c.fill();c.strokeStyle=hi;c.lineWidth=.4;c.beginPath();c.ellipse(x,q.y,.9,1.3,0,0,TAU);c.stroke();}
+  // moss and slime low on one side, soft-edged
+  const ms=R()<.5?-1:1;c.fillStyle=moss;for(let i=0;i<3+Math.floor(R()*3);i++){const q=at(rr(.03,.5));c.beginPath();c.ellipse(q.x+ms*q.w*rr(.45,.8),q.y,q.w*rr(.2,.4),rr(2,4.5),0,0,TAU);c.fill();}
+  // algae ring where it breaks the surface
+  if(top<SURF){const q=at(clamp((b-SURF)/h,0,1));c.fillStyle=rgbStr(mix('#4f7a3a','#0c1a12',dk*.8),.6);c.beginPath();c.ellipse(q.x,SURF+1,q.w*1.3,2,0,0,TAU);c.fill();}}
 function drawBoat(c,dk,y,front){const cn=LOC().shore==='canoe';const hull=rgbStr(mix(cn?'#8a5a30':'#a9b4ba','#252a2e',dk*.75)),dark=rgbStr(mix(cn?'#4e301a':'#5f6b72','#121518',dk*.75)),stripe=rgbStr(mix(cn?'#c98a3a':'#2d6e9e','#0c1a26',dk*.75));
   if(front){c.fillStyle=hull;c.fillRect(6,y-6,62,4);c.fillStyle=stripe;c.fillRect(6,y-4,62,1.5);return;}
   c.fillStyle=`rgba(0,0,0,${.25*(1-dk*.5)})`;c.beginPath();c.ellipse(36,SURF+9,50,6,0,0,TAU);c.fill();
@@ -2902,7 +2998,8 @@ function renderShop(){
         if(lvl<2){const c2=tierCost(id,lvl+1);acts.push(pill('buy',`Upgrade <span class="coin"></span>${c2}`,()=>buy(()=>{st.lvl=lvl+1;},c2),S.coins<c2));}
         const o=document.createElement('span');o.className='own';o.textContent=TIERS[lvl].name;acts.push(o);}
       const cw=imp()?`${u.cast[0].toFixed(1)}–${u.cast[1]} oz-ish`:'';
-      row(ic,u.name,u.desc,`${u.line} · ${['','Light','Medium','Heavy'][u.power]} power · casts ${u.cast[0]<1?'tiny':u.cast[0]<2?'light':'heavy'} tackle best${own&&lvl<2?` · next: ${TIERS[lvl+1].name} (${TIERS[lvl+1].desc.toLowerCase()})`:''}`,acts);}
+      row(ic,u.name,u.desc,`${(LINE_TEST[id]||[8,8,8])[Math.max(0,lvl)]} lb line · ${['','Light','Medium','Heavy'][u.power]} power · casts ${u.cast[0]<1?'tiny':u.cast[0]<2?'light':'heavy'} tackle best${own&&lvl<2?` · next: ${TIERS[lvl+1].name}, ${(LINE_TEST[id]||[])[lvl+1]} lb line`:''}`,acts);
+      {const c0=box.lastElementChild.querySelector('.ic');c0.classList.add('tap');c0.setAttribute('role','button');c0.setAttribute('aria-label',u.name+' info');c0.onclick=()=>openRodInfo(id);}}
   }else{
     const cat=shopTab==='rigging'?Object.fromEntries([...Object.entries(GEAR.sinkers).filter(([k])=>k!=='none'),...Object.entries(GEAR.bobbers),...Object.entries(GEAR.terminal)]):GEAR[shopTab];const slot={rods:'rod',reels:'reel',lines:'line',hooks:'hook'}[shopTab];
     for(const [id,it] of Object.entries(cat)){
@@ -2999,8 +3096,8 @@ const LINFO={
   swim:{how:'Reel it slow and steady so the tail thumps. You\u2019ll get fewer bites than smaller lures, but bigger fish.',reg:['bass','pike','tigermuskie','peacock']},
   prop:{how:'Reel in short bursts so the props churn the surface, then pause. Strikes often come right after a pause.',reg:['peacock','arowana']}};
 function lureRegulars(id){const lu=LURES[id],i=LINFO[id]||{};if(i.reg)return i.reg;if(lu.bait)return Object.entries(BAITPULL[id]||{}).filter(([,v])=>v>=1.2).map(([k])=>k);return[];}
-function openLureInfo(id){G.liId=id;SFX.ui();open('lureInfo');}
-function renderLureInfo(){const id=G.liId,lu=LURES[id],inf=LINFO[id]||{};$('#liName').textContent=lu.name;
+function openLureInfo(id){G.liId=id;G.riId=null;SFX.ui();open('lureInfo');}
+function renderLureInfo(){if(G.riId){renderRodInfo();return;}const id=G.liId,lu=LURES[id],inf=LINFO[id]||{};$('#liName').textContent=lu.name;
   const takers=SPECIES.filter(sp=>sp.lures.includes(id)&&!sp.legend),reg=lureRegulars(id).filter(k=>takers.some(t=>t.id===k));
   const occ=takers.filter(sp=>!reg.includes(sp.id)),legend=SPECIES.some(sp=>sp.lures.includes(id)&&sp.legend);
   const chip=sp=>`<span class="${S.log[sp.id]?'':'new'}">${esc(sp.name)}</span>`;
@@ -3018,6 +3115,27 @@ function renderLureInfo(){const id=G.liId,lu=LURES[id],inf=LINFO[id]||{};$('#liN
     ${legend?'<p class="li-leg">Rumor has it something legendary takes it too.</p>':''}
     <div class="li-sec"><h3>Best rod</h3><p>${rodTxt}</p></div>`;
   $('#liIc').replaceWith(c);}
+// ---------- rod info ----------
+const RINFO={
+  medium:{good:'Bass, carp, catfish on worms, panfish. Throws most medium lures and baits well enough.',weak:'Light line for pike, muskie and big catfish. A long run from a big fish can reach the end of the reel.'},
+  ultra:{good:'Crappie, perch, bluegill and trout on tiny lures and baits. Feels the lightest nibble and keeps paper-mouthed crappie hooked.',weak:'Small reel and thin line. A big fish can break it or run it to the end of the spool.'},
+  heavy:{good:'Pike, muskie and big bass around weeds and wood. Strong braid turns big fish before they get going.',weak:'Rips the hook out of small mouths, and wary fish can see the braid.'},
+  cat:{good:'Catfish, carp and drum on heavy bottom rigs. Casts farther than anything, and the tip shows bites on the bottom.',weak:'Light lures barely cast.'}};
+function openRodInfo(id){G.riId=id;SFX.ui();open('lureInfo');}
+function renderRodInfo(){const id=G.riId,u=SETUPS[id],inf=RINFO[id]||{},st=(S.setups||{})[id],own=!!(st&&st.owned),lvl=own?st.lvl||0:-1;
+  $('#liName').textContent=u.name;const kind=u.line.replace(/^[\d.]+ lb /,'');const T=LINE_TEST[id]||[8,8,8];
+  const drag=['Rough','Smooth','Silky'],cap=fDist((u.spool||900)/10,0);
+  const col=t=>`<th class="${t===lvl?'cur':''}">${TIERS[t].name}${t===lvl?'<small>yours</small>':''}</th>`;
+  const cell=(t,v)=>`<td class="${t===lvl?'cur':''}">${v}</td>`;
+  const rows=[['Line',t=>`${T[t]} lb ${esc(kind)}`],['Crank speed',t=>t?`+${12*t}%`:'Base'],['Drag',t=>drag[t]],['Cost',t=>t===0?(u.price?`<span class="coin"></span>${u.price}`:'Free'):`<span class="coin"></span>${tierCost(id,t)}`]];
+  $('#liBody').innerHTML=`<div class="li-top"><span id="liIc"></span><p>${esc(u.desc)}</p></div>
+    <div class="li-sec"><h3>Good for</h3><p>${esc(inf.good||'')}</p></div>
+    <div class="li-sec"><h3>Watch out</h3><p>${esc(inf.weak||'')}</p></div>
+    <div class="li-sec"><h3>Upgrades</h3><table class="ri-tab"><tr><th></th>${[0,1,2].map(col).join('')}</tr>${rows.map(([n,f])=>`<tr><td class="rl">${n}</td>${[0,1,2].map(t=>cell(t,f(t))).join('')}</tr>`).join('')}</table>
+      <p class="ri-note">Stronger line means big fish make shorter runs and you can set the drag tighter. Faster cranking gains line quicker, and a smoother drag gives line without jerks that pop light line.</p></div>
+    <div class="li-sec"><h3>Line on the reel</h3><p>About ${cap} at every tier. Better reels hold the same amount of the stronger line. Run out and the fish is gone.</p></div>`;
+  const ic=document.createElement('canvas');ic.width=ic.height=96;const x=ic.getContext('2d');x.strokeStyle=u.rod;x.lineWidth=u.w*1.8;x.lineCap='round';x.beginPath();x.moveTo(10,86);x.lineTo(86,10);x.stroke();x.fillStyle='#9aa3a8';x.beginPath();x.arc(24,72,6,0,TAU);x.fill();
+  $('#liIc').replaceWith(ic);}
 // ---------- add to home screen ----------
 // Shown only when the game is open in a browser tab. iPhone/iPad get the step-by-step guide (Safari has no install button);
 // Android/Chrome can install with one tap through the browser's own prompt.
@@ -3041,6 +3159,8 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v0.92','Fight rework',['Fish can only take line when they pull past your drag; below it, cranking always gains line','Big fish run harder the more they outweigh your line','Runs are shorter and stay on screen more often','Some runs come straight at you, so reel fast to keep the line tight','Each rod\u2019s reel holds its own amount of line','In Willow Creek a fish that reaches the far bank can wrap you in the roots','Tap a rod in the shop to see what it\u2019s good for and what each upgrade does','A real night sky: constellations turn slowly overhead and change with the seasons','Satellites now and then drift across clear nights']],
+  ['v0.91','Spooky fish',['Casting scares fish near the boat; wary fish rarely hang right under you','Hooked fish often make one more run when they see you near the boat','Fish can swim behind weeds and the flooded trunks in the Amazon']],
   ['v0.90','Sky',['Geese fly north over the water in spring and south in fall','Pairs of macaws cross the sky in the Amazon']],
   ['v0.89','Big Rock Lake',['Tall weed beds out in the deep water and a sunken tree on the bottom','Snapping and musk turtles crawl along the bottom; turtles sometimes hang still at the surface']],
   ['v0.88','Turtles',['Each place has its own turtle, from painted turtles in the pond to snappers in the lake','Turtles cruise slowly, come up for air and love to steal worms','Once in a long while one takes the hook on a worm']],
