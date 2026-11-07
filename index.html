@@ -718,7 +718,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.93a';
+const VERSION='v0.94a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -827,7 +827,7 @@ const SETUPS={
     desc:'Stiff rod with braided line. Throws frogs and jigs far and drags big fish out of the weeds, but rips panfish mouths and wary fish spot the braid.'},
   cat:{name:'Catfish Rod',short:'Catfish',line:'20 lb mono',price:260,power:3,f:.5,grace:.7,speed:54,vis:.45,cast:[3,9],reach:1.15,sens:1,botSens:1.35,tear:1.5,tire:1.2,pull:1.1,spool:1100,rod:'#3c4a6a',w:2.8,len:74,
     desc:'Long and forgiving. Launches heavy bottom rigs farther than anything, and its tip shows bites on the bottom. Poor with light lures.'},
-  fly:{name:'Fly Rod',short:'Fly rod',line:'5 lb tippet',price:420,power:1,f:.95,grace:.65,speed:40,vis:.05,cast:[.1,1.2],reach:.85,sens:1.3,tear:.5,tire:.7,pull:.8,spool:800,rod:'#7a5232',w:1.5,len:72,fly:true,
+  fly:{name:'Fly Rod',short:'Fly rod',line:'5 lb tippet',price:420,power:1,f:.95,grace:.65,speed:40,vis:.05,cast:[.1,1.2],reach:.85,sens:1.3,tear:.5,tire:.7,pull:.8,spool:800,rod:'#7a5232',w:1.5,len:72,fly:true,resp:'Local',
     desc:'A 5-weight with floating line. Lays down flies nothing else can cast and turns every bluegill into a fight. Flies only.'}};
 const SETUP_ORDER=['medium','ultra','heavy','cat','fly'];
 const LINE_TEST={medium:[8,10,12],ultra:[4,5,6],heavy:[20,30,50],cat:[20,30,40],fly:[5,6,8]};
@@ -975,6 +975,14 @@ Object.assign(BAITPULL.cricket,{brook:1.5,rockbass:1.3,fallfish:1.2,chub:1.2});O
 function lureAppeal(sp){const lu=LURES[S.lure];if(lu.bait)return(BAITPULL[S.lure]&&BAITPULL[S.lure][sp.id])||1;const v=lureVar();return(v.color===condPref()?1.5:.8)*SIZES[v.size].mouth[sp.mouth];}
 const TROPHY={bluegill:[18,21,24],pumpkinseed:[15,18,21],perch:[22,27,32],crappie:[25,30,34],bass:[40,50,58],trout:[38,46,52],catfish:[55,68,78],pickerel:[48,56,63],carp:[65,78,88],eel:[70,85,96],bowfin:[65,75,85],brownbull:[30,34,38],blackbull:[25,28,31],smallmouth:[30,40,48],brook:[20,26,31],brown:[38,48,56],rockbass:[18,22,25],fallfish:[25,32,37],chub:[15,19,23],sucker:[33,40,46],undercut:[72,78,83],walleye:[50,61,68],pike:[70,85,97],whitebass:[33,38,42],drum:[45,55,63],tigermuskie:[100,110,120],flathead:[95,105,115],piranha:[22,26,30],peacock:[45,55,63],arowana:[65,75,84],pacu:[45,55,61],oscar:[24,29,33],redtail:[75,90,102],arapaima:[180,210,235]};
 const MEDALS=['bronze','silver','gold'],MEDALN=['Bronze','Silver','Gold'];
+// Respect: earned by letting the right fish go. Permanent, and it unlocks gear and outfits money can't buy.
+const RANKS=[['Newcomer',0],['Regular',10],['Local',30],['Old Hand',70],['Guide',140],['Legend',250]];
+function rankIdx(r=S.respect||0){let i=0;RANKS.forEach(([,n],k)=>{if(r>=n)i=k;});return i;}
+function rankName(r){return RANKS[rankIdx(r)][0];}
+function rankNeed(name){const k=RANKS.findIndex(x=>x[0]===name);return k<0?0:RANKS[k][1];}
+function respectFor(P){if(!P||P.gut)return 0;let r=0;if(P.bed)r+=3;const m=medalFor(P.sp.id,P.len);if(m>=0)r+=[4,6,10][m];if(P.record&&P.prevBest)r+=3;if(P.sp.legend)r+=25;return r;}
+function rankUnlocks(i){const nm=RANKS[i][0],out=[];for(const k of SETUP_ORDER)if(SETUPS[k].resp===nm)out.push(SETUPS[k].name);
+  for(const sl in LOOKS)for(const k in LOOKS[sl])if(LOOKS[sl][k].resp===nm)out.push(LOOKS[sl][k].name);return out.length?'Now available: '+out.join(', '):'Other anglers are starting to notice';}
 function medalFor(id,len){const t=TROPHY[id];let m=-1;if(t)for(let i=0;i<3;i++)if(len>=t[i])m=i;return m;}
 function trophyCounts(){const c=[0,0,0];for(const sp of SPECIES){const r=S.log[sp.id];if(!r)continue;const m=medalFor(sp.id,r.best);if(m>=0)c[m]++;}return c;}
 const SPMAP=Object.fromEntries(SPECIES.map(s=>[s.id,s]));
@@ -1196,7 +1204,7 @@ function seasonName(){const d=seasonDay(),part=d<=2?'Early':d<=5?'Mid':'Late';
   return`${part} ${['spring','summer','fall','winter'][seasonIdx()]}`;}
 const SEASON_NEWS={spring:['Spring is here','Pike, walleye and crappie move shallow first'],summer:['Summer has come','Fish go deep at midday. Fish the edges of the day'],
   fall:['Fall has arrived','Leaves are turning and fish are feeding hard before winter'],winter:['Winter sets in','Warm-water fish slow way down. Perch, pike and trout keep biting']};
-function newDay(){const s0=seasonIdx();S.yday=(S.yday||0)+1;if(G.beds)setTimeout(updateNests,0);for(const k in SNAPS)delete SNAPS[k];
+function newDay(){const s0=seasonIdx();S.yday=(S.yday||0)+1;S.luck=Math.max(0,(S.luck||0)-.03);if(G.beds)setTimeout(updateNests,0);for(const k in SNAPS)delete SNAPS[k];
   if(seasonIdx()!==s0&&!LOC().jungle&&G.mode==='play'){const n=SEASON_NEWS[['spring','summer','fall','winter'][seasonIdx()]];setTimeout(()=>toast(n[0],n[1]),3200);}}
 // Fish and the seasons: cold-water fish keep feeding through winter, warm-water fish slow down;
 // everything feeds hard in fall; early spring brings pike, walleye, crappie and perch in shallow.
@@ -2970,6 +2978,8 @@ $('#tutSkip').onclick=()=>{SFX.ui();tutEnd();};
 function startGame(){
   // Leaderboard: bests caught before it existed count too. (Old Nick saves came with a handed-out Fish Log: drop it.)
   // The Moth Fly became fly-rod only. Anglers without a fly rod get their coins back for any they had.
+  // Respect started after many players had already been releasing fish; give them a head start from what they let go.
+  if(S.respect==null){S.respect=Math.min(60,Math.floor(((S.stats&&S.stats.released)||0)/3));save();}
   if(!S.mothFix){S.mothFix=1;const n=S.lures.fly>0?S.lures.fly:0;if(n&&!setupOK('fly')){const amt=n*LURES.fly.price;delete S.lures.fly;S.coins+=amt;if(S.lure==='fly')S.lure=fallbackLure();setTimeout(()=>toast(`Moth Flies refunded: +${amt} coins`,'Flies now need the fly rod'),1500);}save();}
   if(S.nickLog){for(const k in S.log)if(S.log[k].n<=1&&!(S.landed&&S.landed[k]))delete S.log[k];delete S.nickLog;save();}
   if(!S.landed&&!S.nickLog){S.landed={};for(const k in S.log)if(S.log[k].best>0)S.landed[k]=S.log[k].best;}setTimeout(sbSync,3000);
@@ -3083,7 +3093,8 @@ function renderShop(){
     for(const id of SETUP_ORDER){const u=SETUPS[id],st=(S.setups||{})[id],own=!!(st&&st.owned),lvl=own?st.lvl||0:0;
       const ic=document.createElement('canvas');ic.width=ic.height=80;const x=ic.getContext('2d');x.strokeStyle=u.rod;x.lineWidth=u.w*1.6;x.lineCap='round';x.beginPath();x.moveTo(8,72);x.lineTo(72,8);x.stroke();x.fillStyle='#9aa3a8';x.beginPath();x.arc(20,60,5,0,TAU);x.fill();
       const acts=[];
-      if(!own)acts.push(pill('buy',buyHtml(u.price),()=>buy(()=>{S.setups[id]={owned:true,lvl:0};if(u.fly)S.lures.dryfly=(S.lures.dryfly>0?S.lures.dryfly:0)+5;switchSetup(id);if(u.fly)toast('Fly rod','Comes with 5 dry flies');},u.price),S.coins<u.price));
+      if(!own&&u.resp&&(S.respect||0)<rankNeed(u.resp))acts.push(pill('buy',`Respect: ${u.resp}`,()=>{},true));
+      else if(!own)acts.push(pill('buy',buyHtml(u.price),()=>buy(()=>{S.setups[id]={owned:true,lvl:0};if(u.fly)S.lures.dryfly=(S.lures.dryfly>0?S.lures.dryfly:0)+5;switchSetup(id);if(u.fly)toast('Fly rod','Comes with 5 dry flies');},u.price),S.coins<u.price));
       else{acts.push(S.setup===id?pill('on','In hand',()=>{},true):pill('equip','Use',()=>{if(G.lure.state!=='ready'){toast('Reel in first');return;}switchSetup(id);SFX.ui();renderShop();}));
         if(lvl<2){const c2=tierCost(id,lvl+1);acts.push(pill('buy',`Upgrade <span class="coin"></span>${c2}`,()=>buy(()=>{st.lvl=lvl+1;},c2),S.coins<c2));}
         const o=document.createElement('span');o.className='own';o.textContent=TIERS[lvl].name;acts.push(o);}
@@ -3115,7 +3126,7 @@ function renderLog(){
   const st=(k,v,w)=>`<div${w?' class="wide"':''}><span>${k}</span><b>${v}</b></div>`;
   $('#logSum').innerHTML=`<div class="ang-name"><b>${esc(S.name||'Unnamed angler')}</b><button class="btn small" id="renameBtn" type="button">${S.name?'Rename':'Set name'}</button></div><div class="ang-top"><div class="ang-lv">Lv ${li.l}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${li.need?`${li.rem} / ${li.need} XP to level ${li.l+1}`:'Max level'}</span></div></div>
     <div class="ang-grid">${st('Cast reach',fDist(castReach()*curSetup().reach/10))}${st('Hook set (matched)',Math.round(Math.min(.97,.92*hookSkill())*100)+'%')}${st('Cast accuracy','\u00b1'+Math.round(lerp(18,3,skillT()))+'%')}${st('Species',n+' / '+SPECIES.length)}
-    ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
+    ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Respect',`${rankName()} · ${S.respect||0}`)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
     <div class="ang-gear">${curSetup().name} (${TIERS[curTier()].name}) \u00b7 ${curSetup().line}</div>
     <div class="ang-kit"><span class="label">Gear</span>${['finder','shades','lantern','leader','whistle'].map(id=>{const it=GEAR.gear[id];return`<div class="row"><div><b>${it.name}</b><p>${it.desc}</p></div>${S.owned[id]?`<button class="tog" role="switch" data-kit="${id}" aria-label="${it.name}" aria-checked="${gearOn(id)}"></button>`:`<span class="kit-shop"><span class="coin"></span>${it.price} in shop</span>`}</div>`;}).join('')}</div>`;
   $('#renameBtn').onclick=()=>askName(null);
@@ -3254,6 +3265,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v0.94','Respect',['Letting the right fish go now earns respect: nesting fish, trophies, personal bests and legends','Respect ranks from Newcomer to Legend, shown in your angler stats','The Fly Rod unlocks at Local respect','New outfits earned with respect: Fishing Vest, Wool Plaid, Fly-Patch Hat, Tweed Cap, Guide\u2019s Shirt and more','Luck now fades a little each day, so releasing fish keeps it up']],
   ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
   ['v0.92','Fight rework',['Fish can only take line when they pull past your drag; below it, cranking always gains line','Big fish run harder the more they outweigh your line','Runs are shorter and stay on screen more often','Some runs come straight at you, so reel fast to keep the line tight','Each rod\u2019s reel holds its own amount of line','In Willow Creek a fish that reaches the far bank can wrap you in the roots','Tap a rod in the shop to see what it\u2019s good for and what each upgrade does','A real night sky: constellations turn slowly overhead and change with the seasons','Satellites now and then drift across clear nights']],
   ['v0.91','Spooky fish',['Casting scares fish near the boat; wary fish rarely hang right under you','Hooked fish often make one more run when they see you near the boat','Fish can swim behind weeds and the flooded trunks in the Amazon']],
@@ -3305,7 +3317,7 @@ function showCatch(){
   for(const h of P.quest||[]){const s=document.createElement('span');s.className='badge alt';s.textContent=h.done?`Quest done · +${h.q.reward} coins`:`Quest ${h.q.got}/${h.q.n}`;b.append(s);}
   if(P.gut){const s=document.createElement('span');s.className='badge gut';s.textContent='Gut-hooked · 35% value';b.append(s);}
   const rel=Math.ceil(P.value*.5);
-  $('#cSellAmt').textContent=`+${P.value} coins`;$('#cRelAmt').textContent=P.gut?'Won\u2019t survive':P.bed?`+${rel} · back to its nest`:`+${rel} · luck up`;$('#cRelease').disabled=!!P.gut;
+  $('#cSellAmt').textContent=`+${P.value} coins`;$('#cRelAmt').textContent=P.gut?'Won\u2019t survive':P.bed?`+${rel} · back to its nest`+(respectFor(P)?` · +${respectFor(P)} respect`:''):`+${rel} · luck up`+(respectFor(P)?` · +${respectFor(P)} respect`:'');$('#cRelease').disabled=!!P.gut;
   const c=$('#catchCanvas'),x=c.getContext('2d');let t0=performance.now();
   const anim=()=>{if($('#catch').hidden)return;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,640,320);const t=(performance.now()-t0)/1000;
     x.save();x.translate(320,165+Math.sin(t*3)*4);x.rotate(Math.sin(t*2)*.05);const L=P.sp.shape==='eel'?520:P.sp.shape==='pike'?480:400;
@@ -3314,8 +3326,8 @@ function showCatch(){
     x.fillStyle='rgba(255,255,255,.5)';for(let i=0;i<10;i++){const a=t*.8+i*.63,r=140+Math.sin(t*2+i)*14;x.fillRect(320+Math.cos(a)*r*1.6,160+Math.sin(a)*r*.7,3,3);}
     requestAnimationFrame(anim);};anim();
 }
-function finishCatch(sold){const P=G.pending;if(!P)return;const amt=sold?P.value:Math.ceil(P.value*.5);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
-  G.pending=null;save();SFX.coin();resume();toast(sold?`+${amt} coins`:P.bed?'Back to its nest':'Released',sold?null:`+${amt} coins · luck now +${Math.round(S.luck*100)}%`);
+function finishCatch(sold){const P=G.pending;if(!P)return;const amt=sold?P.value:Math.ceil(P.value*.5);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));{const rp=respectFor(P);if(rp){const r0=rankIdx();S.respect=(S.respect||0)+rp;if(rankIdx()>r0)setTimeout(()=>{toast(`Respect earned: ${rankName()}`,rankUnlocks(rankIdx()));SFX.coin();vib([60,40,60]);},1700);}}gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
+  G.pending=null;save();SFX.coin();resume();toast(sold?`+${amt} coins`:P.bed?'Back to its nest':'Released',sold?null:`+${amt} coins · luck now +${Math.round(S.luck*100)}%`+(respectFor(P)?` · +${respectFor(P)} respect`:''));
   const qd=(P.quest||[]).filter(h=>h.done);if(qd.length)setTimeout(()=>{toast('Quest complete!',qd.map(h=>`${qTitle(h.q)} · +${h.q.reward} coins`).join(' · '));SFX.coin();},1300);updateQuestBtn();}
 $('#cSell').onclick=()=>finishCatch(true);$('#cRelease').onclick=()=>finishCatch(false);
 
@@ -3442,6 +3454,10 @@ const LOOKS={
     bucket:{name:'Bucket Hat',price:250,col:'#6f7a3e',desc:'Keeps off the sun and the rain.'},
     beanie:{name:'Knit Beanie',price:300,col:'#e07a2a',desc:'For cold mornings on the water.'},
     lucky:{name:'Lucky Lure Hat',price:400,quests:10,col:'#b9a36a',desc:'Covered in old lures. Earned, not bought.'},
+    flyhat:{name:'Fly-Patch Hat',price:300,resp:'Local',col:'#7a7a4a',desc:'An old bucket hat with flies stuck in the band.'},
+    tweed:{name:'Tweed Cap',price:450,resp:'Old Hand',col:'#7a6a52',desc:'Flat cap of an angler who\u2019s seen it all.'},
+    guidehat:{name:'Guide\u2019s Wide-Brim',price:600,resp:'Guide',col:'#b8a77a',desc:'Sun-faded from a thousand days on the water.'},
+    legendhat:{name:'Legend\u2019s Hat',price:1200,resp:'Legend',col:'#2e2a26',desc:'Dark felt with a gold band. People whisper when you walk down the dock.'},
     cowboy:{name:'Cowboy Hat',price:600,col:'#7a4a24',desc:'Wide brim, big attitude.'},
     skipper:{name:'Skipper Cap',price:900,col:'#f0eee6',desc:'Every boat needs a captain.'}},
   shirt:{denim:{name:'Denim Shirt',price:0,col:'#3d5a7a',desc:'The one you always wear.'},
@@ -3449,9 +3465,13 @@ const LOOKS={
     flannel:{name:'Red Flannel',price:120,col:'#a8322a',pat:'check',desc:'A classic.'},
     orange:{name:'Hunter Orange',price:150,col:'#e8742a',desc:'Nobody will miss you on the bank.'},
     camo:{name:'Camo Jacket',price:200,col:'#5d6a3a',pat:'camo',desc:'The fish still see you.'},
+    vest:{name:'Fishing Vest',price:200,resp:'Regular',col:'#a89a6a',pat:'pockets',desc:'A pocket for every fly box.'},
+    wool:{name:'Wool Plaid',price:300,resp:'Local',col:'#2f4a6a',pat:'check',desc:'Warm on a cold creek at dawn.'},
+    guideshirt:{name:'Guide\u2019s Shirt',price:500,resp:'Old Hand',col:'#6f7c55',pat:'pockets',desc:'Worn by the people other anglers ask for advice.'},
     island:{name:'Island Shirt',price:350,col:'#2a9a9a',pat:'flowers',desc:'Vacation mode.'}},
   rod:{stock:{name:'Stock Finish',price:0,col:null,desc:'Whatever the rod came with.'},
     bamboo:{name:'Bamboo Wrap',price:500,col:'#c9a45a',desc:'Warm and old-timey.'},
+    cane:{name:'Split-Cane Finish',price:900,resp:'Guide',col:'#b07a3a',desc:'Glowing amber cane, like the old masters fished.'},
     gold:{name:'Golden Rod',price:3000,quests:25,col:'#f0c43a',desc:'For the angler who has done it all.'}}};
 function look(){const L=S.look||{};return{hat:LOOKS.hat[L.hat]?L.hat:'straw',shirt:LOOKS.shirt[L.shirt]?L.shirt:'denim',rod:LOOKS.rod[L.rod]?L.rod:'stock'};}
 function ownsLook(slot,id){return LOOKS[slot][id].price===0||!!(S.owned&&S.owned['look_'+slot+'_'+id]);}
@@ -3462,6 +3482,7 @@ function drawAnglerBody(c,ax,y,dk,lk,short){
   if(sh.pat){c.save();body();c.clip();
     if(sh.pat==='check'){c.fillStyle='rgba(20,10,10,.32)';c.fillRect(ax-4.5,y-32,2,h);c.fillRect(ax+1.5,y-32,2,h);c.fillRect(ax-7,y-27,14,2);c.fillRect(ax-7,y-20,14,2);}
     else if(sh.pat==='camo'){for(const [dx,dy,r,cl] of [[-3,-28,3.2,'rgba(40,46,20,.65)'],[3,-22,3.6,'rgba(150,130,80,.5)'],[-2,-17,3,'rgba(40,46,20,.6)'],[4,-30,2.4,'rgba(150,130,80,.45)']]){c.fillStyle=cl;c.beginPath();c.ellipse(ax+dx,y+dy,r,r*.7,.5,0,TAU);c.fill();}}
+    else if(sh.pat==='pockets'){c.fillStyle='rgba(0,0,0,.22)';c.fillRect(ax-6,y-28,4.6,4);c.fillRect(ax+1.4,y-28,4.6,4);c.fillRect(ax-6,y-21,4.6,4);c.fillRect(ax+1.4,y-21,4.6,4);c.fillStyle='rgba(255,255,255,.2)';c.fillRect(ax-6,y-28,4.6,.8);c.fillRect(ax+1.4,y-28,4.6,.8);}
     else if(sh.pat==='flowers'){c.fillStyle=D('#fff0c8',.5);for(const [dx,dy] of [[-3,-28],[3,-23],[-2,-18],[4,-30],[-4,-22]]){c.beginPath();c.arc(ax+dx,y+dy,1.4,0,TAU);c.fill();}}
     c.restore();}
   c.fillStyle=D('#e0a98a');c.beginPath();c.arc(ax,y-38,6,0,TAU);c.fill();
@@ -3469,13 +3490,15 @@ function drawAnglerBody(c,ax,y,dk,lk,short){
 function drawHat(c,id,ax,y,D){const col=D(LOOKS.hat[id].col),dark='rgba(0,0,0,.3)';c.fillStyle=col;
   const poly=pts=>{c.beginPath();c.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)c.lineTo(pts[i],pts[i+1]);c.closePath();c.fill();};
   if(id==='cap'){c.beginPath();c.ellipse(ax,y-42,6.6,5.4,0,Math.PI,0);c.fill();c.fillRect(ax+2,y-43,10,2.2);c.fillStyle=dark;c.fillRect(ax+2,y-41.6,10,.8);}
-  else if(id==='bucket'||id==='lucky'){poly([ax-5,y-49,ax+5,y-49,ax+6.5,y-43,ax+9.5,y-40,ax-9.5,y-40,ax-6.5,y-43]);c.fillStyle=dark;c.fillRect(ax-6.5,y-44,13,1.4);
+  else if(id==='bucket'||id==='lucky'||id==='flyhat'){poly([ax-5,y-49,ax+5,y-49,ax+6.5,y-43,ax+9.5,y-40,ax-9.5,y-40,ax-6.5,y-43]);c.fillStyle=dark;c.fillRect(ax-6.5,y-44,13,1.4);
     if(id==='lucky'){c.fillStyle=D('#d8382a');c.beginPath();c.arc(ax-3.5,y-46.5,1.7,Math.PI,0);c.fill();c.fillStyle=D('#ffffff');c.beginPath();c.arc(ax-3.5,y-46.5,1.7,0,Math.PI);c.fill();
-      c.fillStyle=D('#e8c040');c.beginPath();c.ellipse(ax+2.5,y-46.5,1.3,2.2,.4,0,TAU);c.fill();c.strokeStyle=D('#9aa3a8');c.lineWidth=.7;c.beginPath();c.arc(ax+5.5,y-44,1.4,0,Math.PI);c.stroke();}}
+      c.fillStyle=D('#e8c040');c.beginPath();c.ellipse(ax+2.5,y-46.5,1.3,2.2,.4,0,TAU);c.fill();c.strokeStyle=D('#9aa3a8');c.lineWidth=.7;c.beginPath();c.arc(ax+5.5,y-44,1.4,0,Math.PI);c.stroke();}
+    if(id==='flyhat'){for(const [dx,cl] of [[-4,'#c9a46a'],[-1,'#e8d03a'],[2.5,'#8a5a32'],[5,'#d8463a']]){c.fillStyle=D(cl);c.beginPath();c.ellipse(ax+dx,y-44.6,1.2,.8,-.5,0,TAU);c.fill();}}}
   else if(id==='beanie'){c.beginPath();c.ellipse(ax,y-41,6.9,7,0,Math.PI,0);c.fill();c.fillStyle=dark;c.fillRect(ax-7,y-43.5,14,3);c.fillStyle=D('#f4e6c8');c.beginPath();c.arc(ax,y-48.5,2.4,0,TAU);c.fill();}
-  else if(id==='cowboy'){c.beginPath();c.moveTo(ax-5,y-42.5);c.lineTo(ax-5.6,y-50);c.quadraticCurveTo(ax,y-47,ax+5.6,y-50);c.lineTo(ax+5,y-42.5);c.closePath();c.fill();
+  else if(id==='tweed'){c.beginPath();c.ellipse(ax-.5,y-42.5,7,3.6,0,Math.PI,0);c.fill();poly([ax+1,y-44.5,ax+11,y-43,ax+10.5,y-41.6,ax+1,y-42]);c.fillStyle=dark;c.fillRect(ax-7,y-43,14,.9);}
+  else if(id==='cowboy'||id==='legendhat'){c.beginPath();c.moveTo(ax-5,y-42.5);c.lineTo(ax-5.6,y-50);c.quadraticCurveTo(ax,y-47,ax+5.6,y-50);c.lineTo(ax+5,y-42.5);c.closePath();c.fill();
     c.beginPath();c.moveTo(ax-12,y-45);c.quadraticCurveTo(ax-8,y-41.5,ax,y-42);c.quadraticCurveTo(ax+8,y-41.5,ax+12,y-45);c.quadraticCurveTo(ax+8,y-39.5,ax,y-40);c.quadraticCurveTo(ax-8,y-39.5,ax-12,y-45);c.fill();
-    c.fillStyle=dark;c.fillRect(ax-5.2,y-44,10.4,1.4);}
+    c.fillStyle=id==='legendhat'?D('#e0b030'):dark;c.fillRect(ax-5.2,y-44,10.4,1.4);}
   else if(id==='skipper'){poly([ax-7.5,y-48.5,ax+7.5,y-48.5,ax+6.4,y-42.5,ax-6.4,y-42.5]);c.fillStyle=D('#1d2328');c.fillRect(ax-6.4,y-43.6,12.8,1.6);c.fillRect(ax+1,y-42.4,9,2);c.fillStyle=D('#e0b030');c.fillRect(ax-1.5,y-46.8,3,2);}
   else{c.fillRect(ax-10,y-42,20,3);c.beginPath();c.ellipse(ax,y-43,6.5,4.5,0,Math.PI,0);c.fill();c.fillStyle='rgba(90,40,20,.55)';c.fillRect(ax-6.5,y-43.6,13,1.4);}}
 function lookIcon(slot,id){const c=document.createElement('canvas');c.width=c.height=80;const x=c.getContext('2d');
@@ -3493,8 +3516,9 @@ function renderOutfit(box,row,pill,buyHtml){
       if(cur[slot]===id)a=pill('on','Wearing',()=>{},true);
       else if(ownsLook(slot,id))a=pill('equip','Wear',()=>{S.look=Object.assign(look(),{[slot]:id});save();SFX.ui();renderShop();});
       else if(it.quests&&done<it.quests)a=pill('buy',`${done}/${it.quests} quests`,()=>{},true);
+      else if(it.resp&&(S.respect||0)<rankNeed(it.resp))a=pill('buy',`Respect: ${it.resp}`,()=>{},true);
       else a=pill('buy',buyHtml(it.price),()=>buy(()=>{S.owned['look_'+slot+'_'+id]=1;S.look=Object.assign(look(),{[slot]:id});},it.price),S.coins<it.price);
-      row(lookIcon(slot,id),it.name,it.desc,it.quests?`Unlocks after ${it.quests} quests`:'',[a]);}}}
+      row(lookIcon(slot,id),it.name,it.desc,it.quests?`Unlocks after ${it.quests} quests`:it.resp?`Earned at ${it.resp} respect`:'',[a]);}}}
 
 document.querySelectorAll('.ver-tag').forEach(e=>e.textContent='Backroads Fishing '+VERSION);
 try{devBadge();}catch(e){}
