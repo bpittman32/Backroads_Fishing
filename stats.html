@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Backroads Stats</title>
+<style>
+:root{color-scheme:dark;
+  --bg:#0f1512;--surface:#141a17;--card:#1a221e;--line:#2a3530;--grid:#24302a;
+  --text:#eef2ee;--text2:#b9c4bc;--muted:#8a978e;
+  --s1:#3987e5;--s2:#d95926;--accent:#f2a93b;--bad:#e66767;--good:#5fb86f;--r:12px}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){color-scheme:light;
+  --bg:#f3f5f2;--surface:#fcfcfb;--card:#ffffff;--line:#dfe5df;--grid:#e8ece8;
+  --text:#0f1512;--text2:#45514a;--muted:#6a766e;--s1:#2a78d6;--s2:#eb6834;--accent:#b8720a;--bad:#c63c3b;--good:#2f8a43}}
+:root[data-theme="light"]{color-scheme:light;--bg:#f3f5f2;--surface:#fcfcfb;--card:#ffffff;--line:#dfe5df;--grid:#e8ece8;--text:#0f1512;--text2:#45514a;--muted:#6a766e;--s1:#2a78d6;--s2:#eb6834;--accent:#b8720a;--bad:#c63c3b;--good:#2f8a43}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:0 16px 40px;max-width:980px;margin:0 auto}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0 8px;border-bottom:1px solid var(--line)}
+h1{font-size:19px;margin:0;display:flex;align-items:center;gap:8px}
+h1 small{font-size:12px;color:var(--muted);font-weight:500}
+h2{font-size:15px;margin:22px 0 8px;color:var(--text)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+button,select,input{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 11px}
+button{cursor:pointer}button:active{transform:translateY(1px)}
+.chip{padding:5px 11px;border-radius:999px;font-size:13px}
+.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.tabs{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+.tabs button{border-radius:999px;font-size:14px;white-space:nowrap}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#1b1205;font-weight:600}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi i{font-style:normal;font-size:12px;color:var(--text2)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-top:10px}
+.card h3{margin:0 0 2px;font-size:14px}.card p.sub{margin:0 0 8px;font-size:12px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:720px){.grid2{grid-template-columns:1fr 1fr}}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{fill:var(--muted);font-size:10px}
+.bars .bl{display:grid;grid-template-columns:minmax(70px,34%) 1fr auto;align-items:center;gap:8px;margin:5px 0;font-size:13px}
+.bars .bl .nm{color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bars .tr{height:10px;background:var(--grid);border-radius:4px;position:relative;overflow:hidden}
+.bars .tr div{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.bars .v{font-variant-numeric:tabular-nums;color:var(--text);min-width:48px;text-align:right}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600;font-size:12px;cursor:pointer;white-space:nowrap;position:sticky;top:0;background:var(--card)}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--grid)}
+.tw{overflow-x:auto;max-height:70vh;overflow-y:auto}
+.muted{color:var(--muted)}.err{color:var(--bad)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--text2);margin:2px 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend span::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--c)}
+.cmp td.a,.cmp th.a{color:var(--text)}.cmp .dlt{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--text2);margin:1px 2px 1px 0}
+.tip{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--line);color:var(--text);font-size:12px;padding:6px 8px;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.3);z-index:20;display:none;max-width:240px}
+#login{max-width:420px;margin:40px auto}
+#login input{width:100%;margin:8px 0}
+.empty{padding:28px 10px;text-align:center;color:var(--muted)}
+details summary{cursor:pointer}
+.pill{font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="row"><h1>Backroads Stats <small id="stamp"></small></h1><span class="sp"></span>
+    <button class="chip" id="refresh" title="Reload the data">Refresh</button></div>
+  <div class="row" style="margin-top:8px" id="ranges"></div>
+  <div class="tabs" id="tabs"></div>
+</header>
+
+<section id="login" hidden>
+  <h2>Sign in</h2>
+  <p class="muted">Paste the dashboard key. It stays on this device only.</p>
+  <form id="keyForm"><input id="keyIn" type="password" placeholder="bf-…" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div class="row"><button type="submit" style="background:var(--accent);color:#1b1205;border-color:var(--accent);font-weight:600">Open</button><button type="button" id="demoBtn">Try with sample data</button></div></form>
+  <p id="loginMsg" class="err"></p>
+</section>
+
+<main id="main" hidden></main>
+<div class="tip" id="tip"></div>
+
+<script>
+const SB_URL='https://ihctnwgpcnjbjsxcvgyg.supabase.co',SB_KEY='sb_publishable_ZO8hj5a-GLz0RVA9Do9syQ_XALYglUa';
+const PLACES={pond:'Mossback Pond',creek:'Willow Creek',lake:'Big Rock Lake',bayou:'Tupelo Bayou',river:'Iron Ferry River',alpine:'Highline Lake',amazon:'Carter’s Adventure',pier:'Pelican Point Pier'};
+const PLACE_ORDER=Object.keys(PLACES);
+const $=s=>document.querySelector(s);
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=(n,d=0)=>n==null||!isFinite(n)?'–':Number(n).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+const hrs=m=>m>=60?fmt(m/60,1)+' h':fmt(m,0)+' min';
+const DAY=864e5;
+const ago=t=>{const d=(Date.now()-new Date(t))/DAY;return d<1/24?'just now':d<1?fmt(d*24)+' h ago':fmt(d)+' d ago';};
+const dayKey=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+
+let RAW=null,DEMO=false,RANGE=+(store.get('bs-range')||30),TAB=store.get('bs-tab')||'overview';
+const CMP={dim:'version',a:'',b:''};
+
+// ---------- data ----------
+async function load(){const key=store.get('bs-key');if(DEMO){RAW=demoData();render();return;}
+  if(!key){showLogin();return;}
+  $('#stamp').textContent='loading…';
+  try{const r=await fetch(SB_URL+'/rest/v1/rpc/stats_dashboard',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:key,p_days:90})});
+    const t=await r.text();if(!r.ok){let m=t;try{m=JSON.parse(t).message||t}catch(e){}throw new Error(m);}
+    RAW=JSON.parse(t);render();}
+  catch(e){const m=String(e.message||e);if(/not allowed/.test(m)){store.set('bs-key',null);showLogin('That key didn’t work.');}
+    else if(/stats_dashboard/.test(m)&&/find|exist/i.test(m)){showLogin('The dashboard function isn’t set up in the database yet. Run the SQL first.');}
+    else{$('#stamp').textContent='';$('#main').hidden=false;$('#main').innerHTML=`<div class="empty err">Couldn’t load the data: ${esc(m)}</div>`;}}}
+function showLogin(msg){$('#login').hidden=false;$('#main').hidden=true;$('#loginMsg').textContent=msg||'';$('#stamp').textContent='';}
+$('#keyForm').onsubmit=e=>{e.preventDefault();const k=$('#keyIn').value.trim();if(!k)return;store.set('bs-key',k);DEMO=false;$('#login').hidden=true;load();};
+$('#demoBtn').onclick=()=>{DEMO=true;$('#login').hidden=true;load();};
+$('#refresh').onclick=()=>load();
+
+// Everything the views need, for the chosen date range.
+function slice(){const cut=Date.now()-RANGE*DAY,S=RAW.sessions.filter(s=>new Date(s.at)>=cut),E=RAW.errors.filter(e=>new Date(e.at)>=cut);
+  const P={};for(const p of RAW.players)P[p.player_id]=p;
+  return{S,E,P};}
+function nameOf(P,id){const p=P[id];return p&&p.player?p.player:'Player '+String(id).slice(0,5);}
+function summarize(S,E){const ids=new Set(S.map(s=>s.player_id)),min=S.reduce((a,s)=>a+(+s.minutes||0),0),fish=S.reduce((a,s)=>a+(+s.fish||0),0);
+  const locs={};for(const s of S)for(const k in (s.locs||{}))locs[k]=(locs[k]||0)+(+s.locs[k]||0);
+  return{players:ids.size,sessions:S.length,min,fish,avg:S.length?min/S.length:0,fph:min?fish/(min/60):0,errors:E.length,eph:min?E.length/(min/60):0,locs,app:S.length?S.filter(s=>s.app).length/S.length:0};}
+
+// ---------- shell ----------
+const TABS=[['overview','Overview'],['compare','Compare'],['players','Players'],['errors','Errors']];
+function renderChrome(){const rg=$('#ranges');rg.innerHTML='';for(const d of[7,30,90]){const b=document.createElement('button');b.className='chip'+(RANGE===d?' on':'');b.textContent=`Last ${d} days`;b.onclick=()=>{RANGE=d;store.set('bs-range',d);render();};rg.append(b);}
+  if(DEMO){const s=document.createElement('span');s.className='pill';s.textContent='Sample data';rg.append(s);const o=document.createElement('button');o.className='chip';o.textContent='Use real data';o.onclick=()=>{DEMO=false;load();};rg.append(o);}
+  else{const o=document.createElement('button');o.className='chip';o.textContent='Sign out';o.onclick=()=>{store.set('bs-key',null);RAW=null;showLogin();};rg.append(o);}
+  const tb=$('#tabs');tb.innerHTML='';for(const [k,n] of TABS){const b=document.createElement('button');b.textContent=n;b.className=TAB===k?'on':'';b.onclick=()=>{TAB=k;store.set('bs-tab',k);render();};tb.append(b);}
+  $('#stamp').textContent=DEMO?'':'updated '+new Date(RAW.now||Date.now()).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
+function render(){if(!RAW)return;$('#login').hidden=true;$('#main').hidden=false;renderChrome();const m=$('#main');m.innerHTML='';
+  const D=slice();if(!RAW.sessions.length&&!RAW.players.length&&!RAW.errors.length){m.innerHTML='<div class="empty">No data yet. It shows up once players say yes to sharing stats and play a session.</div>';return;}
+  ({overview:viewOverview,compare:viewCompare,players:viewPlayers,errors:viewErrors})[TAB](m,D);}
+
+// ---------- tooltip ----------
+const tip=$('#tip');function showTip(e,html){tip.innerHTML=html;tip.style.display='block';const x=Math.min(innerWidth-tip.offsetWidth-8,e.clientX+12),y=Math.max(8,e.clientY-tip.offsetHeight-12);tip.style.left=x+'px';tip.style.top=y+'px';}
+function hideTip(){tip.style.display='none';}
+addEventListener('scroll',hideTip,{passive:true});
+
+// ---------- charts ----------
+function el(tag,attrs,html){const e=document.createElement(tag);for(const k in attrs||{})e.setAttribute(k,attrs[k]);if(html!=null)e.innerHTML=html;return e;}
+function card(title,sub){const c=el('div',{class:'card'});c.innerHTML=`<h3>${esc(title)}</h3>${sub?`<p class="sub">${esc(sub)}</p>`:''}`;return c;}
+// Daily columns for one or two series. Same scale for both; one axis.
+function dayChart(series,valueName,fmtV){const days=[];const end=new Date();end.setHours(0,0,0,0);for(let i=RANGE-1;i>=0;i--)days.push(dayKey(end.getTime()-i*DAY));
+  const W=360,H=160,L=30,B=20,T=8,n=days.length,k=series.length,gw=(W-L)/n,bw=Math.max(2,Math.min(18,(gw-2)/k-1));
+  const vals=series.map(s=>days.map(d=>s.by[d]||0)),max=Math.max(1,...vals.flat()),nice=niceMax(max),y=v=>T+(H-T-B)*(1-v/nice);
+  let g='';const nt=[4,5,2].find(k=>Number.isInteger(nice/k))||4;for(let i=0;i<=nt;i++){const v=nice*i/nt,yy=y(v);g+=`<line x1="${L}" x2="${W}" y1="${yy}" y2="${yy}" stroke="var(--grid)" stroke-width="1"/><text x="${L-6}" y="${yy+4}" text-anchor="end">${fmtV(v)}</text>`;}
+  let bars='';days.forEach((d,i)=>{series.forEach((s,j)=>{const v=vals[j][i];if(!v)return;const x=L+i*gw+(gw-k*(bw+1))/2+j*(bw+1),yy=y(v),h=H-B-yy;bars+=`<path d="M${x},${H-B}V${yy+Math.min(3,h)}q0,-3 3,-3h${bw-6}q3,0 3,3V${H-B}Z" fill="var(${s.c})"/>`;});});
+  let lab='';const step=Math.ceil(n/6);days.forEach((d,i)=>{if(i%step)return;const dt=new Date(d+'T12:00');lab+=`<text x="${L+i*gw+gw/2}" y="${H-6}" text-anchor="middle">${dt.toLocaleDateString([], {month:'short',day:'numeric'})}</text>`;});
+  const svg=el('div');svg.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(valueName)} per day">${g}${bars}${lab}<line x1="${L}" x2="${W}" y1="${H-B}" y2="${H-B}" stroke="var(--line)"/><rect class="hit" x="${L}" y="0" width="${W-L}" height="${H}" fill="transparent"/></svg>`;
+  const s=svg.querySelector('svg');s.addEventListener('pointermove',e=>{const r=s.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W,i=Math.floor((x-L)/gw);if(i<0||i>=n){hideTip();return;}
+    const dt=new Date(days[i]+'T12:00').toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});showTip(e,`<b>${dt}</b><br>`+series.map((sr,j)=>`${series.length>1?esc(sr.name)+': ':''}${fmtV(vals[j][i])} ${esc(valueName)}`).join('<br>'));});
+  s.addEventListener('pointerleave',hideTip);return svg;}
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v))),m=v/p;return(m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p;}
+// Horizontal bars, one series (or two for comparing, side by side on the same scale).
+function barList(rows,fmtV,two){const max=Math.max(1e-9,...rows.flatMap(r=>two?[r.a,r.b]:[r.v]));const w=el('div',{class:'bars'});
+  if(!rows.length){w.innerHTML='<div class="muted">Nothing yet.</div>';return w;}
+  for(const r of rows){if(two){w.append(el('div',{class:'bl'},`<span class="nm">${esc(r.name)}</span><span><div class="tr" style="margin-bottom:3px"><div style="width:${r.a/max*100}%;background:var(--s1)"></div></div><div class="tr"><div style="width:${r.b/max*100}%;background:var(--s2)"></div></div></span><span class="v">${fmtV(r.a)}<br>${fmtV(r.b)}</span>`));}
+    else w.append(el('div',{class:'bl'},`<span class="nm">${esc(r.name)}</span><span class="tr"><div style="width:${r.v/max*100}%;background:var(--s1)"></div></span><span class="v">${fmtV(r.v)}</span>`));}
+  return w;}
+function kpis(list){const k=el('div',{class:'kpis'});for(const [v,l,sub] of list)k.append(el('div',{class:'kpi'},`<span>${esc(l)}</span><b>${v}</b>${sub?`<i>${sub}</i>`:''}`));return k;}
+function countBy(arr,key,val){const o={};for(const x of arr){const k=typeof key==='function'?key(x):x[key];if(k==null||k==='')continue;o[k]=(o[k]||0)+(val?val(x):1);}return o;}
+function toRows(o,limit=10,label){return Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,limit).map(([k,v])=>({name:label?label(k):k,v}));}
+
+// ---------- views ----------
+function viewOverview(m,{S,E,P}){const s=summarize(S,E),cut=Date.now()-RANGE*DAY,newP=RAW.players.filter(p=>new Date(p.first_seen)>=cut).length;
+  m.append(kpis([[fmt(s.players),'Players','who played'],[fmt(newP),'New players',''],[fmt(s.sessions),'Sessions',''],[hrs(s.min),'Time played',''],
+    [fmt(s.avg,1)+' min','Average session',''],[fmt(s.fish),'Fish landed',fmt(s.fph,1)+' per hour'],[fmt(s.errors),'Errors',fmt(s.eph,2)+' per hour played'],[fmt(s.app*100)+'%','From the home-screen app','']]));
+  const c1=card('Time played per day','Minutes of play each day.');c1.append(dayChart([{name:'Minutes',c:'--s1',by:countBy(S,s=>dayKey(s.at),s=>+s.minutes||0)}],'min',v=>fmt(v)));m.append(c1);
+  const c2=card('Players per day','Different players who played each day.');const pd={};for(const x of S){const d=dayKey(x.at);(pd[d]=pd[d]||new Set()).add(x.player_id);}const pdc={};for(const d in pd)pdc[d]=pd[d].size;c2.append(dayChart([{name:'Players',c:'--s1',by:pdc}],'players',v=>fmt(v)));m.append(c2);
+  const g=el('div',{class:'grid2'});
+  const c3=card('Where people fish','Total time at each place.');c3.append(barList(PLACE_ORDER.filter(k=>s.locs[k]).map(k=>({name:PLACES[k],v:s.locs[k]})).sort((a,b)=>b.v-a.v),hrs));g.append(c3);
+  const c4=card('Devices','Sessions by kind of device.');c4.append(barList(toRows(countBy(S,'device')),v=>fmt(v)));g.append(c4);
+  const c5=card('Versions','Sessions by game version.');c5.append(barList(toRows(countBy(S,'version'),8),v=>fmt(v)));g.append(c5);
+  const c6=card('Session length','How long sessions last.');const bins=[['Under 5 min',0,5],['5–15 min',5,15],['15–30 min',15,30],['30–60 min',30,60],['Over an hour',60,1e9]];c6.append(barList(bins.map(([n,a,b])=>({name:n,v:S.filter(x=>+x.minutes>=a&&+x.minutes<b).length})),v=>fmt(v)));g.append(c6);
+  m.append(g);}
+
+const DIMS={version:{n:'Version',key:s=>s.version},device:{n:'Device',key:s=>s.device},player:{n:'Player',key:s=>s.player_id},place:{n:'Place'},app:{n:'App vs browser',key:s=>s.app?'Home-screen app':'Browser'},week:{n:'Week',key:s=>{const d=new Date(s.at);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return dayKey(d);}}};
+function viewCompare(m,{S,E,P}){const dim=DIMS[CMP.dim];
+  const label=v=>CMP.dim==='player'?nameOf(P,v):CMP.dim==='place'?PLACES[v]||v:CMP.dim==='week'?'Week of '+new Date(v+'T12:00').toLocaleDateString([], {month:'short',day:'numeric'}):v;
+  let opts;if(CMP.dim==='place')opts=PLACE_ORDER.filter(k=>S.some(s=>s.locs&&s.locs[k]));else opts=Object.entries(countBy(S,dim.key)).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  if(!opts.includes(CMP.a))CMP.a=opts[0]||'';if(!opts.includes(CMP.b)||CMP.b===CMP.a)CMP.b=opts.find(o=>o!==CMP.a)||'';
+  const ctl=el('div',{class:'card'});ctl.innerHTML='<h3>Compare two groups</h3><p class="sub">Pick what to split by, then the two to put side by side.</p>';
+  const r=el('div',{class:'row'});const sd=el('select');for(const k in DIMS)sd.append(new Option(DIMS[k].n,k,false,k===CMP.dim));sd.onchange=()=>{CMP.dim=sd.value;CMP.a=CMP.b='';render();};
+  const mk=(which)=>{const s2=el('select');for(const o of opts)s2.append(new Option(label(o),o,false,o===CMP[which]));s2.onchange=()=>{CMP[which]=s2.value;render();};return s2;};
+  r.append(sd,el('span',{class:'muted'},'A'),mk('a'),el('span',{class:'muted'},'B'),mk('b'));ctl.append(r);m.append(ctl);
+  if(!CMP.a||!CMP.b){m.append(el('div',{class:'empty'},'Not enough different groups in this range to compare yet.'));return;}
+  const pick=v=>{if(CMP.dim==='place'){return S.filter(s=>s.locs&&s.locs[v]).map(s=>({...s,minutes:+s.locs[v],fish:Math.round((+s.fish||0)*(+s.locs[v]/Math.max(.1,+s.minutes)))}));}return S.filter(s=>String(dim.key(s))===v);};
+  const SA=pick(CMP.a),SB=pick(CMP.b),ids=x=>new Set(x.map(s=>s.player_id));
+  const EA=CMP.dim==='place'?[]:E.filter(e=>{if(CMP.dim==='player')return e.player_id===CMP.a;if(CMP.dim==='week'||CMP.dim==='app')return SA.some(s=>s.player_id===e.player_id);return String(e[CMP.dim])===CMP.a;});
+  const EB=CMP.dim==='place'?[]:E.filter(e=>{if(CMP.dim==='player')return e.player_id===CMP.b;if(CMP.dim==='week'||CMP.dim==='app')return SB.some(s=>s.player_id===e.player_id);return String(e[CMP.dim])===CMP.b;});
+  const A=summarize(SA,EA),B=summarize(SB,EB);
+  const lg=el('div',{class:'legend'});lg.innerHTML=`<span style="--c:var(--s1)">A: ${esc(label(CMP.a))}</span><span style="--c:var(--s2)">B: ${esc(label(CMP.b))}</span>`;
+  const t=card('Side by side');t.append(lg);const rows=[['Players',A.players,B.players,v=>fmt(v)],['Sessions',A.sessions,B.sessions,v=>fmt(v)],['Time played',A.min,B.min,hrs],['Average session',A.avg,B.avg,v=>fmt(v,1)+' min'],
+    ['Fish landed',A.fish,B.fish,v=>fmt(v)],['Fish per hour',A.fph,B.fph,v=>fmt(v,1)]];if(CMP.dim!=='place')rows.push(['Errors',A.errors,B.errors,v=>fmt(v)],['Errors per hour',A.eph,B.eph,v=>fmt(v,2)]);
+  const tb=el('table',{class:'cmp'});tb.innerHTML=`<tr><th></th><th class="n">A</th><th class="n">B</th><th class="n">B vs A</th></tr>`+rows.map(([n,a,b,f])=>{const d=a?((b-a)/a*100):null;return`<tr><td>${n}</td><td class="n a">${f(a)}</td><td class="n a">${f(b)}</td><td class="n dlt">${d==null?'–':(d>0?'+':'')+fmt(d)+'%'}</td></tr>`;}).join('');
+  t.append(tb);m.append(t);
+  const c1=card('Time played per day','Minutes each day, A and B on the same scale.');const lg2=lg.cloneNode(true);c1.append(lg2,dayChart([{name:'A',c:'--s1',by:countBy(SA,s=>dayKey(s.at),s=>+s.minutes||0)},{name:'B',c:'--s2',by:countBy(SB,s=>dayKey(s.at),s=>+s.minutes||0)}],'min',v=>fmt(v)));m.append(c1);
+  if(CMP.dim!=='place'){const c2=card('Where they fish','Share of each group’s time at each place.');c2.append(lg.cloneNode(true));const tot=x=>Object.values(x).reduce((a,b)=>a+b,0)||1;
+    c2.append(barList(PLACE_ORDER.filter(k=>A.locs[k]||B.locs[k]).map(k=>({name:PLACES[k],a:(A.locs[k]||0)/tot(A.locs)*100,b:(B.locs[k]||0)/tot(B.locs)*100})),v=>fmt(v)+'%',true));m.append(c2);}}
+
+function viewPlayers(m,{S,E,P}){const per={};for(const s of S){const r=per[s.player_id]||(per[s.player_id]={min:0,n:0,fish:0,locs:{}});r.min+=+s.minutes||0;r.n++;r.fish+=+s.fish||0;for(const k in(s.locs||{}))r.locs[k]=(r.locs[k]||0)+(+s.locs[k]||0);}
+  const errBy=countBy(E,'player_id');
+  const rows=RAW.players.map(p=>({p,id:p.player_id,name:p.player||'Player '+p.player_id.slice(0,5),lv:+p.level||1,resp:+p.respect||0,sp:+p.species||0,places:(p.locs||'').split(',').filter(Boolean).length,dev:p.device||'',ver:p.version||'',last:p.last_seen,first:p.first_seen,min:(per[p.player_id]||{}).min||0,n:(per[p.player_id]||{}).n||0,fish:(per[p.player_id]||{}).fish||0,err:errBy[p.player_id]||0}));
+  const sortK=store.get('bs-psort')||'last',dir=+(store.get('bs-pdir')||-1);rows.sort((a,b)=>{const x=a[sortK],y=b[sortK];return(typeof x==='string'&&sortK!=='last'&&sortK!=='first'?String(x).localeCompare(y):(new Date(x)-new Date(y)||x-y))*dir;});
+  const c=card(`${rows.length} players`,`Tap a heading to sort. Tap a player for details. Time, sessions and fish are for the last ${RANGE} days.`);
+  const cols=[['name','Name'],['lv','Level',1],['resp','Respect',1],['sp','Species',1],['places','Places',1],['min','Time',1],['n','Sessions',1],['fish','Fish',1],['err','Errors',1],['dev','Device'],['ver','Version'],['last','Last seen']];
+  const tw=el('div',{class:'tw'}),tb=el('table');
+  tb.innerHTML=`<thead><tr>${cols.map(([k,n,num])=>`<th data-k="${k}" class="${num?'n':''}">${n}${k===sortK?(dir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="click" data-id="${esc(r.id)}"><td>${esc(r.name)}</td><td class="n">${r.lv}</td><td class="n">${r.resp}</td><td class="n">${r.sp}</td><td class="n">${r.places}</td><td class="n">${r.min?hrs(r.min):'–'}</td><td class="n">${r.n||'–'}</td><td class="n">${r.fish||'–'}</td><td class="n ${r.err?'err':''}">${r.err||'–'}</td><td>${esc(r.dev)}</td><td>${esc(r.ver)}</td><td>${ago(r.last)}</td></tr>`).join('')}</tbody>`;
+  tb.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;store.set('bs-pdir',k===sortK?-dir:-1);store.set('bs-psort',k);render();});
+  tb.querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>playerDetail(m,tr.dataset.id,rows.find(r=>r.id===tr.dataset.id),S,E));
+  tw.append(tb);c.append(tw);m.append(c);}
+function playerDetail(m,id,r,S,E){const old=$('#pdetail');if(old)old.remove();const c=card(r.name,`First seen ${new Date(r.first).toLocaleDateString()} · last seen ${ago(r.last)} · ${r.dev} · ${r.ver}`);c.id='pdetail';
+  const mine=S.filter(s=>s.player_id===id);c.append(kpis([[r.lv,'Level'],[r.resp,'Respect'],[r.sp,'Species logged'],[hrs(r.min),'Time played'],[fmt(r.n),'Sessions'],[fmt(r.fish),'Fish landed']]));
+  const loc={};for(const s of mine)for(const k in(s.locs||{}))loc[k]=(loc[k]||0)+(+s.locs[k]||0);const h=el('h2',{},'Where they fish');c.append(h,barList(PLACE_ORDER.filter(k=>loc[k]).map(k=>({name:PLACES[k],v:loc[k]})).sort((a,b)=>b.v-a.v),hrs));
+  const places=(r.p.locs||'').split(',').filter(Boolean);if(places.length)c.append(el('p',{class:'sub'},'Has caught fish at: '+places.map(k=>`<span class="tag">${esc(PLACES[k]||k)}</span>`).join('')));
+  c.append(el('h2',{},'Time played per day'),dayChart([{name:'Minutes',c:'--s1',by:countBy(mine,s=>dayKey(s.at),s=>+s.minutes||0)}],'min',v=>fmt(v)));
+  const b=el('button',{},'Compare with another player');b.onclick=()=>{CMP.dim='player';CMP.a=id;CMP.b='';TAB='compare';store.set('bs-tab','compare');render();scrollTo(0,0);};c.append(el('div',{class:'row',style:'margin-top:10px'}),b);
+  m.prepend(c);scrollTo({top:0,behavior:'smooth'});}
+
+function viewErrors(m,{S,E,P}){const groups={};for(const e of E){const k=(e.msg||'(no message)').slice(0,160);const g=groups[k]||(groups[k]={msg:k,n:0,players:new Set(),versions:{},devices:{},srcs:{},last:e.at,first:e.at});g.n++;g.players.add(e.player_id);g.versions[e.version]=(g.versions[e.version]||0)+1;g.devices[e.device]=(g.devices[e.device]||0)+1;if(e.src)g.srcs[e.src]=(g.srcs[e.src]||0)+1;if(e.at>g.last)g.last=e.at;if(e.at<g.first)g.first=e.at;}
+  const list=Object.values(groups).sort((a,b)=>b.n-a.n);const s=summarize(S,E);
+  m.append(kpis([[fmt(E.length),'Errors'],[fmt(list.length),'Different errors'],[fmt(new Set(E.map(e=>e.player_id)).size),'Players affected'],[fmt(s.eph,2),'Per hour played']]));
+  const bv=card('Errors per hour by version','Fewer is better. Versions with under 10 minutes of play are left out.');const byV={};for(const x of S)byV[x.version]=(byV[x.version]||0)+(+x.minutes||0);const ev=countBy(E,'version');
+  bv.append(barList(Object.keys(byV).filter(v=>byV[v]>=10).sort().reverse().slice(0,8).map(v=>({name:v,v:(ev[v]||0)/(byV[v]/60)})),v=>fmt(v,2)));m.append(bv);
+  const c=card('What broke','Grouped by message, most common first. Tap one for details.');if(!list.length)c.append(el('div',{class:'empty'},'No errors in this range.'));
+  for(const g of list){const d=el('details',{style:'border-top:1px solid var(--line);padding:8px 0'});d.innerHTML=`<summary><b class="${g.n>2?'err':''}">${g.n}×</b> ${esc(g.msg)} <span class="muted">· ${g.players.size} player${g.players.size>1?'s':''} · last ${ago(g.last)}</span></summary>
+    <div style="padding:6px 0 0 14px;font-size:13px"><div>Versions: ${Object.entries(g.versions).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div><div>Devices: ${Object.entries(g.devices).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div>${Object.keys(g.srcs).length?`<div>Where: ${Object.entries(g.srcs).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div>`:''}<div class="muted">First seen ${ago(g.first)}</div></div>`;c.append(d);}
+  m.append(c);}
+
+// ---------- sample data, to see how the page looks before real data comes in ----------
+function demoData(){let z=7;const r=()=>(z=(z*9301+49297)%233280)/233280;const now=Date.now();
+  const names=['Brandon','Carter','Lucy','Jason','Nick','Ava','Sam','Mia'],devs=['iPhone','iPhone','iPhone','Android phone','iPad','Computer'],vers=['v0.95a','v0.96a','v0.97a'];
+  const players=names.map((n,i)=>({player_id:'demo'+i+'abcdef',player:n,level:3+Math.floor(r()*26),respect:Math.floor(r()*160),species:5+Math.floor(r()*50),locs:PLACE_ORDER.filter(()=>r()<.5).join(','),version:vers[2],device:devs[i%devs.length],first_seen:new Date(now-(20+r()*60)*DAY).toISOString(),last_seen:new Date(now-r()*6*DAY).toISOString()}));
+  const sessions=[];for(let d=0;d<90;d++)for(const p of players){if(r()<.55)continue;const min=Math.round((2+r()*r()*80)*10)/10,locs={};let left=min;const ks=PLACE_ORDER.filter(()=>r()<.35);if(!ks.length)ks.push('pond');ks.forEach((k,i)=>{const v=i===ks.length-1?left:Math.round(left*r()*10)/10;locs[k]=v;left-=v;});
+    sessions.push({at:new Date(now-d*DAY-r()*DAY*.9).toISOString(),player_id:p.player_id,version:d<6?'v0.97a':d<20?'v0.96a':'v0.95a',device:p.device,screen:'390x844',app:r()<.6,minutes:min,locs,fish:Math.round(min*(.6+r()*1.2)),level:p.level});}
+  const msgs=["TypeError: Cannot read properties of undefined (reading 'x')","ReferenceError: mx is not defined",'NetworkError when attempting to fetch resource.','Script error.'];
+  const errors=[];for(let i=0;i<40;i++){const p=players[Math.floor(r()*players.length)];errors.push({at:new Date(now-r()*80*DAY).toISOString(),player_id:p.player_id,version:vers[Math.floor(r()*3)],device:p.device,msg:msgs[Math.floor(r()*r()*msgs.length)],src:'index.html:'+(1000+Math.floor(r()*3000))});}
+  return{now:new Date().toISOString(),players,sessions:sessions.sort((a,b)=>b.at.localeCompare(a.at)),errors};}
+
+if(/demo/.test(location.hash)){DEMO=true;}
+load();
+</script>
+</body>
+</html>
