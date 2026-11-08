@@ -237,6 +237,11 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .ri-tab{width:100%;border-collapse:collapse;font-size:13px}.ri-tab th,.ri-tab td{padding:6px 4px;text-align:center;border-bottom:1px solid var(--line)}.ri-tab th{font-size:12px;opacity:.8}.ri-tab th small{display:block;font-size:10px;color:var(--amber);text-transform:uppercase;letter-spacing:.05em}.ri-tab .rl{text-align:left;opacity:.75;font-weight:700}.ri-tab .cur{background:rgba(255,190,80,.12);font-weight:800}.ri-note{margin-top:8px!important;font-size:13px;opacity:.75}
 .li-leg{margin:8px 4px 0;font-size:13px;font-style:italic;opacity:.75}
 .li-chips span.new{opacity:.55;font-weight:600}.item .ic.tap{cursor:pointer;position:relative}.item .ic.tap::after{content:'i';position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:var(--amber);color:#1b1406;font:900 11px/16px sans-serif;text-align:center}
+.st-card{text-align:left}.st-card h2,.st-card .eyebrow,.st-card .st-foot{text-align:center}.st-card p{font-size:14px;line-height:1.45;margin:.5em 0}.st-list{margin:.4em 0 .6em;padding-left:1.1em;font-size:14px;line-height:1.45}.st-list li{margin:.35em 0}
+.st-ex{margin:.6em 0;background:rgba(255,255,255,.05);border-radius:12px;padding:8px 12px;font-size:13px}.st-ex summary{cursor:pointer;font-weight:700;min-height:32px;display:flex;align-items:center}
+.st-btns{display:grid;gap:8px;margin-top:10px}.st-foot{font-size:12px!important;opacity:.7;text-align:center}
+.sv-k{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:.4em 0}.sv-k span{opacity:.7}.sv-raw{white-space:pre-wrap;word-break:break-word;font-size:11px;background:rgba(0,0,0,.25);border-radius:8px;padding:8px;margin:6px 0 0;max-height:220px;overflow:auto}
+.sv-sec{margin:14px 0 6px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:800}
 .nt-body p{margin:.55em 0;line-height:1.45;font-size:15px}
 .tu-card{text-align:center}.tu-card .eyebrow{color:var(--amber);letter-spacing:.2em;text-transform:uppercase;font-size:12px;font-weight:800;margin-top:6px}
 .tu-card h2{margin:4px 0 6px}#tuCanvas{width:100%;max-width:420px;height:auto;background:linear-gradient(#2e5a62,#1d3a40);border-radius:16px}
@@ -594,6 +599,11 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
       <div class="row dv-col"><div><b>Time, season, weather</b></div>
         <div class="dv-ctl dv-3"><select id="dvHour"></select><select id="dvSeason"></select><select id="dvWx"></select></div></div>
     </div>
+    <h3 class="set-h">Privacy</h3>
+    <div class="panel">
+      <div class="row"><div><b>Share play stats</b><p>Anonymous error reports and a short summary of each play session, to help fix bugs.</p></div><button class="tog" role="switch" id="sStats" aria-label="Share play stats"></button></div>
+      <div class="row"><div><b>What's sent</b><p>See exactly what the game sends, and what it's sent lately.</p></div><button class="btn small" id="sStatsView">View</button></div>
+    </div>
     <h3 class="set-h">Progress</h3>
     <div class="panel">
       <div class="row"><div><b>Reset progress</b><p>Clears coins, gear and your fish log on this device.</p></div><button class="btn small danger" id="sReset">Reset</button></div>
@@ -637,6 +647,28 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
   </div>
 </section>
 
+<section class="screen" id="statsAsk" hidden>
+  <div class="sheet tu-card st-card">
+    <div class="eyebrow">Help improve the game</div>
+    <h2>Share play stats?</h2>
+    <p>Backroads Fishing can send a little anonymous information to its developer. It helps find bugs and shows which spots and devices people play on.</p>
+    <ul class="st-list">
+      <li><b>Error reports</b> when something breaks: the version, the error message, and the kind of device.</li>
+      <li><b>A short summary</b> each time you put the game away: minutes played, which spots, how many fish, your level, the kind of device and screen size.</li>
+      <li><b>Your angler card</b>: angler name, level, respect, species caught and spots fished.</li>
+    </ul>
+    <p>Nothing else from your phone: no contacts, no location, no other apps. You're identified only by a random ID the game made up, plus the angler name you already show on the leaderboard.</p>
+    <details class="st-ex"><summary>See an example</summary><div id="stExample"></div></details>
+    <div class="st-btns"><button class="btn big primary" id="stYes">Share stats</button><button class="btn big" id="stNo">No thanks</button></div>
+    <p class="st-foot">You can change this, or see exactly what's sent, any time in Settings.</p>
+  </div>
+</section>
+<section class="screen" id="statsView" hidden>
+  <div class="sheet">
+    <header class="sheet-head"><button class="back" data-back>‹ Back</button><h2>What's sent</h2></header>
+    <div id="svBody"></div>
+  </div>
+</section>
 <section class="screen" id="notes" hidden>
   <div class="sheet">
     <header class="sheet-head"><button class="back" data-back>‹ Back</button><h2>Dev Notes</h2></header>
@@ -650,7 +682,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
     <div class="tabs" id="boardTabs"></div>
     <div class="tabs board-sp" id="boardSp"></div>
     <div class="board-list" id="boardList"></div>
-    <p class="board-note">Each angler's biggest of each species, from every phone playing Backroads Fishing.</p>
+    <p class="board-note">Each angler's biggest of each species at this spot, from every phone playing Backroads Fishing.</p>
   </div>
 </section>
 
@@ -1389,6 +1421,7 @@ function tickClock(dt){
   if(period()!==before)updateNests();
   // Hatches: some dawns and dusks, bugs come off the water and fish rise all over. Not in winter or the jungle.
   if(period()!==before){G.hatch=null;if((period()==='dawn'||period()==='dusk')&&seasonIdx()!==3&&!LOC().jungle&&SPECIES.some(sp=>sp.rises&&(sp.locs||['pond']).includes(S.loc))&&Math.random()<.45){const k=['Caddis','Mayfly','Midge'][Math.floor(Math.random()*3)];G.hatch={kind:k,left:rand(35,70)};setTimeout(()=>toast(k+' hatch!','Fish are rising to bugs on top'),2600);}}
+  if(G.mode==='play'&&!G.paused&&document.visibilityState!=='hidden'){const m=Math.min(dt,.5)/60;G.sess.min+=m;G.sess.locs[S.loc]=(G.sess.locs[S.loc]||0)+m;}
   if(G.hatch){G.hatch.left-=dt*MIN_PER_SEC;if(G.hatch.left<=0)G.hatch=null;}
   if(bridge&&!G.train){for(const [tm,dir] of [[7*60+40,-1],[17*60+20,1]])if(m0<tm&&S.minutes>=tm)startTrain(dir);}
   updateTrain(dt);
@@ -1811,8 +1844,8 @@ function landTurtle(){const f=G.fight.f,sp=f.sp;f.dead=true;splash(DOCKX+20,1);u
     show('turtle');SFX.coin();},700);}
 // Changes made to someone's save (refunds, new systems) wait on a card until they tap Got it.
 function queueNotice(title,lines){(S.notices=S.notices||[]).push({title,lines});save();}
-function showNotices(){if(G.mode!=='play'||!(S.notices&&S.notices.length))return;if(G.tut||!$('#tut').hidden||currentScreen()){setTimeout(showNotices,1500);return;}const n=S.notices[0];$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');show('notice');SFX.ui();}
-$('#ntOk').onclick=()=>{if(S.notices)S.notices.shift();save();if(S.notices&&S.notices.length){const n=S.notices[0];$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');SFX.ui();}else resume();};
+function showNotices(){if(G.mode!=='play')return;if(!(S.notices&&S.notices.length)){if(S.settings.stats===undefined&&sbOn()&&!window.__statsAnswered){if(G.tut||!$('#tut').hidden||currentScreen()){setTimeout(showNotices,1500);return;}renderStatsAsk();show('statsAsk');}return;}if(G.tut||!$('#tut').hidden||currentScreen()){setTimeout(showNotices,1500);return;}const n=S.notices[0];$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');show('notice');SFX.ui();}
+$('#ntOk').onclick=()=>{if(S.notices)S.notices.shift();save();if(S.notices&&S.notices.length){const n=S.notices[0];$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');SFX.ui();}else{resume();setTimeout(showNotices,400);}};
 $('#tuGo').onclick=()=>{gainXP(G.turtleXp||20);G.turtleXp=0;resume();toast('Back in the water','It paddled off slow and steady');};
 function endFight(){G.input.reel=false;G.padEnd&&G.padEnd();$('#bReel').classList.remove('down');G.fight=null;G.lure.state='ready';G.lure.fish=null;$('#fightHud').hidden=true;G.input.tilt=0;refreshControls();}
 // ---------------- DRAG ----------------
@@ -1854,7 +1887,8 @@ function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const 
   G.pending.xp=Math.round((6+f.len*.4)*(sp.legend?3:1)+(first?40:0)+(medal>prevMedal?[10,25,60][medal]:0));G.pending.quest=qHits;for(const h of qHits)if(h.done)G.pending.xp+=h.q.xp;
   endFight();
   if(!S.log[sp.id])S.log[sp.id]={n:0,best:0,bestW:0};
-  const r=S.log[sp.id];r.n++;if(f.len>r.best){r.best=f.len;r.bestW=weight;}S.landed=S.landed||{};S.bestLoc=S.bestLoc||{};if(!S.dev&&!f.devT&&f.len>(S.landed[sp.id]||0)){S.landed[sp.id]=f.len;S.bestLoc[sp.id]=S.loc;}S.stats.caught++;save();setTimeout(sbSync,1200);
+  G.sess.fish++;const r=S.log[sp.id];r.n++;if(f.len>r.best){r.best=f.len;r.bestW=weight;}S.landed=S.landed||{};S.bestLoc=S.bestLoc||{};if(!S.dev&&!f.devT&&f.len>(S.landed[sp.id]||0)){S.landed[sp.id]=f.len;S.bestLoc[sp.id]=S.loc;}
+  if(!S.dev&&!f.devT){S.landedL=S.landedL||{};const lk=sp.id+'|'+S.loc;if(f.len>(S.landedL[lk]||0))S.landedL[lk]=f.len;}S.stats.caught++;save();setTimeout(sbSync,1200);
   SFX.fanfare();vib([60,40,60,40,120]);
   setTimeout(showCatch,650);gainXP(G.pending.xp);
 }
@@ -3065,7 +3099,7 @@ addEventListener('blur',()=>{G.input.reel=false;if(G.charging)G.charging=false;i
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(G.mode==='play'&&!G.paused)pauseGame();}});
 
 // ---------------- SCREENS ----------------
-const SCREENS=['map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle','notice'];
+const SCREENS=['map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle','notice','statsAsk','statsView'];
 function show(id){for(const s of SCREENS)$('#'+s).hidden=s!==id;}
 function open(id){G.stack.push(currentScreen());show(id);render_(id);SFX.ui();}
 function currentScreen(){return SCREENS.find(s=>!$('#'+s).hidden)||null;}
@@ -3081,16 +3115,58 @@ function sbFetch(path,opt){opt=opt||{};const ctl=new AbortController(),tm=setTim
     .then(r=>r.ok?r.json():r.text().then(t=>{let m=t;try{const j=JSON.parse(t);m=j.message||j.msg||j.error||t;}catch(e){}throw new Error(r.status+': '+String(m).slice(0,120));})).finally(()=>clearTimeout(tm));}
 let sbBusy=false;
 // Send any personal best the board hasn't seen yet (one at a time; whatever fails is retried after the next catch or launch).
-function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;S.sbSent=S.sbSent||{};
+// Per-location bests go to loc_bests. If that table isn't set up yet, this quietly stops for the session and the old board keeps working.
+// ---------- play stats (opt-in) ----------
+// Anonymous: the random player ID, angler name and game numbers. Only sent when the player has said yes, never in dev mode.
+function statsOn(){return S.settings.stats===true&&!S.dev&&sbOn();}
+function devInfo(){const ua=navigator.userAgent||'',w=Math.min(screen.width,screen.height),touch=navigator.maxTouchPoints>1;
+  const ios=/iPhone|iPod/.test(ua),ipad=/iPad/.test(ua)||(/Macintosh/.test(ua)&&touch),and=/Android/.test(ua),fire=/Silk|KF[A-Z]{2}/.test(ua);
+  const kind=ios?'iPhone':ipad?'iPad':fire?'Fire tablet':and?(w>=600?'Android tablet':'Android phone'):touch?'Touch device':'Computer';
+  return{device:kind,screen:`${screen.width}x${screen.height}`,app:!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true};}
+G.sess={min:0,locs:{},fish:0};
+function sessionPayload(){const d=devInfo(),locs={};for(const k in G.sess.locs)locs[k]=Math.round(G.sess.locs[k]*10)/10;
+  const visited=[...new Set(Object.keys(S.landedL||{}).map(k=>k.split('|')[1]).concat([S.loc]))].join(',');
+  return{p_id:sbPid(),p_version:VERSION,p_device:d.device,p_screen:d.screen,p_app:d.app,p_minutes:Math.round(G.sess.min*10)/10,p_locs:locs,p_fish:G.sess.fish,
+    p_level:lvlInfo().l,p_name:(S.name||'').slice(0,20),p_respect:S.respect||0,p_species:SPECIES.filter(sp=>S.log[sp.id]).length,p_visited:visited};}
+function statsLog(kind,data){S.statsSent=(S.statsSent||[]).slice(-7);S.statsSent.push({kind,at:Date.now(),data});save();}
+function statsPost(path,body){try{fetch(SB_URL+path,{method:'POST',keepalive:true,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>{});}catch(e){}}
+function sendSession(){if(!statsOn()||G.sess.min<.5)return;const b=sessionPayload();statsPost('/rest/v1/rpc/log_session',b);statsLog('Play session',b);G.sess={min:0,locs:{},fish:0};}
+let errSent=0,errSeen={};
+function reportError(msg,src){if(!statsOn()||errSent>=5)return;msg=String(msg||'Unknown error').slice(0,300);if(errSeen[msg])return;errSeen[msg]=1;errSent++;
+  const b={p_id:sbPid(),p_version:VERSION,p_device:devInfo().device,p_msg:msg,p_src:String(src||'').slice(0,120)};statsPost('/rest/v1/rpc/log_error',b);statsLog('Error report',b);}
+window.addEventListener('error',e=>reportError(e.message,(String(e.filename||'').split('/').pop()||'game')+':'+(e.lineno||0)));
+window.addEventListener('unhandledrejection',e=>{const r=e.reason;reportError(r&&r.message||String(r),'promise');});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendSession();});
+window.addEventListener('pagehide',sendSession);
+function statsLines(b){const locs=Object.entries(b.p_locs||{}).map(([k,v])=>`${(LOCS[k]||{}).name||k} ${v} min`).join(', ')||'none yet';
+  return [['Version',b.p_version],['Device',`${b.p_device} \u00b7 ${b.p_screen}${b.p_app?' \u00b7 home-screen app':''}`],['Played',`${b.p_minutes} min (${locs})`],['Fish caught',b.p_fish],
+    ['Angler',`${b.p_name||'(no name)'} \u00b7 level ${b.p_level} \u00b7 respect ${b.p_respect}`],['Species caught',b.p_species],['Spots fished',(b.p_visited||'').split(',').filter(Boolean).map(k=>(LOCS[k]||{}).name||k).join(', ')],['Random ID',b.p_id]];}
+function kvHtml(lines){return `<div class="sv-k">${lines.map(([k,v])=>`<span>${esc(k)}</span><b>${esc(String(v))}</b>`).join('')}</div>`;}
+function exampleSession(){return{p_id:'5f3c9a1e-7b2d-4c8e-9a10-2e6b4d7c1f88',p_version:VERSION,p_device:'iPhone',p_screen:'390x844',p_app:true,p_minutes:23.4,p_locs:{pond:15.1,lake:8.3},p_fish:12,p_level:14,p_name:'Bob',p_respect:38,p_species:11,p_visited:'pond,lake'};}
+function renderStatsAsk(){$('#stExample').innerHTML=kvHtml(statsLines(exampleSession()))+`<p style="margin:.6em 0 .2em"><b>An error report</b> looks like:</p>`+kvHtml([['Version',VERSION],['Device','Android phone'],['Error','Cannot read properties of undefined'],['Where','index.html:2210']]);}
+function renderStatsView(){const cur=sessionPayload(),on=S.settings.stats===true;
+  let h=`<div class="panel"><p>Sharing is <b>${on?'on':'off'}</b>${S.dev?' (paused while dev tools are on)':''}. ${on?'This is what the game will send when you put it away:':'If you turn it on, this is what would be sent when you put the game away:'}</p>${kvHtml(statsLines(cur))}<details><summary>Exact data</summary><pre class="sv-raw">${esc(JSON.stringify(cur,null,1))}</pre></details></div>`;
+  h+=`<div class="sv-sec">Sent lately</div>`;const log=(S.statsSent||[]).slice().reverse();
+  h+=log.length?log.map(x=>`<div class="panel"><p><b>${esc(x.kind)}</b> \u00b7 ${new Date(x.at).toLocaleString()}</p>${x.kind==='Play session'?kvHtml(statsLines(x.data)):kvHtml([['Version',x.data.p_version],['Device',x.data.p_device],['Error',x.data.p_msg],['Where',x.data.p_src]])}<details><summary>Exact data</summary><pre class="sv-raw">${esc(JSON.stringify(x.data,null,1))}</pre></details></div>`).join(''):`<div class="panel"><p>Nothing has been sent from this device.</p></div>`;
+  $('#svBody').innerHTML=h;}
+$('#stYes').onclick=()=>{S.settings.stats=true;save();SFX.ui();resume();setTimeout(showNotices,400);};
+$('#stNo').onclick=()=>{S.settings.stats=false;save();SFX.ui();resume();setTimeout(showNotices,400);};
+function sbSyncLoc(){if(G.sbLocOff||!S.landedL)return false;S.sbSentL=S.sbSentL||{};
+  const k=Object.keys(S.landedL).find(k=>SPMAP[k.split('|')[0]]&&S.landedL[k]>(S.sbSentL[k]||0));if(!k)return false;
+  const [id,loc]=k.split('|'),sp=SPMAP[id],len=S.landedL[k],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046;
+  sbBusy=true;sbFetch('/rest/v1/rpc/submit_loc_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
+    .then(()=>{S.sbSentL[k]=len;save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
+    .catch(err=>{sbBusy=false;G.sbLocOff=true;G.sbErr=String(err&&err.message||err);setTimeout(sbSync,300);});return true;}
+function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;S.sbSent=S.sbSent||{};if(sbSyncLoc())return;
   const id=Object.keys(S.landed).find(k=>SPMAP[k]&&S.landed[k]>(S.sbSent[k]||0));
   if(!id){// nothing new to send: if the name, outfit or level changed since the board last saw them, update this angler's rows
     const prof=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');if(S.sbProf===prof||!Object.keys(S.sbSent).length)return;
     sbBusy=true;sbFetch('/rest/v1/rpc/set_profile',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l})})
-      .then(()=>{S.sbProf=prof;save();for(const k in sbCache)delete sbCache[k];sbBusy=false;}).catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});
+      .then(()=>{S.sbProf=prof;save();for(const k in sbCache)delete sbCache[k];sbBusy=false;if(!G.sbLocOff)sbFetch('/rest/v1/rpc/set_loc_profile',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l})}).catch(()=>{});}).catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});
     return;}
   const sp=SPMAP[id],len=S.landed[id],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046,loc=(S.bestLoc&&S.bestLoc[id])||(sp.locs||['pond'])[0];
   sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
-    .then(()=>{S.sbSent[id]=len;S.sbProf=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');save();delete sbCache[id];sbBusy=false;setTimeout(sbSync,300);})
+    .then(()=>{S.sbSent[id]=len;S.sbProf=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
     .catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});}
 const sbCache={};
 function lookStr(){const lk=look();return`${lk.hat}.${lk.shirt}.${lk.rod}`;}
@@ -3117,15 +3193,17 @@ function renderBoard(){
     const rk=rows.map(r=>1+rows.filter(o=>(+o.lb)>(+r.lb)+1e-9||(Math.abs(o.lb-r.lb)<1e-9&&(+o.len_cm)>(+r.len_cm)+1e-9)).length),tied=rows.map(r=>rows.filter(o=>key(o)===key(r)).length>1);
     const pid=S.pid,cls=['gold','silver','bronze'];
     list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
-      +(pid&&!rows.some(r=>r.player_id===pid)&&S.log[cur]?`<div class="board-msg">Your best is ${fLen(S.log[cur].best,2)}${(S.sbSent||{})[cur]>=S.log[cur].best?'':' (not sent yet)'}.</div>`:'');
+      +(()=>{const lk=cur+'|'+lt,mine=(S.landedL||{})[lk];return pid&&!rows.some(r=>r.player_id===pid)&&mine?`<div class="board-msg">Your best here is ${fLen(mine,2)}${(S.sbSentL||{})[lk]>=mine?'':' (not sent yet)'}.</div>`:'';})();
     list.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));};
-  const c=sbCache[cur];if(c&&Date.now()-c.t<60000){show(c.rows);return;}
+  const ck=cur+'|'+lt,c=sbCache[ck];if(c&&Date.now()-c.t<60000){show(c.rows);return;}
   list.innerHTML='<div class="board-msg">Checking the board\u2026</div>';
-  sbFetch(`/rest/v1/bests?select=player,player_id,len_cm,lb,loc,look,lv&species=eq.${cur}&order=lb.desc,len_cm.desc,caught_at.asc&limit=10`)
-    .then(rows=>{sbCache[cur]={t:Date.now(),rows};show(rows);})
+  // Each location has its own board. Until loc_bests is set up, fall back to the old table filtered to this location.
+  const q=`select=player,player_id,len_cm,lb,loc,look,lv&species=eq.${cur}&loc=eq.${lt}&order=lb.desc,len_cm.desc,caught_at.asc&limit=10`;
+  sbFetch('/rest/v1/loc_bests?'+q).catch(()=>sbFetch('/rest/v1/bests?'+q))
+    .then(rows=>{sbCache[ck]={t:Date.now(),rows};show(rows);})
     .catch(err=>{const why=err&&err.name==='AbortError'?'timed out':String(err&&err.message||err);if(G.boardSp===cur&&!$('#board').hidden)list.innerHTML=`<div class="board-msg">Couldn\u2019t reach the leaderboard. Check your connection and try again in a bit.<br><small style="opacity:.6">(${esc(why)})</small></div>`;});
 }
-function render_(id){if(id==='shop')renderShop();if(id==='log')renderLog();if(id==='settings')renderSettings();if(id==='menu')renderMenu();if(id==='lurePick')renderLurePick();if(id==='map')renderMap();if(id==='quests')renderQuests();if(id==='board')renderBoard();if(id==='notes')renderNotes();if(id==='lureInfo')renderLureInfo();if(id==='install')renderInstall();}
+function render_(id){if(id==='shop')renderShop();if(id==='log')renderLog();if(id==='settings')renderSettings();if(id==='menu')renderMenu();if(id==='lurePick')renderLurePick();if(id==='map')renderMap();if(id==='quests')renderQuests();if(id==='board')renderBoard();if(id==='notes')renderNotes();if(id==='lureInfo')renderLureInfo();if(id==='install')renderInstall();if(id==='statsView')renderStatsView();}
 document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',back));
 function inGameUI(on){$('#hud').hidden=!on;$('#controls').hidden=!on;$('#shopBtn').hidden=!on;$('#questBtn').hidden=!on;if(!on)$('#fightHud').hidden=true;}
 
@@ -3242,7 +3320,9 @@ function startGame(){
     'Luck now fades a little each day, so keep releasing fish to hold it up.']);save();}
   if(!S.mothFix){S.mothFix=1;const n=S.lures.fly>0?S.lures.fly:0;if(n&&!setupOK('fly')){const amt=n*LURES.fly.price;delete S.lures.fly;S.coins+=amt;if(S.lure==='fly')S.lure=fallbackLure();queueNotice('Moth Flies refunded',[`Flies now need the Fly Rod, so the ${n} Moth Fl${n>1?'ies':'y'} in your tackle box ${n>1?'were':'was'} taken out.`,`You got the full price back: +${amt} coins.`,'Moth Flies are still in the shop for when you have a Fly Rod.']);}save();}
   if(S.nickLog){for(const k in S.log)if(S.log[k].n<=1&&!(S.landed&&S.landed[k]))delete S.log[k];delete S.nickLog;save();}
-  if(!S.landed&&!S.nickLog){S.landed={};for(const k in S.log)if(S.log[k].best>0)S.landed[k]=S.log[k].best;}setTimeout(sbSync,3000);
+  if(!S.landed&&!S.nickLog){S.landed={};for(const k in S.log)if(S.log[k].best>0)S.landed[k]=S.log[k].best;}
+  if(!S.landedL){S.landedL={};for(const k in S.landed){const sp=SPMAP[k];if(!sp)continue;const loc=(S.bestLoc||{})[k]||(sp.locs||['pond'])[0];S.landedL[k+'|'+loc]=S.landed[k];}save();}
+  setTimeout(sbSync,3000);
   G.nickT=12;G.mode='play';G.paused=false;G.stack=[];S.started=true;show(null);inGameUI(true);setTimeout(showNotices,900);
   G.lure.state='ready';G.lure.fish=null;G.fight=null;
   repopulate();G.spawnT=6;updateHUD(true);refreshControls();save();
@@ -3528,7 +3608,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
-  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights and lengths one decimal finer, and marks real ties','Fish hooked or fought with dev tools on never reach the leaderboard, even if the tools are turned off before landing']],
+  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights and lengths one decimal finer, and marks real ties','Every location has its own leaderboard, so you can see who\u2019s fished where','Optional, anonymous play stats and error reports to help fix bugs. You choose the first time, can switch it in Settings, and can see exactly what\u2019s sent','Fish hooked or fought with dev tools on never reach the leaderboard, even if the tools are turned off before landing']],
   ['v0.95','Docks and boats',['Mossback dock rebuilt: weathered boards, cross-braced pilings, a mooring post, cleat, tire bumper, ladder and bait bucket','Big Rock Lake boat is now an aluminum V-hull with an outboard, bow seat and anchor line','The Amazon canoe is now a wooden dugout with a paddle across it','Hulls sit in the water instead of on top of it','Willow Creek: a granite ledge with lichen, moss and a fern, stepping down into the water through smaller rocks with foam curling off them','Iron Ferry: the gravel bar has a wet edge, big cobbles, grass, a driftwood log and a tackle box','Every location has its own skyline: steeper ridges on the creek, snow-capped mountains and the big granite bluff behind Big Rock Lake, low country on the river and flat jungle with towering kapok trees in the Amazon','A cabin across Mossback Pond, with smoke from the chimney and lit windows at night','The lake boat no longer overlaps fish being landed','At Iron Ferry the old bridge now stands over a side river that winds back and opens into the water you fish','A railroad grade runs along the far bank to the bridge, then slopes down into the trees, with ties, rails and telegraph poles','A freight train crosses the Iron Ferry bridge twice a day: west in the morning, back east in the evening. Listen for the horn']],
   ['v0.94','Respect',['Letting the right fish go now earns respect: nesting fish, trophies, personal bests and legends','Respect ranks from Newcomer to Legend, shown in your angler stats','The Fly Rod unlocks at Local respect','New outfits earned with respect: Fishing Vest, Wool Plaid, Fly-Patch Hat, Tweed Cap, Guide\u2019s Shirt and more','Luck now fades a little each day, so releasing fish keeps it up']],
   ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
@@ -3553,7 +3633,9 @@ const NOTES=[
   ['v0.74','Big fish',['Heavy fish are matched against your line strength','Adjustable drag during fights','Simpler pause menu']]];
 function renderNotes(){$('#notesList').innerHTML=NOTES.map(([v,t,l])=>`<div class="note-v"><b>${v}</b><span>${t}</span></div><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('');}
 $('#mNotes').onclick=()=>{SFX.ui();open('notes');};
-function renderSettings(){renderDev();{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
+function renderSettings(){renderDev();$('#sStats').setAttribute('aria-checked',S.settings.stats===true);{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
+$('#sStats').onclick=()=>{S.settings.stats=S.settings.stats!==true;save();renderSettings();SFX.ui();};
+$('#sStatsView').onclick=()=>{SFX.ui();open('statsView');};
 $('#sVol').oninput=e=>{const v=+e.target.value;S.settings.vol=v;S.settings.sound=v>0;$('#sVolV').textContent=v?v+'%':'Off';if(master)master.gain.value=.69*v/100;if(!v&&rainGain)rainGain.gain.value=0;};
 $('#sVol').onchange=()=>{save();SFX.plip();};
 $('#sLefty').onclick=()=>{S.settings.lefty=!S.settings.lefty;save();renderSettings();refreshControls();SFX.ui();};
