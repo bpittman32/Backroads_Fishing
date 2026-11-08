@@ -872,7 +872,15 @@ function castFit(){const u=curSetup(),w=tackleWeight();if(w<u.cast[0])return{m:M
 function lureOK(id,setup=S.setup){const lu=LURES[id];if(!lu)return false;return SETUPS[setup]&&SETUPS[setup].fly?!!lu.flyOnly:!lu.flyOnly;}
 function fallbackLure(){const have=id=>{const c=S.lures[id];return c===-1||c>0;};return ALL_ORDER.find(id=>have(id)&&lureOK(id))||(curSetup().fly?S.lure:'worm');}
 function switchSetup(id){if(!setupOK(id)||id===S.setup)return;G.fc=null;G.charging=false;const o=S.setups[S.setup];if(o){o.lure=S.lure;o.hook=S.hook;o.rig=JSON.parse(JSON.stringify(S.rig||{type:'free'}));}
-  S.setup=id;const n=S.setups[id];if(n.lure&&(S.lures[n.lure]===-1||S.lures[n.lure]>0))S.lure=n.lure;if(n.hook&&S.owned[n.hook])S.hook=n.hook;if(n.rig)S.rig=JSON.parse(JSON.stringify(n.rig));if(!lureOK(S.lure))S.lure=fallbackLure();save();updateHUD(true);}
+  // Each rod comes back exactly as you left it: its own bait or lure, hook and rig. A rod you haven't set up yet gets a sensible default for it, never the other rod's tackle.
+  S.setup=id;const n=S.setups[id],have=k=>S.lures[k]===-1||S.lures[k]>0;
+  S.rig=n.rig?JSON.parse(JSON.stringify(n.rig)):{type:'free'};
+  if(n.hook&&S.owned[n.hook])S.hook=n.hook;
+  S.lure=n.lure&&have(n.lure)&&lureOK(n.lure,id)?n.lure:defaultLureFor(id);
+  save();updateHUD(true);}
+function defaultLureFor(id){const u=SETUPS[id],have=k=>S.lures[k]===-1||S.lures[k]>0;const cands=ALL_ORDER.filter(k=>have(k)&&lureOK(k,id));
+  const fit=cands.filter(k=>{const w=tackleWeight(k);return w>=u.cast[0]&&w<=u.cast[1];});const want=k=>id==='cat'?LURES[k].bait:!LURES[k].bait,big=['liver','minnow','shad','crawfish'];
+  return (id==='cat'&&cands.find(k=>big.includes(k)))||fit.find(want)||cands.find(want)||fit[0]||cands[0]||(u.fly?'dryfly':'worm');}
 GEAR.bobbers={fixed:{name:'Fixed Bobber',price:6,max:6,desc:'Clips onto the line. Shows every nibble clearly. Holds bait up to 6 ft down, but casts shorter when set deep.'},
   slip:{name:'Slip Bobber',price:12,max:18,desc:'Slides to a stop knot. Casts full distance at any depth, down to 18 ft. Lies flat while the bait sinks, then stands up.'}};
 GEAR.terminal={swivel:{name:'Barrel Swivels',price:5,desc:'Joins the main line to a leader. Needed for Carolina and three-way rigs.'}};
@@ -1411,7 +1419,9 @@ function hookSkill(){return lerp(.78,1.04,skillT());}
 function depthM(y){return clamp((unwarpY(y)-SURF)/Math.max(1,GROUND-SURF),0,1.2)*LOC().maxDepth;}
 function imp(){return S.settings.units!=='metric';}
 function fLen(cm,d=1){return imp()?(cm/2.54).toFixed(d)+' in':cm.toFixed(d)+' cm';}
-function fWt(kg){if(!imp())return kg<1?Math.round(kg*1000)+' g':kg.toFixed(2)+' kg';const oz=kg*35.274;if(oz<16)return oz.toFixed(1)+' oz';let lb=Math.floor(oz/16),r=Math.round(oz-lb*16);if(r===16){lb++;r=0;}if(lb>=100)return `${Math.round(oz/16)} lb`;return r?`${lb} lb ${r} oz`:`${lb} lb`;}
+// precise: one more decimal, for the leaderboard where close fish need telling apart
+function fWt(kg,precise){if(precise){if(!imp())return kg<1?(kg*1000).toFixed(1)+' g':kg.toFixed(3)+' kg';const oz=kg*35.274;if(oz<16)return oz.toFixed(2)+' oz';const lb=Math.floor(oz/16),r=oz-lb*16;return `${lb} lb ${r.toFixed(1)} oz`;}
+  if(!imp())return kg<1?Math.round(kg*1000)+' g':kg.toFixed(2)+' kg';const oz=kg*35.274;if(oz<16)return oz.toFixed(1)+' oz';let lb=Math.floor(oz/16),r=Math.round(oz-lb*16);if(r===16){lb++;r=0;}if(lb>=100)return `${Math.round(oz/16)} lb`;return r?`${lb} lb ${r} oz`:`${lb} lb`;}
 function fDist(m,d=0){return imp()?(m*3.281).toFixed(d)+' ft':m.toFixed(d)+' m';}
 function fTrophy(id){const t=TROPHY[id];return imp()?t.map(v=>Math.round(v/2.54)).join(' / ')+' in':t.join(' / ')+' cm';}
 function lvlSummary(){return`Casts reach ${fDist(castReach()/10)} \u00b7 hook sets up to ${Math.round(Math.min(.97,.92*hookSkill())*100)}%`;}
@@ -3078,7 +3088,7 @@ function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;S.sbSent=
       .then(()=>{S.sbProf=prof;save();for(const k in sbCache)delete sbCache[k];sbBusy=false;}).catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});
     return;}
   const sp=SPMAP[id],len=S.landed[id],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046,loc=(S.bestLoc&&S.bestLoc[id])||(sp.locs||['pond'])[0];
-  sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(1),p_lb:+Math.min(699,lb).toFixed(2),p_look:lookStr(),p_lv:lvlInfo().l})})
+  sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(1),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
     .then(()=>{S.sbSent[id]=len;S.sbProf=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');save();delete sbCache[id];sbBusy=false;setTimeout(sbSync,300);})
     .catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});}
 const sbCache={};
@@ -3101,13 +3111,16 @@ function renderBoard(){
   for(const sp of sps){const b=document.createElement('button');b.textContent=sp.name;b.setAttribute('aria-selected',sp.id===cur);b.onclick=()=>{G.boardSp=sp.id;SFX.ui();renderBoard();};chips.append(b);}
   const show=rows=>{if(G.boardSp!==cur||$('#board').hidden)return;
     if(!rows.length){list.innerHTML='<div class="board-msg">Nobody is on this board yet. Land one and it will be yours.</div>';return;}
+    // Rank by weight, then length. Fish that match on both share a place and show as tied.
+    rows=rows.slice().sort((a,b)=>(+b.lb)-(+a.lb)||(+b.len_cm)-(+a.len_cm));const key=r=>(+r.lb).toFixed(3)+'|'+(+r.len_cm).toFixed(1);
+    const rk=rows.map(r=>1+rows.filter(o=>(+o.lb)>(+r.lb)+1e-9||(Math.abs(o.lb-r.lb)<1e-9&&(+o.len_cm)>(+r.len_cm)+1e-9)).length),tied=rows.map(r=>rows.filter(o=>key(o)===key(r)).length>1);
     const pid=S.pid,cls=['gold','silver','bronze'];
-    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[i]||''}${r.player_id===pid?' me':''}"><span class="rk">${i+1}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm)}</span><span class="sub">${fWt(+r.lb/2.2046)} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
+    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
       +(pid&&!rows.some(r=>r.player_id===pid)&&S.log[cur]?`<div class="board-msg">Your best is ${fLen(S.log[cur].best)}${(S.sbSent||{})[cur]>=S.log[cur].best?'':' (not sent yet)'}.</div>`:'');
     list.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));};
   const c=sbCache[cur];if(c&&Date.now()-c.t<60000){show(c.rows);return;}
   list.innerHTML='<div class="board-msg">Checking the board\u2026</div>';
-  sbFetch(`/rest/v1/bests?select=player,player_id,len_cm,lb,loc,look,lv&species=eq.${cur}&order=len_cm.desc,caught_at.asc&limit=10`)
+  sbFetch(`/rest/v1/bests?select=player,player_id,len_cm,lb,loc,look,lv&species=eq.${cur}&order=lb.desc,len_cm.desc,caught_at.asc&limit=10`)
     .then(rows=>{sbCache[cur]={t:Date.now(),rows};show(rows);})
     .catch(err=>{const why=err&&err.name==='AbortError'?'timed out':String(err&&err.message||err);if(G.boardSp===cur&&!$('#board').hidden)list.innerHTML=`<div class="board-msg">Couldn\u2019t reach the leaderboard. Check your connection and try again in a bit.<br><small style="opacity:.6">(${esc(why)})</small></div>`;});
 }
@@ -3511,7 +3524,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
-  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play']],
+  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights one decimal finer, and marks real ties']],
   ['v0.95','Docks and boats',['Mossback dock rebuilt: weathered boards, cross-braced pilings, a mooring post, cleat, tire bumper, ladder and bait bucket','Big Rock Lake boat is now an aluminum V-hull with an outboard, bow seat and anchor line','The Amazon canoe is now a wooden dugout with a paddle across it','Hulls sit in the water instead of on top of it','Willow Creek: a granite ledge with lichen, moss and a fern, stepping down into the water through smaller rocks with foam curling off them','Iron Ferry: the gravel bar has a wet edge, big cobbles, grass, a driftwood log and a tackle box','Every location has its own skyline: steeper ridges on the creek, snow-capped mountains and the big granite bluff behind Big Rock Lake, low country on the river and flat jungle with towering kapok trees in the Amazon','A cabin across Mossback Pond, with smoke from the chimney and lit windows at night','The lake boat no longer overlaps fish being landed','At Iron Ferry the old bridge now stands over a side river that winds back and opens into the water you fish','A railroad grade runs along the far bank to the bridge, then slopes down into the trees, with ties, rails and telegraph poles','A freight train crosses the Iron Ferry bridge twice a day: west in the morning, back east in the evening. Listen for the horn']],
   ['v0.94','Respect',['Letting the right fish go now earns respect: nesting fish, trophies, personal bests and legends','Respect ranks from Newcomer to Legend, shown in your angler stats','The Fly Rod unlocks at Local respect','New outfits earned with respect: Fishing Vest, Wool Plaid, Fly-Patch Hat, Tweed Cap, Guide\u2019s Shirt and more','Luck now fades a little each day, so releasing fish keeps it up']],
   ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
