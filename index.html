@@ -165,6 +165,11 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .sheet-head{background:linear-gradient(rgba(8,18,15,.96) 78%,rgba(8,18,15,0));margin-inline:-6px;padding-inline:6px;padding-bottom:14px}
 .sheet-head h2{font-family:var(--f-display);font-weight:400;font-size:28px;margin:0;flex:1;letter-spacing:.01em;text-shadow:0 2px 0 rgba(0,0,0,.4)}
 .back{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-weight:700}
+.set-h{margin:18px 4px 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);font-weight:800}
+.set-h:first-of-type{margin-top:6px}
+.row.set-col{display:grid;gap:10px}
+.set-slider{display:flex;align-items:center;gap:12px}.set-slider input{flex:1;accent-color:var(--amber);height:28px}.set-slider span{min-width:44px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.vseg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.vseg button{min-height:44px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:inherit;font-weight:700;font-size:14px;font-family:inherit}.vseg button[aria-pressed="true"]{background:var(--amber);color:#1b1406;border-color:transparent}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 18px;border-radius:14px;background:var(--panel);border:1px solid var(--line);font-family:var(--f-display);font-size:20px;letter-spacing:.02em;box-shadow:0 4px 0 rgba(0,0,0,.3)}
 .btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.3)}
@@ -554,20 +559,30 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
       <h3>Keyboard</h3>
       <p><kbd>Space</kbd> cast and twitch · <kbd>↑</kbd> or <kbd>H</kbd> hook · <kbd>↓</kbd> or <kbd>S</kbd> reel · <kbd>Esc</kbd> pause</p>
     </div>
+    <div class="panel">
+      <div class="row"><div><b>Quick tour</b><p>Replay the controls walkthrough.</p></div><button class="btn small" id="sTour">Replay</button></div>
+      <div class="row"><div><b>Dev notes</b><p>What changed in each version.</p></div><button class="btn small" id="sNotes">Read</button></div>
+    </div>
   </div>
 </section>
 
 <section class="screen" id="settings" hidden>
   <div class="sheet">
     <header class="sheet-head"><button class="back" data-back>‹ Back</button><h2>Settings</h2></header>
+    <h3 class="set-h">Sound</h3>
     <div class="panel">
-      <div class="row"><div><b>Sound</b><p>Splashes, reel clicks and the catch fanfare.</p></div><button class="tog" role="switch" id="sSound" aria-label="Sound"></button></div>
+      <div class="row set-col"><div><b>Sound effects</b><p>Splashes, reel clicks, rain, the train horn and the catch fanfare.</p></div>
+        <div class="set-slider"><input type="range" id="sVol" min="0" max="100" step="5" aria-label="Sound effects volume"><span id="sVolV"></span></div></div>
+    </div>
+    <h3 class="set-h">Controls</h3>
+    <div class="panel">
       <div class="row"><div><b>Left-handed controls</b><p>Puts REEL on the right and CAST on the left.</p></div><button class="tog" role="switch" id="sLefty" aria-label="Left-handed controls"></button></div>
+      <div class="row"><div><b>Coaching hints</b><p>Tips above the buttons and the pulsing HOOK! button.</p></div><button class="tog" role="switch" id="sHints" aria-label="Coaching hints"></button></div>
+    </div>
+    <h3 class="set-h">Display</h3>
+    <div class="panel">
       <div class="row"><div><b>Metric units</b><p>Show centimeters, kilograms and meters instead of inches, pounds, ounces and feet.</p></div><button class="tog" role="switch" id="sUnits" aria-label="Metric units"></button></div>
       <div class="row"><div><b>Angler chatter</b><p>Your angler says something now and then.</p></div><button class="tog" role="switch" id="sChat" aria-label="Angler chatter"></button></div>
-      <div class="row"><div><b>Quick tour</b><p>Replay the controls walkthrough.</p></div><button class="btn small" id="sTour">Replay</button></div>
-      <div class="row"><div><b>Dev notes</b><p>What changed in each version.</p></div><button class="btn small" id="sNotes">Read</button></div>
-      <div class="row"><div><b>Coaching hints</b><p>Tips above the buttons and the pulsing HOOK! button.</p></div><button class="tog" role="switch" id="sHints" aria-label="Coaching hints"></button></div>
       <div class="row"><div><b>Fish Finder labels</b><p>Names and depths over fish you've caught before. Needs the Fish Finder from the shop.</p></div><button class="tog" role="switch" id="sFinder" aria-label="Fish Finder labels"></button></div>
     </div>
     <div class="panel dev-panel" id="devPanel" hidden>
@@ -579,6 +594,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
       <div class="row dv-col"><div><b>Time, season, weather</b></div>
         <div class="dv-ctl dv-3"><select id="dvHour"></select><select id="dvSeason"></select><select id="dvWx"></select></div></div>
     </div>
+    <h3 class="set-h">Progress</h3>
     <div class="panel">
       <div class="row"><div><b>Reset progress</b><p>Clears coins, gear and your fish log on this device.</p></div><button class="btn small danger" id="sReset">Reset</button></div>
     </div>
@@ -1009,7 +1025,8 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(ty
 
 // ---------------- AUDIO ----------------
 let AC=null,master=null,noiseBuf=null,rainSrc=null,rainGain=null;
-function audio(){if(!S.settings.sound)return null;if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.55;master.connect(AC.destination);}catch(e){return null;}}if(AC.state==='suspended')AC.resume().catch(()=>{});return AC;}
+function sfxVol(){const v=S.settings.vol;return v==null?(S.settings.sound===false?0:.8):v/100;}
+function audio(){if(!S.settings.sound||sfxVol()<=0)return null;if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.69*sfxVol();master.connect(AC.destination);}catch(e){return null;}}if(AC.state==='suspended')AC.resume().catch(()=>{});return AC;}
 function tone(f,d=.12,type='sine',v=.2,f2=null,delay=0){const a=audio();if(!a)return;const t=a.currentTime+delay;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.03);}
 function getNoise(a){if(!noiseBuf){noiseBuf=a.createBuffer(1,a.sampleRate*2,a.sampleRate);const ch=noiseBuf.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;}return noiseBuf;}
 function noise(d=.3,v=.25,freq=1200,q=.8,delay=0){const a=audio();if(!a)return;const t=a.currentTime+delay;const s=a.createBufferSource();s.buffer=getNoise(a);const fl=a.createBiquadFilter();fl.type='bandpass';fl.frequency.value=freq;fl.Q.value=q;const g=a.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(fl);fl.connect(g);g.connect(master);s.start(t,Math.random());s.stop(t+d+.05);}
@@ -1031,7 +1048,8 @@ const SFX={
   thrash(){noise(.14,.2,650,1);},
   cast(){noise(.25,.12,2500,.5);tone(1200,.25,'sine',.03,400);}
 };
-function vib(ms){try{navigator.vibrate&&navigator.vibrate(ms);}catch(e){}}
+// Vibration was removed (iPhones can't vibrate from a web page, so it only ever worked for some players).
+function vib(){}
 
 // ---------------- WORLD ----------------
 const cv=$('#cv'),ctx=cv.getContext('2d');
@@ -3493,7 +3511,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
-  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it']],
+  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play']],
   ['v0.95','Docks and boats',['Mossback dock rebuilt: weathered boards, cross-braced pilings, a mooring post, cleat, tire bumper, ladder and bait bucket','Big Rock Lake boat is now an aluminum V-hull with an outboard, bow seat and anchor line','The Amazon canoe is now a wooden dugout with a paddle across it','Hulls sit in the water instead of on top of it','Willow Creek: a granite ledge with lichen, moss and a fern, stepping down into the water through smaller rocks with foam curling off them','Iron Ferry: the gravel bar has a wet edge, big cobbles, grass, a driftwood log and a tackle box','Every location has its own skyline: steeper ridges on the creek, snow-capped mountains and the big granite bluff behind Big Rock Lake, low country on the river and flat jungle with towering kapok trees in the Amazon','A cabin across Mossback Pond, with smoke from the chimney and lit windows at night','The lake boat no longer overlaps fish being landed','At Iron Ferry the old bridge now stands over a side river that winds back and opens into the water you fish','A railroad grade runs along the far bank to the bridge, then slopes down into the trees, with ties, rails and telegraph poles','A freight train crosses the Iron Ferry bridge twice a day: west in the morning, back east in the evening. Listen for the horn']],
   ['v0.94','Respect',['Letting the right fish go now earns respect: nesting fish, trophies, personal bests and legends','Respect ranks from Newcomer to Legend, shown in your angler stats','The Fly Rod unlocks at Local respect','New outfits earned with respect: Fishing Vest, Wool Plaid, Fly-Patch Hat, Tweed Cap, Guide\u2019s Shirt and more','Luck now fades a little each day, so releasing fish keeps it up']],
   ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
@@ -3518,8 +3536,9 @@ const NOTES=[
   ['v0.74','Big fish',['Heavy fish are matched against your line strength','Adjustable drag during fights','Simpler pause menu']]];
 function renderNotes(){$('#notesList').innerHTML=NOTES.map(([v,t,l])=>`<div class="note-v"><b>${v}</b><span>${t}</span></div><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('');}
 $('#sNotes').onclick=()=>{SFX.ui();open('notes');};
-function renderSettings(){renderDev();$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sSound').setAttribute('aria-checked',S.settings.sound);$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
-$('#sSound').onclick=()=>{S.settings.sound=!S.settings.sound;if(!S.settings.sound&&rainGain)rainGain.gain.value=0;save();renderSettings();SFX.ui();};
+function renderSettings(){renderDev();{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
+$('#sVol').oninput=e=>{const v=+e.target.value;S.settings.vol=v;S.settings.sound=v>0;$('#sVolV').textContent=v?v+'%':'Off';if(master)master.gain.value=.69*v/100;if(!v&&rainGain)rainGain.gain.value=0;};
+$('#sVol').onchange=()=>{save();SFX.plip();};
 $('#sLefty').onclick=()=>{S.settings.lefty=!S.settings.lefty;save();renderSettings();refreshControls();SFX.ui();};
 $('#sUnits').onclick=()=>{S.settings.units=S.settings.units==='metric'?'imperial':'metric';save();renderSettings();SFX.ui();};
 $('#sChat').onclick=()=>{S.settings.chatter=S.settings.chatter===false;if(S.settings.chatter===false)G.bubble=null;save();renderSettings();SFX.ui();};
