@@ -273,6 +273,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .log-sum b{font-family:var(--f-mono)}
 .ang{display:grid;gap:14px}
 .ang-top{display:flex;align-items:center;gap:14px}
+.ang-resp{margin-top:10px}.ang-rank{font-family:var(--f-display);font-size:22px;color:var(--amber);line-height:1;min-width:84px}.ang-rank small{display:block;font-family:inherit;font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75;margin-bottom:3px}#logSum .ang-resp .ang-xp .bar i{background:var(--amber)}
 .ang-lv{font-family:var(--f-display);font-size:34px;color:var(--sky);line-height:1;flex:none}
 .ang-xp{flex:1;min-width:0;display:grid;gap:6px}.ang-xp .bar i{background:var(--sky);width:0}.ang-xp span{font-family:var(--f-mono);font-size:12px;color:var(--lichen-dim)}
 .ang-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -3380,13 +3381,16 @@ function renderShop(){
 function buy(fn,price){if(S.coins<price)return;S.coins-=price;fn();save();SFX.coin();renderShop();updateHUD(true);}
 
 // Log
+// Respect sits right under the level: rank, points, and how far to the next rank.
+function respHtml(){const r=S.respect||0,i=rankIdx(),nx=RANKS[i+1],lo=RANKS[i][1],pct=nx?(r-lo)/(nx[1]-lo)*100:100;
+  return `<div class="ang-top ang-resp"><div class="ang-rank"><small>Respect</small>${RANKS[i][0]}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${nx?`${r} · ${nx[1]-r} more to ${nx[0]}`:`${r} · Highest rank`}</span></div></div>`;}
 function renderLog(){
   const n=SPECIES.filter(sp=>S.log[sp.id]).length;
   const li=lvlInfo(),pct=li.need?li.rem/li.need*100:100,best=SPECIES.filter(sp=>S.log[sp.id]).sort((a,b)=>S.log[b.id].best-S.log[a.id].best)[0];
   const st=(k,v,w)=>`<div${w?' class="wide"':''}><span>${k}</span><b>${v}</b></div>`;
   $('#logSum').innerHTML=`<div class="ang-name"><b>${esc(S.name||'Unnamed angler')}</b><button class="btn small" id="renameBtn" type="button">${S.name?'Rename':'Set name'}</button></div><div class="ang-top"><div class="ang-lv">Lv ${li.l}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${li.need?`${li.rem} / ${li.need} XP to level ${li.l+1}`:'Max level'}</span></div></div>
     <div class="ang-grid">${st('Cast reach',fDist(castReach()*curSetup().reach/10))}${st('Hook set (matched)',Math.round(Math.min(.97,.92*hookSkill())*100)+'%')}${st('Cast accuracy','\u00b1'+Math.round(lerp(18,3,skillT()))+'%')}${st('Species',n+' / '+SPECIES.length)}
-    ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Respect',`${rankName()} · ${S.respect||0}`)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
+    ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Respect',`${rankName()} \u00b7 ${S.respect||0}`)}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
     <div class="ang-gear">${curSetup().name} (${TIERS[curTier()].name}) \u00b7 ${curSetup().line}</div>
     <div class="ang-kit"><span class="label">Gear</span>${['finder','shades','lantern','leader','whistle'].map(id=>{const it=GEAR.gear[id];return`<div class="row"><div><b>${it.name}</b><p>${it.desc}</p></div>${S.owned[id]?`<button class="tog" role="switch" data-kit="${id}" aria-label="${it.name}" aria-checked="${gearOn(id)}"></button>`:`<span class="kit-shop"><span class="coin"></span>${it.price} in shop</span>`}</div>`;}).join('')}</div>`;
   $('#renameBtn').onclick=()=>askName(null);
