@@ -494,7 +494,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
     <nav class="menu-btns">
       <button class="btn big primary" id="mPlay">Go Fishing</button>
       <button class="btn" id="mBoard" hidden>🏆 Leaderboard</button>
-      <div class="menu-links"><button class="linkish" id="mSettings">Settings</button><button class="linkish" id="mHelp">How to Play</button></div>
+      <div class="menu-links"><button class="linkish" id="mSettings">Settings</button><button class="linkish" id="mHelp">How to Play</button><button class="linkish" id="mNotes">Dev notes</button></div>
       <button class="install-btn" id="mInstall" hidden>📲 Add to Home Screen</button>
     </nav>
     <div class="menu-stats" id="menuStats"></div>
@@ -562,7 +562,6 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
     </div>
     <div class="panel">
       <div class="row"><div><b>Quick tour</b><p>Replay the controls walkthrough.</p></div><button class="btn small" id="sTour">Replay</button></div>
-      <div class="row"><div><b>Dev notes</b><p>What changed in each version.</p></div><button class="btn small" id="sNotes">Read</button></div>
     </div>
   </div>
 </section>
@@ -3090,7 +3089,7 @@ function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;S.sbSent=
       .then(()=>{S.sbProf=prof;save();for(const k in sbCache)delete sbCache[k];sbBusy=false;}).catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});
     return;}
   const sp=SPMAP[id],len=S.landed[id],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046,loc=(S.bestLoc&&S.bestLoc[id])||(sp.locs||['pond'])[0];
-  sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(1),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
+  sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
     .then(()=>{S.sbSent[id]=len;S.sbProf=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');save();delete sbCache[id];sbBusy=false;setTimeout(sbSync,300);})
     .catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});}
 const sbCache={};
@@ -3114,11 +3113,11 @@ function renderBoard(){
   const show=rows=>{if(G.boardSp!==cur||$('#board').hidden)return;
     if(!rows.length){list.innerHTML='<div class="board-msg">Nobody is on this board yet. Land one and it will be yours.</div>';return;}
     // Rank by weight, then length. Fish that match on both share a place and show as tied.
-    rows=rows.slice().sort((a,b)=>(+b.lb)-(+a.lb)||(+b.len_cm)-(+a.len_cm));const key=r=>(+r.lb).toFixed(3)+'|'+(+r.len_cm).toFixed(1);
+    rows=rows.slice().sort((a,b)=>(+b.lb)-(+a.lb)||(+b.len_cm)-(+a.len_cm));const key=r=>(+r.lb).toFixed(3)+'|'+(+r.len_cm).toFixed(2);
     const rk=rows.map(r=>1+rows.filter(o=>(+o.lb)>(+r.lb)+1e-9||(Math.abs(o.lb-r.lb)<1e-9&&(+o.len_cm)>(+r.len_cm)+1e-9)).length),tied=rows.map(r=>rows.filter(o=>key(o)===key(r)).length>1);
     const pid=S.pid,cls=['gold','silver','bronze'];
-    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
-      +(pid&&!rows.some(r=>r.player_id===pid)&&S.log[cur]?`<div class="board-msg">Your best is ${fLen(S.log[cur].best)}${(S.sbSent||{})[cur]>=S.log[cur].best?'':' (not sent yet)'}.</div>`:'');
+    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
+      +(pid&&!rows.some(r=>r.player_id===pid)&&S.log[cur]?`<div class="board-msg">Your best is ${fLen(S.log[cur].best,2)}${(S.sbSent||{})[cur]>=S.log[cur].best?'':' (not sent yet)'}.</div>`:'');
     list.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));};
   const c=sbCache[cur];if(c&&Date.now()-c.t<60000){show(c.rows);return;}
   list.innerHTML='<div class="board-msg">Checking the board\u2026</div>';
@@ -3529,7 +3528,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
-  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights one decimal finer, and marks real ties','Fish hooked or fought with dev tools on never reach the leaderboard, even if the tools are turned off before landing']],
+  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights and lengths one decimal finer, and marks real ties','Fish hooked or fought with dev tools on never reach the leaderboard, even if the tools are turned off before landing']],
   ['v0.95','Docks and boats',['Mossback dock rebuilt: weathered boards, cross-braced pilings, a mooring post, cleat, tire bumper, ladder and bait bucket','Big Rock Lake boat is now an aluminum V-hull with an outboard, bow seat and anchor line','The Amazon canoe is now a wooden dugout with a paddle across it','Hulls sit in the water instead of on top of it','Willow Creek: a granite ledge with lichen, moss and a fern, stepping down into the water through smaller rocks with foam curling off them','Iron Ferry: the gravel bar has a wet edge, big cobbles, grass, a driftwood log and a tackle box','Every location has its own skyline: steeper ridges on the creek, snow-capped mountains and the big granite bluff behind Big Rock Lake, low country on the river and flat jungle with towering kapok trees in the Amazon','A cabin across Mossback Pond, with smoke from the chimney and lit windows at night','The lake boat no longer overlaps fish being landed','At Iron Ferry the old bridge now stands over a side river that winds back and opens into the water you fish','A railroad grade runs along the far bank to the bridge, then slopes down into the trees, with ties, rails and telegraph poles','A freight train crosses the Iron Ferry bridge twice a day: west in the morning, back east in the evening. Listen for the horn']],
   ['v0.94','Respect',['Letting the right fish go now earns respect: nesting fish, trophies, personal bests and legends','Respect ranks from Newcomer to Legend, shown in your angler stats','The Fly Rod unlocks at Local respect','New outfits earned with respect: Fishing Vest, Wool Plaid, Fly-Patch Hat, Tweed Cap, Guide\u2019s Shirt and more','Luck now fades a little each day, so releasing fish keeps it up']],
   ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
@@ -3553,7 +3552,7 @@ const NOTES=[
   ['v0.75','Feel',['Bites are more varied from fish to fish','Top bar rearranged so everything fits']],
   ['v0.74','Big fish',['Heavy fish are matched against your line strength','Adjustable drag during fights','Simpler pause menu']]];
 function renderNotes(){$('#notesList').innerHTML=NOTES.map(([v,t,l])=>`<div class="note-v"><b>${v}</b><span>${t}</span></div><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('');}
-$('#sNotes').onclick=()=>{SFX.ui();open('notes');};
+$('#mNotes').onclick=()=>{SFX.ui();open('notes');};
 function renderSettings(){renderDev();{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
 $('#sVol').oninput=e=>{const v=+e.target.value;S.settings.vol=v;S.settings.sound=v>0;$('#sVolV').textContent=v?v+'%':'Off';if(master)master.gain.value=.69*v/100;if(!v&&rainGain)rainGain.gain.value=0;};
 $('#sVol').onchange=()=>{save();SFX.plip();};
