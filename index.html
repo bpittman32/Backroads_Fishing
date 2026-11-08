@@ -718,7 +718,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.94a';
+const VERSION='v0.95a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1006,6 +1006,7 @@ function getNoise(a){if(!noiseBuf){noiseBuf=a.createBuffer(1,a.sampleRate*2,a.sa
 function noise(d=.3,v=.25,freq=1200,q=.8,delay=0){const a=audio();if(!a)return;const t=a.currentTime+delay;const s=a.createBufferSource();s.buffer=getNoise(a);const fl=a.createBiquadFilter();fl.type='bandpass';fl.frequency.value=freq;fl.Q.value=q;const g=a.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(fl);fl.connect(g);g.connect(master);s.start(t,Math.random());s.stop(t+d+.05);}
 function rainAudio(on){const a=AC;if(!a||!S.settings.sound){if(rainGain)rainGain.gain.value=0;return;}if(!rainSrc){rainSrc=a.createBufferSource();rainSrc.buffer=getNoise(a);rainSrc.loop=true;const fl=a.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1400;rainGain=a.createGain();rainGain.gain.value=0;rainSrc.connect(fl);fl.connect(rainGain);rainGain.connect(master);rainSrc.start();}rainGain.gain.setTargetAtTime(on?.07:0,a.currentTime,.6);}
 const SFX={
+  horn(){for(const [d,l] of [[0,1.1],[1.35,1.1],[2.7,.45],[3.3,1.3]])for(const f of[277,349,415])tone(f,l,'sawtooth',.018,f*.985,d);},
   splash(s=1){noise(.4*s,.32*s,800,.6);tone(200,.18,'sine',.07*s,80);},
   plip(){tone(900,.07,'sine',.12,1350);},
   pop(){noise(.08,.3,1600,2);tone(500,.06,'square',.06,260);},
@@ -1028,7 +1029,7 @@ const cv=$('#cv'),ctx=cv.getContext('2d');
 const darkC=document.createElement('canvas'),dctx=darkC.getContext('2d');
 let UI=1,DPR=1,CW=0,CH=0,SC=1,W=400,TW=400,WX=800,H=700,SURF=220,GROUND=600;
 const DOCKX=70;
-let bigTrees=[],bridge=null,weeds=[],pads=[],hills=[],trees=[],stones=[],rocks=[],roots=[],GPAT=null,farTrees=[],ridge=[],clouds=[],reeds=[],specks=[];
+let ridge2=[],farMarks=[],nearMarks=[],bigTrees=[],bridge=null,weeds=[],pads=[],hills=[],trees=[],stones=[],rocks=[],roots=[],GPAT=null,farTrees=[],ridge=[],clouds=[],reeds=[],specks=[];
 function makeGroundPat(){
   const K=2,Z=160,cv2=document.createElement('canvas');cv2.width=cv2.height=Z*K;const x=cv2.getContext('2d');x.scale(K,K);const r=seeded(11);
   const wrap=(px,py,f)=>{for(const dx of[-Z,0,Z])for(const dy of[-Z,0,Z])f(px+dx,py+dy);};
@@ -1138,15 +1139,34 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   roots=[];for(let i=0;i<7;i++){const x=DOCKX-20+r()*130;roots.push({x,len:20+r()*40,dir:r()<.5?-1:1,ph:r()*6,w:.8+r()*1.4});}
   if(!GPAT)GPAT=makeGroundPat();
   stones=[];for(let x=DOCKX;x<WX;x+=r()*40+20)stones.push({x,r:3+r()*7,s:r()});
-  hills=[];for(let x=-20;x<=WX*.4+W+40;x+=20)hills.push([x,SURF-40-Math.sin(x*.011)*22-Math.sin(x*.031+2)*10-r()*4]);
+  // Each place has its own skyline: rolling hills at the pond, steep wooded ridges on the creek, mountains behind the big lake, low country on the river, and flat jungle in the Amazon.
+  // Skyline shapes: rolling hills, long creek-valley ridges with notches, jagged mountain peaks, flat river country with a few buttes, flat jungle.
+  const KIND={pond:'roll',creek:'ridge',lake:'peaks',river:'mesa',amazon:'flat'}[S.loc]||'roll';
+  const hsh=n=>{const v=Math.sin(n*127.1+Lc.seed*31.7)*43758.5453;return v-Math.floor(v);};
+  const sky=(x,amp,sc,jit)=>{const X=x*sc;switch(KIND){
+    case'ridge':return amp*(.78+.22*Math.sin(X*.004))-amp*.6*Math.pow(Math.abs(Math.cos(X*.011+.7)),10)+jit;
+    case'peaks':{const P=64,i=Math.floor(X/P),u=X/P-i,a=hsh(i),b2=hsh(i+1),pk=.45+.55*a,tri=Math.pow(1-Math.abs(2*u-1),1.25);return amp*Math.max(.22+.1*b2,pk*tri)+jit;}
+    case'mesa':{const i=Math.floor(X/170),u=X/170-i,on=hsh(i+9)>.55,sm=v=>clamp(v,0,1)*clamp(v,0,1)*(3-2*clamp(v,0,1));const bt=on?sm((u-.22)/.08)*sm((.78-u)/.08):0;return amp*(.22+.12*Math.sin(X*.004))+amp*.9*bt+jit;}
+    case'flat':return amp*.3*Math.sin(X*.013)+jit;
+    default:return Math.sin(X*.011)*amp+Math.sin(X*.031+2)*amp*.45+jit;}};
+  const RP={pond:[22,10,40,26,12,58],creek:[30,14,48,38,18,72],lake:[16,7,34,34,14,58],river:[10,5,32,22,6,40],amazon:[3,2,24,0,0,0]}[S.loc]||[22,10,40,26,12,58];
+  hills=[];for(let x=-20;x<=WX*.4+W+40;x+=20)hills.push([x,SURF-RP[2]-sky(x,RP[0]+RP[1]*.6,1,r()*4)]);
   trees=[];for(let x=-10;x<WX*.5+W+30;x+=r()*15+7){const con=r()<(Lc.jungle?0:Lc.deciduous?.18:Lc.shore==='boat'?.75:.62);trees.push({x,con,h:con?26+r()*34:18+r()*16,w:con?6+r()*5:10+r()*8,t:r()});}
   // River scenery uses its own random stream so the rest of the world layout stays the same.
   bigTrees=[];bridge=null;if(Lc.riverbank){let z=(Lc.seed*9301+49297)%233280;const q=()=>(z=(z*9301+49297)%233280)/233280;
     for(let x=10+q()*30;x<WX*.5+W+30;x+=46+q()*60)bigTrees.push({x,h:58+q()*44,w:24+q()*16,lean:(q()-.5)*.22,syc:q()<.45,blobs:Array.from({length:12},()=>[(q()-.5)*1.1,(q()-.5)*1.1,.22+q()*.2])});
     trees=trees.filter((t,i)=>i%2===0).map(t=>({...t,h:t.h*.8}));
-    bridge={x:TW*.62,span:230,y:SURF-26};}
+    bridge={x:TW*.62,span:84,y:SURF-21};
+    // Clear the trees once, in a fixed gap where the side river comes through, so nothing pops in or out as the view pans.
+    {const gc=bridge.x+bridge.span/2+16;bigTrees=bigTrees.filter(t=>Math.abs(t.x-gc)>t.w+60);}}
+  if(bridge){const gc=bridge.x+bridge.span/2+16;trees=trees.filter(t=>Math.abs(t.x-gc)>t.w+58);}
   farTrees=[];for(let x=-10;x<WX*.3+W+30;x+=r()*7+4)farTrees.push({x,h:7+r()*9,w:3+r()*3,con:r()<.7});
-  ridge=[];for(let x=-30;x<=WX*.12+W+40;x+=24)ridge.push([x,SURF-58-Math.sin(x*.006+1)*26-Math.sin(x*.019)*12-r()*5]);
+  ridge=[];for(let x=-30;x<=WX*.12+W+40;x+=24){const yy=SURF-RP[5]-sky(x+500,RP[3]+RP[4]*.5,.6,r()*5);if(RP[5])ridge.push([x,yy]);}
+  {let z=(Lc.seed*7919+104729)%233280;const q=()=>(z=(z*9301+49297)%233280)/233280;
+    ridge2=[];if(RP[5])for(let x=-40;x<=WX*.08+W+60;x+=30)ridge2.push([x,SURF-RP[5]*1.25-sky(x+1300,RP[3]*1.3+RP[4]*.5,.45,q()*4)]);
+    // far-shore landmarks
+    farMarks=[];if(S.loc==='lake')farMarks.push({k:'bluff',x:TW*.95});if(S.loc==='pond'){const cx=TW*1.15;nearMarks=[{k:'cabin',x:cx}];trees=trees.filter(t=>Math.abs(t.x-cx)>15);}else nearMarks=[];
+    if(Lc.jungle)for(let x=30+q()*60;x<WX*.3+W;x+=90+q()*110)farMarks.push({k:'kapok',x,h:46+q()*24,w:22+q()*12});}
   clouds=[];for(let i=0;i<8;i++){const puffs=[];const n=4+Math.floor(r()*4),wd=40+r()*60;for(let k=0;k<n;k++)puffs.push({dx:(k/(n-1)-.5)*wd+r()*8,dy:-r()*10,r:9+r()*14});clouds.push({x:r()*(W+300),y:SURF*(.1+r()*.45),v:2+r()*4,puffs});}
   reeds=[];const addReeds=(cx,n)=>{for(let k=0;k<n;k++)reeds.push({x:cx+(r()-.5)*18,h:10+r()*12,ph:r()*6,head:r()<.55,lean:(r()-.5)*.25});};
   for(let i=0;i<9;i++)addReeds(60+r()*(WX*.5+W),3+Math.floor(r()*4));
@@ -1331,6 +1351,8 @@ function tickClock(dt){
   // Hatches: some dawns and dusks, bugs come off the water and fish rise all over. Not in winter or the jungle.
   if(period()!==before){G.hatch=null;if((period()==='dawn'||period()==='dusk')&&seasonIdx()!==3&&!LOC().jungle&&SPECIES.some(sp=>sp.rises&&(sp.locs||['pond']).includes(S.loc))&&Math.random()<.45){const k=['Caddis','Mayfly','Midge'][Math.floor(Math.random()*3)];G.hatch={kind:k,left:rand(35,70)};setTimeout(()=>toast(k+' hatch!','Fish are rising to bugs on top'),2600);}}
   if(G.hatch){G.hatch.left-=dt*MIN_PER_SEC;if(G.hatch.left<=0)G.hatch=null;}
+  if(bridge&&!G.train){for(const [tm,dir] of [[7*60+40,-1],[17*60+20,1]])if(m0<tm&&S.minutes>=tm)startTrain(dir);}
+  updateTrain(dt);
   if(period()!==before){toast(PNAME[period()],period()==='dawn'?`${seasonName()} \u00b7 day ${seasonDay()} of ${SEASON_DAYS}`:{dawn:'The pond wakes up',day:'Sun’s high',dusk:'Shadows stretch over the water',night:'Things move in the deep'}[period()]);for(const f of G.fish)if(f.state==='wander')newWanderTarget(f);spawnTick(false);}
 }
 function weatherSub(){return{clear:'Good visibility',rain:'Catfish, trout and bass get bold',fog:'Shy fish come out'}[S.weather];}
@@ -1981,20 +2003,25 @@ function drawBackdrop(c,cam,dk,fog,rain,h){
   const wm=warmth(h);
   // far ridge
   c.save();c.translate(-cam*.12,0);
-  const Z=sea();let rc=mx(mx(rain?'#6f8790':'#7aa0ab','#e8eef2',win(Z.p,.7,.78,.95,1)*.55),'#121a2e',dk*.85);if(wm)rc=rc.map((v,i)=>lerp(v,[150,120,140][i],wm*.35*(1-dk)));
-  c.fillStyle=rgbStr(rc,fog?.35:.9);c.beginPath();c.moveTo(-30,SURF);for(const p of ridge)c.lineTo(p[0],p[1]);c.lineTo(ridge[ridge.length-1][0],SURF);c.fill();
+  const SKC={pond:['#3d6b55','#24473a','#7aa0ab'],creek:['#2f5a46','#1a382c','#6a92a0'],lake:['#46666a','#283f44','#8094aa'],river:['#5e7448','#3a4a2e','#a3ad9c'],amazon:['#2f5a38','#1b3a24','#88aaa2']}[S.loc]||['#3d6b55','#24473a','#7aa0ab'];
+  const Z=sea();let rc=mx(mx(rain?'#6f8790':SKC[2],'#e8eef2',win(Z.p,.7,.78,.95,1)*.55),'#121a2e',dk*.85);if(wm)rc=rc.map((v,i)=>lerp(v,[150,120,140][i],wm*.35*(1-dk)));
+  if(ridge2.length){c.save();c.translate(-cam*.05+cam*.12,0);const rc2=mx(rc,rain?'#9aa8ae':'#b9cfd6',.45*(1-dk*.6));c.fillStyle=rgbStr(rc2,fog?.25:.75);c.beginPath();c.moveTo(-40,SURF);for(const p of ridge2)c.lineTo(p[0],p[1]);c.lineTo(ridge2[ridge2.length-1][0],SURF);c.fill();
+    if(S.loc==='lake'&&!fog){const sn=rgbStr(mx('#f2f5f7','#2a3040',dk*.85),.75*(1-Z.leaf*.4));c.fillStyle=sn;for(let i=1;i<ridge2.length-1;i++){const p=ridge2[i];if(p[1]<ridge2[i-1][1]&&p[1]<ridge2[i+1][1]){c.beginPath();c.moveTo(p[0]-9,p[1]+6);c.lineTo(p[0],p[1]);c.lineTo(p[0]+9,p[1]+6);c.lineTo(p[0]+4,p[1]+4.5);c.lineTo(p[0],p[1]+6.5);c.lineTo(p[0]-4,p[1]+4.5);c.closePath();c.fill();}}}
+    c.restore();}
+  if(ridge.length){c.fillStyle=rgbStr(rc,fog?.35:.9);c.beginPath();c.moveTo(-30,SURF);for(const p of ridge)c.lineTo(p[0],p[1]);c.lineTo(ridge[ridge.length-1][0],SURF);c.fill();}
   c.restore();
   // haze
   let g=c.createLinearGradient(0,SURF-90,0,SURF);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,`rgba(${rain?'180,190,195':'220,232,236'},${(fog?.45:.22)*(1-dk*.8)})`);c.fillStyle=g;c.fillRect(0,SURF-90,W,90);
   // mid hill with far forest
   c.save();c.translate(-cam*.3,0);
-  const bare=Z.jungle?0:1-Z.leaf,hc=mx(mx(mx('#3d6b55','#7a705a',bare*.45),'#dfe6ea',Z.snow*.55),'#0d1a22',dk*.85),hc2=mx(mx(mx('#24473a','#5a5040',bare*.4),'#c8d2d8',Z.snow*.45),'#08121a',dk*.85);
+  const bare=Z.jungle?0:1-Z.leaf,hc=mx(mx(mx(SKC[0],'#7a705a',bare*.45),'#dfe6ea',Z.snow*.55),'#0d1a22',dk*.85),hc2=mx(mx(mx(SKC[1],'#5a5040',bare*.4),'#c8d2d8',Z.snow*.45),'#08121a',dk*.85);
   g=c.createLinearGradient(0,SURF-90,0,SURF);g.addColorStop(0,rgbStr(hc,fog?.5:1));g.addColorStop(1,rgbStr(hc2,fog?.6:1));
   c.fillStyle=g;c.beginPath();c.moveTo(-20,SURF);for(const p of hills)c.lineTo(p[0]*.75+0,p[1]);c.lineTo(hills[hills.length-1][0]*.75,SURF);c.fill();
   const ftc=rgbStr(mix('#2b5444','#0a1620',dk*.85),fog?.5:.95),ftd=rgbStr(mx(leafCol('#2b5444',.3,0),'#6e6258',bare*.85).map((v,i)=>lerp(v,[10,22,32][i],dk*.85)),fog?.5:.95);c.fillStyle=ftc;
-  if(bridge)drawBridge(c,dk,fog);
-  for(const t of farTrees){const b=SURF-5;c.fillStyle=t.con?ftc:ftd;if(t.con){c.beginPath();c.moveTo(t.x-t.w,b);c.lineTo(t.x,b-t.h);c.lineTo(t.x+t.w,b);c.fill();}else{c.beginPath();c.ellipse(t.x,b-t.h*.55,t.w*1.1,t.h*.55,0,0,TAU);c.fill();}}
+  for(const m of farMarks)drawFarMark(c,m,dk,fog,Z);
+  for(const t of farTrees){const b=SURF-5;if(bridge&&Math.abs(t.x-(bridge.x+bridge.span/2))<bridge.span*.55)continue;c.fillStyle=t.con?ftc:ftd;if(t.con){c.beginPath();c.moveTo(t.x-t.w,b);c.lineTo(t.x,b-t.h);c.lineTo(t.x+t.w,b);c.fill();}else{c.beginPath();c.ellipse(t.x,b-t.h*.55,t.w*1.1,t.h*.55,0,0,TAU);c.fill();}}
   c.restore();
+  if(bridge){drawChannel(c,cam,dk,fog,0);c.save();c.translate(-cam*.3,0);drawBridge(c,dk,fog);c.restore();}
   // near treeline
   c.save();c.translate(-cam*.5,0);
   const con=mix('#1d4430','#071219',dk*.85),conD=mix('#143223','#050d12',dk*.85),dec=mix('#2f5c33','#0a1716',dk*.85),decL=mix('#4a7a40','#10201a',dk*.85),trunk=mix('#3b2a1c','#0b0806',dk*.85);
@@ -2021,13 +2048,14 @@ function drawBackdrop(c,cam,dk,fog,rain,h){
       else if(!Z.jungle&&Z.leaf<.3){const cy=b-6-t.h*.5;c.strokeStyle=`rgba(242,246,250,${.85*sa})`;c.lineWidth=.8;c.lineCap='round';c.beginPath();
         for(const [dx,dy] of [[-.6,-.2],[.55,-.1],[-.3,-.55],[.35,-.5],[0,-.75]]){const x0=t.x,y0=cy+t.h*.15,x1=t.x+dx*t.w,y1=cy+dy*t.h;c.moveTo(lerp(x0,x1,.35),lerp(y0,y1,.35)-.7);c.lineTo(x1,y1-.7);}c.stroke();}}}
   if(Z.leafDrop>.02){for(let i=0;i<22;i++){const tt=(G.t*.12+i*.137)%1,x=((i*61.3+Math.sin(G.t*.8+i)*12)%(WX*.5+W))+tt*14,y=SURF-70+tt*68;c.save();c.translate(x,y);c.rotate(G.t*2+i);c.fillStyle=rgbStr(mx(FALLC[i%FALLC.length],'#0a0806',dk*.8),Z.leafDrop*fa);c.beginPath();c.ellipse(0,0,1.8,.9,0,0,TAU);c.fill();c.restore();}}
+  for(const m of nearMarks)drawFarMark(c,m,dk,fog,Z);
   drawReeds(c,dk);
   c.restore();
   // grassy shore strip (a muddy cut bank with rocks on the river)
   const Zg=sea(),gt=c0=>mx(mx(mx(c0,'#a89a5a',Zg.grass*.7),'#eef2f5',Zg.snow*.8),'#0c1a12',dk*.85);
   if(LOC().riverbank){g=c.createLinearGradient(0,SURF-9,0,SURF+1);g.addColorStop(0,rgbStr(gt('#5e7a3a')));g.addColorStop(.35,rgbStr(mix('#7a6648','#141008',dk*.85)));g.addColorStop(1,rgbStr(mix('#4e4030','#0a0806',dk*.85)));c.fillStyle=g;c.fillRect(0,SURF-8,W,9);
     const off2=cam*.55;c.fillStyle=rgbStr(mix('#8a8478','#151412',dk*.85));for(let i=0;i<40;i++){const x=((i*53.7-off2)%(W+40)+W+40)%(W+40)-20,rr=1.4+(i*7%5)*.5;c.beginPath();c.ellipse(x,SURF-1.5,rr*1.4,rr,0,0,TAU);c.fill();}
-    c.strokeStyle=rgbStr(mix('#6a9a48','#12241a',dk*.85),.8);c.lineWidth=.8;c.beginPath();for(let x=-((cam*.55)%5);x<W;x+=3.5){const hh=1.5+((x*7.3+cam*.55*7.3)%4);c.moveTo(x,SURF-7.5);c.lineTo(x+.6,SURF-7.5-hh);}c.stroke();return;}
+    c.strokeStyle=rgbStr(mix('#6a9a48','#12241a',dk*.85),.8);c.lineWidth=.8;c.beginPath();for(let x=-((cam*.55)%5);x<W;x+=3.5){const hh=1.5+((x*7.3+cam*.55*7.3)%4);c.moveTo(x,SURF-7.5);c.lineTo(x+.6,SURF-7.5-hh);}c.stroke();if(bridge)drawChannel(c,cam,dk,fog,1);return;}
   g=c.createLinearGradient(0,SURF-9,0,SURF+1);g.addColorStop(0,rgbStr(gt('#4f7a3a')));g.addColorStop(1,rgbStr(mx(gt('#2c4a2a'),'#060e0a',.2)));c.fillStyle=g;c.fillRect(0,SURF-8,W,9);
   c.strokeStyle=rgbStr(mix('#6a9a48','#12241a',dk*.85),.8);c.lineWidth=.8;c.beginPath();const off=(cam*.55)%5;for(let x=-off;x<W;x+=2.5){const hh=2+((x*7.3+cam*.55*7.3)%5);c.moveTo(x,SURF-7);c.lineTo(x+.6,SURF-7-hh);}c.stroke();
   if(LOC().jungle){const Za=sea();if(Za.dry>.3){c.fillStyle=rgbStr(mx('#7a6040','#0a0806',dk*.85));c.fillRect(0,SURF-2-6*(Za.dry-.3),W,2+6*(Za.dry-.3));c.fillStyle=rgbStr(mx('#5a4630','#0a0806',dk*.85),.6);for(let x=-((cam*.55)%23);x<W;x+=23){c.fillRect(x,SURF-1-3*(Za.dry-.3),7,.7);}}
@@ -2046,12 +2074,83 @@ function drawBigTree(c,t,dk,fa){
   for(const [dx,dy,rr] of t.blobs){c.fillStyle=rgbStr(decD,fa);c.beginPath();c.arc(cx+dx*t.w*1.5,cy+dy*t.w*.9+2,rr*t.w,0,TAU);c.fill();}
   for(const [dx,dy,rr] of t.blobs){c.fillStyle=rgbStr(dec,fa);c.beginPath();c.arc(cx+dx*t.w*1.5,cy+dy*t.w*.9,rr*t.w*.92,0,TAU);c.fill();}
   c.fillStyle=rgbStr(decL,fa*.7);for(const [dx,dy,rr] of t.blobs.slice(0,3)){c.beginPath();c.arc(cx+dx*t.w*1.5-rr*t.w*.25,cy+dy*t.w*.9-rr*t.w*.3,rr*t.w*.45,0,TAU);c.fill();}}
+// Far-shore landmarks, softened by distance: the granite bluff that gives Big Rock Lake its name, a cabin across the pond, and emergent kapok trees over the jungle.
+function drawFarMark(c,m,dk,fog,Z){const hz=fog?.45:1,K=(col,a=1)=>rgbStr(mx(mx(col,'#a9c0c8',.28),'#0d1622',dk*.85),a*hz),b=SURF-5;
+  if(m.k==='bluff'){const x=m.x;const face=[[x-40,b],[x-36,b-34],[x-28,b-58],[x-16,b-80],[x-2,b-88],[x+14,b-85],[x+25,b-70],[x+30,b-46],[x+38,b-20],[x+46,b]];
+    c.fillStyle=K('#8a8a84');c.beginPath();face.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();
+    c.fillStyle=K('#a8a79e');c.beginPath();c.moveTo(x-28,b-58);c.lineTo(x-16,b-80);c.lineTo(x-2,b-88);c.lineTo(x-6,b-46);c.lineTo(x-18,b-18);c.lineTo(x-26,b-30);c.closePath();c.fill();
+    c.strokeStyle=K('#5e5e58',.7);c.lineWidth=.8;c.beginPath();for(const [x0,y0,len] of [[-22,-66,46],[-10,-80,60],[4,-84,56],[16,-78,46],[26,-60,34]]){c.moveTo(x+x0,b+y0);c.lineTo(x+x0+2,b+y0+len);}c.stroke();
+    c.fillStyle=K('#2e4a3a');for(const [dx,h] of [[-12,8],[-5,10],[3,9],[10,7],[17,6]]){const ty=b-86+Math.abs(dx)*.3;c.beginPath();c.moveTo(x+dx-2.5,ty);c.lineTo(x+dx,ty-h);c.lineTo(x+dx+2.5,ty);c.fill();}
+    return;}
+  if(m.k==='cabin'){const x=m.x;c.fillStyle=K('#6a4a32');c.fillRect(x-7,b-9,14,9);c.fillStyle=K('#4a3424');c.beginPath();c.moveTo(x-9,b-9);c.lineTo(x,b-15);c.lineTo(x+9,b-9);c.closePath();c.fill();
+    c.fillStyle=K('#5a4a40');c.fillRect(x+3,b-17,2.4,5);
+    const lit=darkness()>.35;c.fillStyle=lit?`rgba(255,205,110,${.9*hz})`:K('#2a2a2e');c.fillRect(x-4.5,b-6.5,3,2.6);c.fillRect(x+1.5,b-6.5,3,2.6);
+    if(lit){const g=c.createRadialGradient(x,b-5,0,x,b-5,12);g.addColorStop(0,'rgba(255,200,110,.25)');g.addColorStop(1,'rgba(255,200,110,0)');c.fillStyle=g;c.fillRect(x-12,b-17,24,24);}
+    c.fillStyle=`rgba(225,230,232,${.35*hz*(1-dk*.5)})`;for(let i=0;i<4;i++){const t=(G.t*.25+i*.25)%1;c.beginPath();c.arc(x+4.2+Math.sin(G.t*.6+i)*2+t*5,b-18-t*16,1.4+t*2.4,0,TAU);c.fill();}
+    return;}
+  if(m.k==='kapok'){const x=m.x,h=m.h,w=m.w;c.strokeStyle=K('#5a4a38');c.lineWidth=2.2;c.beginPath();c.moveTo(x,b);c.lineTo(x+1,b-h);c.stroke();
+    c.lineWidth=1.2;c.beginPath();c.moveTo(x+1,b-h+4);c.lineTo(x-w*.4,b-h-2);c.moveTo(x+1,b-h+4);c.lineTo(x+w*.45,b-h-1);c.stroke();
+    const lf=rgbStr(mx(mx('#3a6a3a','#a9c0c8',.22),'#0d1622',dk*.85),hz),lf2=rgbStr(mx(mx('#4f8048','#a9c0c8',.2),'#0d1622',dk*.85),hz);
+    c.fillStyle=lf;c.beginPath();c.ellipse(x,b-h-3,w*.62,5,0,0,TAU);c.fill();c.beginPath();c.ellipse(x-w*.4,b-h-1,w*.34,3.6,0,0,TAU);c.fill();c.beginPath();c.ellipse(x+w*.42,b-h,w*.32,3.4,0,0,TAU);c.fill();
+    c.fillStyle=lf2;c.beginPath();c.ellipse(x-w*.1,b-h-5.5,w*.36,2.6,0,0,TAU);c.fill();}}
+// The river behind the bridge: a channel that winds back into the distance and opens into the water you're fishing.
+// Its mouth sits at the shoreline (moves with the near bank) and it narrows toward the bridge (moves with the far hills).
+function channelAt(y,cam){const B=bridge,top=SURF-13,t=clamp((y-top)/(SURF-top),0,1),cxT=B.x+B.span/2-cam*.3,cxM=B.x+B.span/2+26-cam*.55;return[lerp(cxT,cxM,t*t),lerp(B.span*.36,64,t*t)];}
+function drawChannel(c,cam,dk,fog,mouth){const wc=LOC().water||['#3f6f72','#2f5a5a'],top=SURF-13,y0=mouth?SURF-9:top,y1=SURF+.5;
+  const pts=[];for(let y=y0;y<=y1;y+=1.5){const [cx,hw]=channelAt(y,cam);pts.push([cx-hw*(1+.04*Math.sin(y*.9)),y]);}
+  const rt=[];for(let y=y1;y>=y0;y-=1.5){const [cx,hw]=channelAt(y,cam);rt.push([cx+hw*(1+.04*Math.cos(y*.8)),y]);}
+  const g=c.createLinearGradient(0,top,0,SURF);g.addColorStop(0,rgbStr(mx(mx(wc[0],'#c8dde2',.45),'#0d1622',dk*.85),fog?.5:1));g.addColorStop(1,rgbStr(mx(wc[0],'#0d1622',dk*.85)));
+  c.fillStyle=g;c.beginPath();[...pts,...rt].forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();
+  // muddy banks along the channel edges
+  c.strokeStyle=rgbStr(mix('#6a5a40','#0e0c08',dk*.85),fog?.4:.8);c.lineWidth=1.2;c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke();c.beginPath();rt.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke();
+  // light glints drifting toward you with the current
+  c.strokeStyle=`rgba(235,245,248,${.45*(1-dk*.6)*(fog?.5:1)})`;c.lineWidth=.7;c.beginPath();for(let i=0;i<7;i++){const u=((G.t*.06+i/7)%1),y=lerp(top+1,SURF-.5,u*u);if(y<y0)continue;const [cx,hw]=channelAt(y,cam),o=(Math.sin(i*2.7)*.6)*hw;c.moveTo(cx+o-2-u*4,y);c.lineTo(cx+o+2+u*4,y);}c.stroke();}
+function trackY(x){const B=bridge,s0=B.x+B.span+70;return x<=s0?B.y:B.y+(x-s0)*.085;}
+function trackEnd(){const B=bridge;return B.x+B.span+70+(SURF-5-B.y)/.085;}
+// The freight train: comes up out of the trees in the morning and runs west over the bridge; heads back east in the evening and drops behind the trees.
+const TRAIN_CARS=[['loco','#d8762a'],['box','#8a3a2a'],['hopper','#5a5a52'],['tank','#2a2a2e'],['box','#3a5a7a'],['hopper','#6a5a3a'],['box','#8a3a2a'],['flat','#6a5a4a'],['caboose','#b8352a']];
+function trainLen(){return TRAIN_CARS.reduce((a,[k])=>a+(k==='loco'?24:18)+1.6,0);}
+function startTrain(dir){const xe=trackEnd()+60,L=trainLen();G.train={dir,head:dir<0?xe:-150,horn:false};SFX&&0;}
+function updateTrain(dt){const T=G.train;if(!T)return;if(!bridge){G.train=null;return;}T.head+=T.dir*34*dt;const L=trainLen(),xe=trackEnd()+60;
+  if(!T.horn&&(T.dir<0?T.head<bridge.x+bridge.span+150:T.head>bridge.x-150)){T.horn=true;if(S.settings.sound!==false)SFX.horn();}
+  if(T.dir<0?T.head+L<-160:T.head-L>xe)G.train=null;}
+function drawTrain(c,dk,fog){const T=G.train,al=fog?.45:1,K=(cl,a=1)=>rgbStr(mx(mx(cl,'#a9c0c8',.12),'#0d1622',dk*.82),a*al);
+  c.save();c.beginPath();c.rect(-400,0,WX*2+800,SURF-5);c.clip();
+  let x=T.head;const night=darkness()>.4;
+  for(const [k,col] of TRAIN_CARS){const len=k==='loco'?24:18,cx=x-T.dir*len/2,cy=trackY(cx)-3.6,ang=Math.atan2(trackY(cx+1)-trackY(cx-1),2);
+    c.save();c.translate(cx,cy);c.rotate(ang);if(T.dir<0)c.scale(-1,1);const hl=len/2;
+    c.fillStyle=K('#1c1c1e');for(const wx of[-hl+3,-hl+6,hl-6,hl-3]){c.beginPath();c.arc(wx,-.6,1.3,0,TAU);c.fill();}c.fillRect(-hl+1,-2.6,len-2,1.4);
+    if(k==='loco'){c.fillStyle=K(col);c.fillRect(-hl+1,-10,len-8,7.4);c.fillRect(hl-8,-12,7,9.4);c.fillStyle=K('#1e2a30');c.fillRect(hl-6.5,-11,4.6,2.8);c.fillStyle=K('#f2e6c8');c.fillRect(-hl+1,-7.4,len-8,1);
+      c.fillStyle=K('#2a2a2e');c.fillRect(-hl+5,-11.6,3,1.6);if(night){c.fillStyle='rgba(255,236,170,.95)';c.fillRect(hl-1.2,-9,1.4,1.6);const g=c.createLinearGradient(hl,0,hl+40,0);g.addColorStop(0,'rgba(255,236,170,.35)');g.addColorStop(1,'rgba(255,236,170,0)');c.fillStyle=g;c.beginPath();c.moveTo(hl,-8.5);c.lineTo(hl+40,-14);c.lineTo(hl+40,-2);c.closePath();c.fill();}}
+    else if(k==='box'){c.fillStyle=K(col);c.fillRect(-hl+1,-11,len-2,8.4);c.strokeStyle=K('#000000',.35);c.lineWidth=.5;c.strokeRect(-3,-10,6,6.6);c.beginPath();for(let i=-hl+3;i<hl-2;i+=3){c.moveTo(i,-11);c.lineTo(i,-2.8);}c.stroke();}
+    else if(k==='hopper'){c.fillStyle=K(col);c.beginPath();c.moveTo(-hl+1,-10);c.lineTo(hl-1,-10);c.lineTo(hl-3,-4);c.lineTo(3,-2.8);c.lineTo(-3,-2.8);c.lineTo(-hl+3,-4);c.closePath();c.fill();c.fillStyle=K('#000000',.25);c.fillRect(-hl+1,-10,len-2,1);}
+    else if(k==='tank'){c.fillStyle=K(col);c.beginPath();c.roundRect?c.roundRect(-hl+1,-9.6,len-2,6.6,3.3):c.rect(-hl+1,-9.6,len-2,6.6);c.fill();c.fillRect(-1.5,-11.2,3,1.8);c.fillStyle=K('#ffffff',.18);c.fillRect(-hl+3,-8.6,len-6,1);}
+    else if(k==='flat'){c.fillStyle=K(col);c.fillRect(-hl+1,-4.4,len-2,1.8);c.fillStyle=K('#8a6a42');for(let i=-hl+2;i<hl-3;i+=4)c.fillRect(i,-7.4,3.4,3);}
+    else{c.fillStyle=K(col);c.fillRect(-hl+2,-9.6,len-4,7);c.fillRect(-3.5,-12.6,7,3.2);c.fillStyle=K('#f2d27a',night?1:.6);c.fillRect(-2.6,-11.8,2,1.4);c.fillRect(.6,-11.8,2,1.4);c.fillStyle=K('#1e2a30');c.fillRect(-hl+4,-8,3,2.4);c.fillRect(hl-7,-8,3,2.4);
+      if(night){c.fillStyle='rgba(255,70,50,.9)';c.fillRect(-hl+1.4,-8.6,1.2,1.2);}}
+    c.restore();x-=T.dir*(len+1.6);}
+  c.restore();
+  // a little diesel exhaust drifting back from the locomotive
+  if(!fog){const lx=T.head-T.dir*17;c.fillStyle=`rgba(90,90,96,${.25*(1-dk*.5)})`;for(let i=0;i<4;i++){const u=((G.t*.9+i*.25)%1);const px=lx-T.dir*u*16,py=trackY(lx)-16-u*8;if(py<SURF-5){c.beginPath();c.arc(px,py,1.4+u*2.6,0,TAU);c.fill();}}}}
 function drawBridge(c,dk,fog){
-  // The old iron ferry bridge, far downstream: a steel truss on stone piers, softened by haze.
-  const B=bridge,x0=B.x,x1=B.x+B.span,y=B.y,h=16,col=rgbStr(mix('#5c4a3e','#0c0e16',dk*.85),fog?.3:.75),pier=rgbStr(mix('#7a7468','#0e1016',dk*.85),fog?.3:.75);
-  c.fillStyle=pier;for(const px of [x0+B.span*.33,x0+B.span*.66])c.fillRect(px-3,y,6,SURF-5-y);c.fillRect(x0-6,y-2,8,SURF-5-y+2);c.fillRect(x1-2,y-2,8,SURF-5-y+2);
-  c.strokeStyle=col;c.lineWidth=1.6;c.beginPath();c.moveTo(x0,y);c.lineTo(x1,y);c.moveTo(x0+8,y-h);c.lineTo(x1-8,y-h);c.stroke();
-  c.lineWidth=1;c.beginPath();const n=12;for(let i=0;i<n;i++){const a=lerp(x0+8,x1-8,i/n),bq=lerp(x0+8,x1-8,(i+1)/n);c.moveTo(a,y-h);c.lineTo((a+bq)/2,y);c.lineTo(bq,y-h);}c.moveTo(x0,y);c.lineTo(x0+8,y-h);c.moveTo(x1,y);c.lineTo(x1-8,y-h);c.stroke();}
+  // The old iron ferry bridge downstream: a steel truss on stone piers standing in the river.
+  const B=bridge,x0=B.x,x1=B.x+B.span,y=B.y,h=13,col=rgbStr(mix('#5c4a3e','#0c0e16',dk*.85),fog?.35:.9),pier=rgbStr(mix('#8a8478','#0e1016',dk*.85),fog?.35:.9),wl=SURF-12;
+  // Railroad grade: level on the left and across the bridge, then it slopes down on the right and drops out of sight behind the trees.
+  {const al=fog?.4:1,K=(cl,a=1)=>rgbStr(mx(mx(cl,'#a9c0c8',.18),'#0d1622',dk*.85),a*al),base=SURF-5,L0=-80,xe=trackEnd();
+    const seg=(a0,b0)=>{c.beginPath();c.moveTo(a0,base);for(let x=a0;x<=b0;x+=3)c.lineTo(x,Math.min(base,trackY(x)-1));c.lineTo(b0,base);c.closePath();};
+    for(const [a0,b0] of [[L0,x0-5],[x1+5,xe]]){const g=c.createLinearGradient(0,y-1,0,base);g.addColorStop(0,K('#8a8070'));g.addColorStop(.35,K('#6e6656'));g.addColorStop(1,K('#4f6a3a'));c.fillStyle=g;seg(a0,b0);c.fill();
+      c.fillStyle=K('#3a2e24');for(let x=a0;x<b0;x+=4){const ty=trackY(x);if(ty<base-1)c.fillRect(x,ty-2.2,2,1.2);}
+      c.strokeStyle=K('#7a7e84');c.lineWidth=.9;c.beginPath();for(let x=a0;x<=b0;x+=3){const ty=trackY(x)-3;if(ty>base-2)break;x===a0?c.moveTo(x,ty):c.lineTo(x,ty);}c.stroke();}
+    c.fillStyle=K('#3a2e24');for(let x=x0;x<x1;x+=4)c.fillRect(x,y-2.2,2,1.2);c.fillStyle=K('#7a7e84');c.fillRect(x0,y-3.4,x1-x0,.9);
+    const poles=[];for(let x=L0+20;x<xe-20;x+=48){if(x>x0-8&&x<x1+8)continue;poles.push([x,trackY(x)]);}
+    c.strokeStyle=K('#4a3a2c');c.lineWidth=1;c.beginPath();for(const [px,py] of poles){c.moveTo(px,py-1);c.lineTo(px,py-17);c.moveTo(px-3,py-15.5);c.lineTo(px+3,py-15.5);}c.stroke();
+    c.strokeStyle=K('#2a2a2e',.55);c.lineWidth=.5;c.beginPath();for(let i=0;i<poles.length-1;i++){const [a2,ya]=poles[i],[b2,yb]=poles[i+1];for(const sx of[-2,2]){c.moveTo(a2+sx,ya-15.5);c.quadraticCurveTo((a2+b2)/2,(ya+yb)/2-12.5,b2+sx,yb-15.5);}}c.stroke();}
+  c.fillStyle=pier;for(const px of [x0+B.span*.36,x0+B.span*.64]){c.fillRect(px-2.6,y,5.2,wl-y+1);c.fillStyle=`rgba(235,245,248,${.4*(1-dk*.6)})`;c.fillRect(px-4,wl+.5,8,.7);c.fillStyle=pier;}
+  c.fillRect(x0-7,y-2,9,wl-y+3);c.fillRect(x1-2,y-2,9,wl-y+3);
+  if(G.train)drawTrain(c,dk,fog);
+  c.strokeStyle=col;c.lineWidth=1.6;c.beginPath();c.moveTo(x0,y);c.lineTo(x1,y);c.moveTo(x0+6,y-h);c.lineTo(x1-6,y-h);c.stroke();
+  c.lineWidth=1;c.beginPath();const n=7;for(let i=0;i<n;i++){const a=lerp(x0+6,x1-6,i/n),bq=lerp(x0+6,x1-6,(i+1)/n);c.moveTo(a,y-h);c.lineTo((a+bq)/2,y);c.lineTo(bq,y-h);}c.moveTo(x0,y);c.lineTo(x0+6,y-h);c.moveTo(x1,y);c.lineTo(x1-6,y-h);c.stroke();
+  if(darkness()>.4){c.fillStyle='rgba(255,210,120,.85)';c.fillRect(x0+2,y-4,1.6,1.6);c.fillRect(x1-3.6,y-4,1.6,1.6);}}
 function drawWaterTop(c,cam,dk,fog,rain,h){
   // reflection of the shoreline
   let g=c.createLinearGradient(0,SURF,0,SURF+30);g.addColorStop(0,rgbStr(mix('#1d4430','#050c14',dk*.85),.55));g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,SURF,W,30);
@@ -2163,37 +2262,143 @@ function drawStump(c,dk,k){const R=seeded(Math.round(k.x*7.3)+11),rr=(a,b)=>a+(b
   const ms=R()<.5?-1:1;c.fillStyle=moss;for(let i=0;i<3+Math.floor(R()*3);i++){const q=at(rr(.03,.5));c.beginPath();c.ellipse(q.x+ms*q.w*rr(.45,.8),q.y,q.w*rr(.2,.4),rr(2,4.5),0,0,TAU);c.fill();}
   // algae ring where it breaks the surface
   if(top<SURF){const q=at(clamp((b-SURF)/h,0,1));c.fillStyle=rgbStr(mix('#4f7a3a','#0c1a12',dk*.8),.6);c.beginPath();c.ellipse(q.x,SURF+1,q.w*1.3,2,0,0,TAU);c.fill();}}
-function drawBoat(c,dk,y,front){const cn=LOC().shore==='canoe';const hull=rgbStr(mix(cn?'#8a5a30':'#a9b4ba','#252a2e',dk*.75)),dark=rgbStr(mix(cn?'#4e301a':'#5f6b72','#121518',dk*.75)),stripe=rgbStr(mix(cn?'#c98a3a':'#2d6e9e','#0c1a26',dk*.75));
-  if(front){c.fillStyle=hull;c.fillRect(6,y-6,62,4);c.fillStyle=stripe;c.fillRect(6,y-4,62,1.5);return;}
-  c.fillStyle=`rgba(0,0,0,${.25*(1-dk*.5)})`;c.beginPath();c.ellipse(36,SURF+9,50,6,0,0,TAU);c.fill();
-  const g=c.createLinearGradient(0,y-6,0,SURF+10);g.addColorStop(0,hull);g.addColorStop(1,dark);c.fillStyle=g;
-  c.beginPath();c.moveTo(-6,y-6);c.lineTo(80,y-8);c.quadraticCurveTo(76,SURF+4,66,SURF+10);c.lineTo(4,SURF+10);c.quadraticCurveTo(-4,SURF+6,-6,y-6);c.fill();
-  c.fillStyle=stripe;c.fillRect(-4,y-3,82,2);c.strokeStyle=rgbStr(mix('#d6dde0','#33383b',dk*.75),.7);c.lineWidth=.6;c.beginPath();for(let x=8;x<70;x+=10){c.moveTo(x,y+1);c.lineTo(x,SURF+8);}c.stroke();
-  c.fillStyle=rgbStr(mix('#3a3f42','#0c0e10',dk*.75));c.fillRect(-10,y-4,6,10);c.fillRect(-14,y+5,4,14);}
-function drawGravelBar(c,dk,y){const k=1-dk*.75,x1=DOCKX+46;
+// Boats. Lake: a dented aluminum V-hull with an outboard. Amazon: a long wooden dugout with a paddle across it.
+function drawBoat(c,dk,y,front){const cn=LOC().shore==='canoe',K=col=>rgbStr(mix(col,'#161a1e',dk*.75)),Ka=(col,a)=>rgbStr(mix(col,'#161a1e',dk*.75),a);
+  if(cn){
+    // near gunwale drawn over the angler's feet
+    const sheer=x=>y-5-Math.pow(Math.abs(x-38)/48,3)*9;
+    if(front){c.strokeStyle=K('#b98a52');c.lineWidth=2.2;c.lineCap='round';c.beginPath();for(let x=-8;x<=84;x+=4)x===-8?c.moveTo(x,sheer(x)+1):c.lineTo(x,sheer(x)+1);c.stroke();return;}
+    c.fillStyle=`rgba(0,0,0,${.25*(1-dk*.5)})`;c.beginPath();c.ellipse(38,SURF+7,52,5,0,0,TAU);c.fill();
+    const hullPath=()=>{c.beginPath();c.moveTo(-10,sheer(-10)-1);for(let x=-8;x<=86;x+=3)c.lineTo(x,sheer(x));c.quadraticCurveTo(84,SURF+2,72,SURF+7);c.lineTo(6,SURF+7);c.quadraticCurveTo(-6,SURF+3,-10,sheer(-10)-1);c.closePath();};
+    const g=c.createLinearGradient(0,y-8,0,SURF+8);g.addColorStop(0,K('#8a4e2a'));g.addColorStop(1,K('#4a2614'));c.fillStyle=g;hullPath();c.fill();
+    c.save();hullPath();c.clip();c.strokeStyle=Ka('#2e170a',.45);c.lineWidth=.6;
+    for(let k=0;k<5;k++){c.beginPath();for(let x=-10;x<=86;x+=4){const yy=sheer(x)+3+k*3.6+Math.sin(x*.21+k*2)*.6;x===-10?c.moveTo(x,yy):c.lineTo(x,yy);}c.stroke();}
+    c.fillStyle=Ka('#e8d2a8',.12);c.fillRect(-10,y-4,100,3);c.restore();
+    // far gunwale and a woven seat
+    c.strokeStyle=K('#6a3c1e');c.lineWidth=1.4;c.beginPath();for(let x=-6;x<=82;x+=4)x===-6?c.moveTo(x,sheer(x)-2):c.lineTo(x,sheer(x)-2);c.stroke();
+    c.fillStyle=K('#c9a46a');c.fillRect(58,y-9,10,2.2);c.strokeStyle=Ka('#7a5a32',.8);c.lineWidth=.5;c.beginPath();for(let x=59;x<68;x+=2){c.moveTo(x,y-9);c.lineTo(x+1,y-6.8);}c.stroke();
+    // paddle resting across, blade hanging over the stern
+    c.strokeStyle=K('#d1a86a');c.lineWidth=1.6;c.beginPath();c.moveTo(-14,y+2);c.lineTo(22,y-10);c.stroke();
+    c.fillStyle=K('#c4985a');c.beginPath();c.ellipse(-16,y+3.5,6,2.6,-.33,0,TAU);c.fill();
+    // carved bow and stern tips
+    c.fillStyle=K('#5a2e16');c.beginPath();c.arc(87,sheer(87)-1,1.6,0,TAU);c.fill();c.beginPath();c.arc(-11,sheer(-11)-1,1.6,0,TAU);c.fill();
+    waterLap(c,dk,-8,84,hullPath);return;}
+  // aluminum V-hull, bow out toward the water (shifted right a little so the outboard shows)
+  // Scaled a touch shorter so the bow stays clear of where fish are landed.
+  c.save();c.translate(10,0);c.scale(.86,1);
+  const gun=x=>x<70?y-6-(x/70)*2:y-8-Math.pow((x-70)/16,2)*5;
+  if(front){c.fillStyle=K('#c9d1d5');c.beginPath();c.moveTo(-2,gun(-2)-1);for(let x=0;x<=84;x+=4)c.lineTo(x,gun(x)-1);for(let x=84;x>=-2;x-=4)c.lineTo(x,gun(x)+1.6);c.closePath();c.fill();
+    c.fillStyle=K('#9aa5ab');for(let x=4;x<80;x+=6)c.fillRect(x,gun(x)+.2,.8,.8);c.restore();return;}
+  c.fillStyle=`rgba(0,0,0,${.25*(1-dk*.5)})`;c.beginPath();c.ellipse(38,SURF+9,50,6,0,0,TAU);c.fill();
+  // outboard motor on the transom
+  c.fillStyle=K('#2a2e31');c.fillRect(-8,y-2,3,SURF+14-(y-2));c.fillStyle=K('#3b4044');c.fillRect(-11,SURF+10,9,2);
+  c.fillStyle=K('#55606a');c.beginPath();c.ellipse(-7,SURF+15,1.6,3.4,0,0,TAU);c.fill();
+  {const cg=c.createLinearGradient(0,y-16,0,y-2);cg.addColorStop(0,K('#3a3f44'));cg.addColorStop(1,K('#1c1f22'));c.fillStyle=cg;c.beginPath();c.moveTo(-15,y-3);c.quadraticCurveTo(-16,y-15,-8,y-15);c.quadraticCurveTo(-1,y-15,-1,y-6);c.lineTo(-2,y-2);c.closePath();c.fill();
+    c.fillStyle=K('#d0563a');c.fillRect(-14,y-9,11,1.6);c.fillStyle=Ka('#ffffff',.25);c.fillRect(-13,y-14,5,1);}
+  c.strokeStyle=K('#30353a');c.lineWidth=1;c.beginPath();c.moveTo(-1,y-8);c.lineTo(6,y-12);c.stroke();
+  const hullPath=()=>{c.beginPath();c.moveTo(-2,gun(-2));for(let x=0;x<=86;x+=3)c.lineTo(x,gun(x));c.quadraticCurveTo(84,SURF+1,70,SURF+9);c.lineTo(4,SURF+10);c.quadraticCurveTo(-2,SURF+8,-2,gun(-2));c.closePath();};
+  const g=c.createLinearGradient(0,y-10,0,SURF+10);g.addColorStop(0,K('#c3ccd1'));g.addColorStop(.55,K('#97a3aa'));g.addColorStop(1,K('#5b666d'));c.fillStyle=g;hullPath();c.fill();
+  c.save();hullPath();c.clip();
+  // painted band, pressed strakes, rivets and a couple of dents
+  c.fillStyle=K('#2f6b4a');c.beginPath();c.moveTo(-2,gun(-2)+2);for(let x=0;x<=88;x+=4)c.lineTo(x,gun(x)+2);for(let x=88;x>=-2;x-=4)c.lineTo(x,gun(x)+5);c.closePath();c.fill();
+  c.strokeStyle=Ka('#ffffff',.35);c.lineWidth=.7;for(const dy of[9,14]){c.beginPath();c.moveTo(0,y+dy-3);c.quadraticCurveTo(50,y+dy-4,80,y+dy-6-(dy-9)*.6);c.stroke();}
+  c.strokeStyle=Ka('#3c464c',.45);for(const dy of[9.8,14.8]){c.beginPath();c.moveTo(0,y+dy-3);c.quadraticCurveTo(50,y+dy-4,80,y+dy-6-(dy-9)*.6);c.stroke();}
+  c.fillStyle=Ka('#e8eef0',.6);for(let x=6;x<78;x+=7){c.fillRect(x,y+5,.8,.8);}
+  c.fillStyle=Ka('#000000',.12);c.beginPath();c.ellipse(24,y+8,5,2.4,0,0,TAU);c.fill();c.beginPath();c.ellipse(56,y+11,4,2,0,0,TAU);c.fill();
+  c.restore();
+  // far gunwale and the bow seat showing over the near side
+  c.strokeStyle=K('#7f8b92');c.lineWidth=1.2;c.beginPath();for(let x=0;x<=82;x+=4)x?c.lineTo(x,gun(x)-2.6):c.moveTo(x,gun(x)-2.6);c.stroke();
+  c.fillStyle=K('#8a949a');c.fillRect(56,y-11,12,2);
+  // bow cleat and anchor rope down into the water
+  c.fillStyle=K('#d6dde0');c.fillRect(80,gun(80)-2,4,1.4);c.strokeStyle=Ka('#c9b88a',.85);c.lineWidth=.8;c.beginPath();c.moveTo(82,gun(82)-1);c.quadraticCurveTo(96,SURF-2,104,SURF+40);c.stroke();
+  waterLap(c,dk,2,82,hullPath);c.restore();}
+// Little ripples lapping along the hull at the waterline.
+function waterLap(c,dk,x0,x1,clip){const wc=LOC().water||['#2f8086'];c.save();clip();c.clip();c.fillStyle=rgbStr(mix(wc[0],'#0a1418',dk*.7),.55);c.fillRect(x0-20,SURF+.5,x1-x0+40,20);c.restore();
+  c.strokeStyle=`rgba(235,245,245,${.5*(1-dk*.6)})`;c.lineWidth=.8;c.beginPath();for(const [x,d] of [[x0-2,-1],[x1+2,1]])for(let k=0;k<2;k++){const o=Math.sin(G.t*1.8+k*2)*1.2;c.moveTo(x+d*(2+k*4)+o,SURF+1+k*.6);c.lineTo(x+d*(5+k*4)+o,SURF+1+k*.6);}c.stroke();}
+// Iron Ferry: a gravel bar sloping into the river, with a wet edge, a bleached driftwood log, a tackle box and a few big cobbles.
+function drawGravelBar(c,dk,y){const k=1-dk*.75,x1=DOCKX+46,K=col=>rgbStr(mix(col,'#161a1e',dk*.75)),Ka=(col,a)=>rgbStr(mix(col,'#161a1e',dk*.75),a);
   const shape=()=>{c.beginPath();c.moveTo(-14,y+1);c.quadraticCurveTo(30,y-2,58,y+1);c.bezierCurveTo(78,y+3,86,SURF+1,x1,bottomAt(x1)-1);for(let x=x1;x>=-14;x-=4)c.lineTo(x,bottomAt(Math.max(0,x))+2);c.closePath();};
-  const g=c.createLinearGradient(0,y,0,SURF+30);g.addColorStop(0,`rgb(${168*k|0},${150*k|0},${118*k|0})`);g.addColorStop(1,`rgb(${110*k|0},${96*k|0},${74*k|0})`);c.fillStyle=g;shape();c.fill();
-  c.save();shape();c.clip();const r=seeded(91);for(let i=0;i<160;i++){const px=-12+r()*(x1+12),py=y-2+r()*(SURF+26-y),tt=95+r()*95;c.fillStyle=`rgb(${tt*k|0},${tt*.93*k|0},${tt*.8*k|0})`;c.beginPath();c.ellipse(px,py,1+r()*2.6,.8+r()*1.5,r()*3,0,TAU);c.fill();c.fillStyle=`rgba(255,250,235,${.25*k})`;c.beginPath();c.arc(px-.5,py-.5,.5,0,TAU);c.fill();}
+  const g=c.createLinearGradient(0,y,0,SURF+30);g.addColorStop(0,`rgb(${176*k|0},${158*k|0},${124*k|0})`);g.addColorStop(1,`rgb(${110*k|0},${96*k|0},${74*k|0})`);c.fillStyle=g;shape();c.fill();
+  c.save();shape();c.clip();
+  // wet, darker gravel near the water
+  {const wg=c.createLinearGradient(56,0,84,0);wg.addColorStop(0,'rgba(60,50,36,0)');wg.addColorStop(1,`rgba(60,50,36,${.45*k+.1})`);c.fillStyle=wg;c.fillRect(52,y-4,40,SURF-y+6);}
+  const r=seeded(91);for(let i=0;i<190;i++){const px=-12+r()*(x1+12),py=y-2+r()*(SURF+26-y),tt=95+r()*95,wet=px>60&&py<SURF+2?.78:1;c.fillStyle=`rgb(${tt*k*wet|0},${tt*.93*k*wet|0},${tt*.8*k*wet|0})`;c.beginPath();c.ellipse(px,py,1+r()*2.6,.8+r()*1.5,r()*3,0,TAU);c.fill();c.fillStyle=`rgba(255,250,235,${.25*k})`;c.beginPath();c.arc(px-.5,py-.5,.5,0,TAU);c.fill();}
   c.fillStyle=`rgba(40,70,80,${.35*(1-dk*.5)})`;c.fillRect(-14,SURF,x1+20,40);c.restore();
-  c.strokeStyle=`rgba(235,245,245,${.5*(1-dk*.6)})`;c.lineWidth=1;c.beginPath();const wx=74+Math.sin(G.t*1.5)*3;c.moveTo(wx,SURF+.5);c.lineTo(wx+14,SURF+.5);c.stroke();}
-function drawShoreBoulder(c,dk,y){c.fillStyle=`rgba(0,0,0,${.22*(1-dk*.5)})`;c.beginPath();c.ellipse(36,SURF+6,52,8,0,0,TAU);c.fill();
-  c.fillStyle=rockGrad(c,30,y+16,30,dk,.55);c.beginPath();c.moveTo(-12,SURF+30);c.quadraticCurveTo(-10,y-2,26,y-2);c.quadraticCurveTo(62,y-1,74,SURF+12);c.quadraticCurveTo(70,SURF+32,30,SURF+34);c.closePath();c.fill();
-  c.fillStyle=rgbStr(mix('#5a7a3e','#132016',dk*.75),.7);c.beginPath();c.ellipse(20,y-1,22,3,0,0,TAU);c.fill();
-  c.fillStyle=rockGrad(c,74,SURF+14,10,dk,.3);c.beginPath();c.ellipse(76,SURF+12,12,9,0,0,TAU);c.fill();}
-function drawPilings(c,dk){const y=dockY(),dwood=rgbStr(mix('#4e3520','#150f0a',dk*.75)),hi=rgbStr(mix('#6a4a2c','#1c140c',dk*.75));
-  for(const x of[8,34,60]){const end=bottomAt(x)+46;c.fillStyle=dwood;c.fillRect(x-3,y,6,end-y);c.fillStyle=hi;c.fillRect(x-3,y,1.5,end-y);
-    c.fillStyle=rgbStr(mix('#3d5a2e','#10200f',dk*.7),.55);c.fillRect(x-3,SURF+2,6,Math.min(18,bottomAt(x)-SURF));}}
+  // a few big cobbles
+  for(const [cx,cy,rr] of [[50,y+1.5,3.2],[64,y+5,2.6],[22,y-.5,2.2],[78,SURF-1,2.4]]){c.fillStyle=rockGrad(c,cx,cy,rr,dk,.4);c.beginPath();c.ellipse(cx,cy,rr*1.3,rr*.8,0,0,TAU);c.fill();}
+  // grass tufts at the back of the bar
+  c.strokeStyle=K('#6f8a3e');c.lineWidth=.8;c.beginPath();for(const gx of[-8,4,14,46]){for(let j=-2;j<=2;j++){c.moveTo(gx,y-.5);c.lineTo(gx+j*1.4+Math.sin(G.t+gx)*.5,y-5-Math.abs(j)*-.6-2);}}c.stroke();
+  // bleached driftwood log behind the angler
+  c.fillStyle=`rgba(0,0,0,${.18*(1-dk*.5)})`;c.beginPath();c.ellipse(8,y+.5,22,2.4,0,0,TAU);c.fill();
+  {const lg=c.createLinearGradient(0,y-8,0,y);lg.addColorStop(0,K('#d6cdb8'));lg.addColorStop(1,K('#8f8676'));c.fillStyle=lg;c.beginPath();c.moveTo(-14,y-1);c.quadraticCurveTo(-12,y-8,-4,y-7.5);c.lineTo(26,y-5.5);c.quadraticCurveTo(30,y-3,26,y-.5);c.lineTo(-12,y);c.closePath();c.fill();
+    c.strokeStyle=Ka('#6a6254',.6);c.lineWidth=.5;c.beginPath();c.moveTo(-8,y-5);c.quadraticCurveTo(8,y-6,24,y-3.6);c.moveTo(-6,y-2.5);c.quadraticCurveTo(10,y-3.4,22,y-1.8);c.stroke();
+    c.fillStyle=K('#7a7060');c.beginPath();c.ellipse(26.5,y-3,1.6,2.6,0,0,TAU);c.fill();c.fillStyle=K('#a69c88');c.beginPath();c.ellipse(26.5,y-3,.9,1.6,0,0,TAU);c.fill();
+    c.strokeStyle=K('#b5ab96');c.lineWidth=1.4;c.beginPath();c.moveTo(6,y-7);c.lineTo(9,y-12);c.stroke();}
+  // tackle box sitting on the gravel
+  c.fillStyle=K('#3f6e4a');c.fillRect(52,y-5,9,5);c.fillStyle=K('#2f5638');c.fillRect(52,y-5,9,1.4);c.fillStyle=K('#c9cfd3');c.fillRect(55.5,y-6.4,2,1.4);
+  // current curling along the edge of the bar
+  c.strokeStyle=`rgba(235,245,245,${.5*(1-dk*.6)})`;c.lineWidth=1;c.beginPath();for(let k2=0;k2<3;k2++){const wx=72+k2*9+((G.t*14+k2*7)%10);c.moveTo(wx,SURF+.6+k2*.4);c.lineTo(wx+6,SURF+.6+k2*.4);}c.stroke();}
+// Willow Creek: a granite ledge to stand on, stepping down into the water through a couple of smaller rocks, with lichen, moss and a fern in a crack.
+function drawShoreBoulder(c,dk,y){const K=col=>rgbStr(mix(col,'#161a1e',dk*.75)),Ka=(col,a)=>rgbStr(mix(col,'#161a1e',dk*.75),a);
+  c.fillStyle=`rgba(0,0,0,${.22*(1-dk*.5)})`;c.beginPath();c.ellipse(40,SURF+6,56,8,0,0,TAU);c.fill();
+  const ledge=()=>{c.beginPath();c.moveTo(-14,y-1);c.lineTo(8,y-3);c.lineTo(34,y-2.5);c.lineTo(50,y-1.5);c.lineTo(57,y+3);c.lineTo(61,SURF-1);c.lineTo(64,SURF+6);c.lineTo(57,SURF+13);c.lineTo(30,SURF+15);c.lineTo(-14,SURF+16);c.closePath();};
+  const step=()=>{c.beginPath();c.moveTo(60,SURF+2);c.lineTo(66,SURF-6);c.lineTo(76,SURF-7);c.lineTo(81,SURF-1);c.lineTo(80,SURF+7);c.lineTo(66,SURF+9);c.closePath();};
+  const pebble=()=>{c.beginPath();c.moveTo(80,SURF+3);c.lineTo(85,SURF-2.5);c.lineTo(92,SURF-1.5);c.lineTo(94,SURF+6);c.lineTo(84,SURF+9);c.closePath();};
+  for(const [sh,cx,cy,rr,t] of [[ledge,24,y+10,40,.55],[step,72,SURF,10,.45],[pebble,87,SURF+2,6,.35]]){c.fillStyle=rockGrad(c,cx,cy,rr,dk,t);sh();c.fill();}
+  // lit top planes and shaded faces
+  c.fillStyle=Ka('#ffffff',.16);c.beginPath();c.moveTo(-14,y-1);c.lineTo(8,y-3);c.lineTo(34,y-2.5);c.lineTo(50,y-1.5);c.lineTo(48,y+2);c.lineTo(-14,y+3);c.closePath();c.fill();
+  c.fillStyle=Ka('#000000',.18);c.beginPath();c.moveTo(50,y-1.5);c.lineTo(57,y+3);c.lineTo(61,SURF-1);c.lineTo(64,SURF+6);c.lineTo(56,SURF+8);c.lineTo(50,y+6);c.closePath();c.fill();
+  c.fillStyle=Ka('#ffffff',.14);c.beginPath();c.moveTo(66,SURF-6);c.lineTo(76,SURF-7);c.lineTo(78,SURF-4);c.lineTo(67,SURF-3.5);c.closePath();c.fill();
+  // cracks
+  c.strokeStyle=Ka('#1e2226',.55);c.lineWidth=.6;c.beginPath();c.moveTo(18,y-2.6);c.lineTo(21,y+6);c.lineTo(19,y+14);c.moveTo(42,y-2);c.lineTo(45,y+5);c.moveTo(70,SURF-6.6);c.lineTo(72,SURF+3);c.stroke();
+  // lichen and moss
+  {const r=seeded(33);for(let i=0;i<14;i++){const lx=-10+r()*58,ly=y+r()*9,o=r()<.3;c.fillStyle=Ka(o?'#c9a24a':'#b8c49a',o?.55:.6);c.beginPath();c.ellipse(lx,ly,1+r()*1.6,.6+r()*.8,0,0,TAU);c.fill();}}
+  c.fillStyle=Ka('#5a7a3e',.85);c.beginPath();c.moveTo(-14,y-1);c.quadraticCurveTo(-4,y-4,8,y-3);c.quadraticCurveTo(-2,y-1.4,-14,y+1);c.closePath();c.fill();
+  // fern growing out of a crack
+  c.strokeStyle=K('#4f7a34');c.lineWidth=.7;for(const [a0,ln] of [[-2.2,9],[-1.8,11],[-1.3,8]]){c.beginPath();c.moveTo(19,y-2.4);const ex=19+Math.cos(a0)*ln,ey=y-2.4+Math.sin(a0)*ln;c.quadraticCurveTo(19+Math.cos(a0)*ln*.5,y-2.4+Math.sin(a0)*ln*.6-2,ex,ey);c.stroke();
+    for(let t=.3;t<1;t+=.18){const px=19+(ex-19)*t,py=y-2.4+(ey-y+2.4)*t-1.2;c.beginPath();c.moveTo(px,py);c.lineTo(px-1.6,py-1.2);c.moveTo(px,py);c.lineTo(px+1.4,py-1.4);c.stroke();}}
+  // wet rock below the waterline, foam curling off downstream of the rocks
+  {const wc=LOC().water||['#2f8086'];c.save();c.beginPath();c.rect(-20,SURF+.5,140,60);c.clip();c.fillStyle=rgbStr(mix(wc[0],'#0a1418',dk*.7),.35);ledge();c.fill();step();c.fill();pebble();c.fill();c.restore();}
+  c.strokeStyle=`rgba(240,248,248,${.6*(1-dk*.6)})`;c.lineWidth=1;c.beginPath();
+  for(const [fx,n] of [[81,3],[94,4]])for(let k2=0;k2<n;k2++){const ph=(G.t*16+k2*6)%18;c.moveTo(fx+ph,SURF+.6+k2*.5);c.lineTo(fx+ph+3+k2,SURF+.6+k2*.5);}c.stroke();}
+// Dock pilings with cross-bracing below the deck, slime at the waterline and a bit of growth lower down.
+function drawPilings(c,dk){const y=dockY(),K=col=>rgbStr(mix(col,'#150f0a',dk*.75));
+  const P=[6,30,54,66];
+  c.strokeStyle=rgbStr(mix('#4a3320','#150f0a',dk*.75),.7);c.lineWidth=1.4;
+  for(let k=0;k<P.length-1;k++){const a=P[k],b=P[k+1],top=y+9,bot=Math.min(bottomAt(a),bottomAt(b))-8;if(bot>top+10){c.beginPath();c.moveTo(a,top);c.lineTo(b,bot);c.moveTo(b,top);c.lineTo(a,bot);c.stroke();}}
+  for(const x of P){const end=bottomAt(x)+46,w=x===66?7:6;c.fillStyle=K('#4e3520');c.fillRect(x-w/2,y,w,end-y);c.fillStyle=K('#6a4a2c');c.fillRect(x-w/2,y,1.5,end-y);
+    c.fillStyle=K('#2e2014');c.fillRect(x+w/2-1.2,y,1.2,end-y);
+    c.fillStyle=rgbStr(mix('#3d5a2e','#10200f',dk*.7),.6);c.fillRect(x-w/2,SURF+1,w,Math.min(18,bottomAt(x)-SURF));
+    c.fillStyle=rgbStr(mix('#2e4a2a','#0c180c',dk*.7),.45);for(let yy=SURF+24;yy<bottomAt(x)-6;yy+=11)c.fillRect(x-w/2-.6,yy,w+1.2,3);}}
 function drawDock(c,dk){
   const y=dockY(),wood=rgbStr(mix('#7a5634','#2a1e14',dk*.75)),dwood=rgbStr(mix('#4e3520','#150f0a',dk*.75));
   const shore=LOC().shore;if(shore==='boulder'){drawShoreBoulder(c,dk,y);}else if(shore==='boat'||shore==='canoe'){drawBoat(c,dk,y,false);}else if(shore==='gravel'){drawGravelBar(c,dk,y);}else{
   {const sh=c.createLinearGradient(0,SURF,0,SURF+16);sh.addColorStop(0,`rgba(0,0,0,${.28*(1-dk*.5)})`);sh.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=sh;c.fillRect(-4,SURF,DOCKX+6,16);}
-  const top=rgbStr(mix('#a0784c','#2e2216',dk*.75)),face=rgbStr(mix('#76532f','#22180f',dk*.75)),seam=rgbStr(mix('#3e2a17','#0e0a06',dk*.75)),grain=rgbStr(mix('#5e4126','#160f09',dk*.75),.55);
-  c.fillStyle=seam;c.fillRect(-4,y+5,DOCKX+2,3);
-  c.fillStyle=face;c.fillRect(-4,y-1,DOCKX+2,6);
-  c.fillStyle=top;c.fillRect(-4,y-3,DOCKX+2,2.5);
-  c.fillStyle=seam;for(let x=0;x<DOCKX;x+=11){c.fillRect(x,y-3,1,8);}
-  c.strokeStyle=grain;c.lineWidth=.5;c.beginPath();for(let x=-4;x<DOCKX-2;x+=11){c.moveTo(x+2,y+1);c.quadraticCurveTo(x+5,y+.2,x+9,y+1.4);c.moveTo(x+1.5,y+3);c.lineTo(x+8,y+2.7);}c.stroke();
-  c.fillStyle=rgbStr(mix('#c9c3b5','#3a3832',dk*.75));for(let x=3;x<DOCKX;x+=11){c.fillRect(x,y+.5,.9,.9);c.fillRect(x+5,y+.5,.9,.9);}
+  // Weathered deck: boards that vary in tone, a stringer beam, a mooring post, a cleat, an old tire and a ladder.
+  const K=col=>rgbStr(mix(col,'#1a130c',dk*.75)),Ka=(col,al)=>rgbStr(mix(col,'#1a130c',dk*.75),al);
+  c.fillStyle=K('#3e2a17');c.fillRect(-4,y+5,DOCKX+2,3.5);
+  c.fillStyle=K('#5a3e24');c.fillRect(-4,y+5,DOCKX+2,1);
+  {const r=seeded(12);for(let x=-4;x<DOCKX-2;x+=9){const t=r(),w=Math.min(9,DOCKX-2-x),tone=t<.25?'#8a7458':t<.5?'#a0784c':t<.8?'#93714a':'#7d6a52';
+    c.fillStyle=K(tone);c.fillRect(x,y-3,w-.8,2.6);c.fillStyle=K(t<.25?'#665640':'#76532f');c.fillRect(x,y-.6,w-.8,5.6);
+    c.fillStyle=Ka('#000000',.18);c.fillRect(x+w-.8,y-3,.8,8.2);
+    c.strokeStyle=Ka('#3e2a17',.5);c.lineWidth=.45;c.beginPath();c.moveTo(x+1.5,y+1.2);c.quadraticCurveTo(x+4,y+.2,x+w-2,y+1.6);c.moveTo(x+1,y+3.2);c.lineTo(x+w-2.5,y+2.9);c.stroke();
+    c.fillStyle=K('#b9b2a2');c.fillRect(x+1.5,y+.4,.8,.8);c.fillRect(x+w-3,y+.4,.8,.8);}}
+  // end cap board
+  c.fillStyle=K('#5e4126');c.fillRect(DOCKX-4,y-3.5,3,12);
+  // mooring post with a coil of rope
+  c.fillStyle=K('#4e3520');c.fillRect(DOCKX-6,y-12,6,10);c.fillStyle=K('#6a4a2c');c.fillRect(DOCKX-6,y-12,1.5,10);c.fillStyle=K('#3a281a');c.beginPath();c.ellipse(DOCKX-3,y-12,3,1.2,0,0,TAU);c.fill();
+  c.strokeStyle=K('#c9b07a');c.lineWidth=1.1;for(let k=0;k<3;k++){c.beginPath();c.ellipse(DOCKX-3,y-7+k*1.4,3.6,1.1,0,0,Math.PI);c.stroke();}
+  // cleat
+  c.fillStyle=K('#9aa3a8');c.fillRect(48,y-4.6,6,1.2);c.fillRect(50.2,y-4,1.6,1.4);
+  // old tire bumper hanging on the end
+  c.strokeStyle=K('#1c1c1c');c.lineWidth=2.6;c.beginPath();c.ellipse(DOCKX-1,y+9,2.2,4.5,0,0,TAU);c.stroke();c.strokeStyle=Ka('#c9b07a',.8);c.lineWidth=.7;c.beginPath();c.moveTo(DOCKX-2,y+3);c.lineTo(DOCKX-1.5,y+4.6);c.stroke();
+  // ladder down into the water
+  c.strokeStyle=K('#8a949a');c.lineWidth=1;c.beginPath();c.moveTo(40,y+8);c.lineTo(40,SURF+12);c.moveTo(45,y+8);c.lineTo(45,SURF+12);for(let yy=y+11;yy<SURF+12;yy+=4){c.moveTo(40,yy);c.lineTo(45,yy);}c.stroke();
+  // bait bucket
+  c.fillStyle=K('#d9dcd6');c.beginPath();c.moveTo(4,y-3);c.lineTo(5,y-10);c.lineTo(12,y-10);c.lineTo(13,y-3);c.closePath();c.fill();c.fillStyle=K('#3b6ea5');c.fillRect(4.6,y-7.5,7.8,1.6);
+  c.strokeStyle=K('#8a949a');c.lineWidth=.6;c.beginPath();c.arc(8.5,y-10,3.6,Math.PI,0);c.stroke();
+  // ripples around the pilings
+  c.strokeStyle=`rgba(235,245,245,${.4*(1-dk*.6)})`;c.lineWidth=.7;c.beginPath();for(const x of[6,30,54,66]){const o=Math.sin(G.t*1.4+x)*1;c.moveTo(x-6+o,SURF+1.2);c.lineTo(x-3.5+o,SURF+1.2);c.moveTo(x+3.5-o,SURF+1.2);c.lineTo(x+6-o,SURF+1.2);}c.stroke();
   }
   // lantern post
   if(gearOn('lantern')){c.fillStyle=dwood;c.fillRect(20,y-34,3,34);c.fillRect(16,y-36,11,3);c.fillStyle=darkness()>.2?'#ffcf6e':'#a88a4a';c.fillRect(17,y-32,7,9);}
@@ -3265,6 +3470,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v0.95','Docks and boats',['Mossback dock rebuilt: weathered boards, cross-braced pilings, a mooring post, cleat, tire bumper, ladder and bait bucket','Big Rock Lake boat is now an aluminum V-hull with an outboard, bow seat and anchor line','The Amazon canoe is now a wooden dugout with a paddle across it','Hulls sit in the water instead of on top of it','Willow Creek: a granite ledge with lichen, moss and a fern, stepping down into the water through smaller rocks with foam curling off them','Iron Ferry: the gravel bar has a wet edge, big cobbles, grass, a driftwood log and a tackle box','Every location has its own skyline: steeper ridges on the creek, snow-capped mountains and the big granite bluff behind Big Rock Lake, low country on the river and flat jungle with towering kapok trees in the Amazon','A cabin across Mossback Pond, with smoke from the chimney and lit windows at night','The lake boat no longer overlaps fish being landed','At Iron Ferry the old bridge now stands over a side river that winds back and opens into the water you fish','A railroad grade runs along the far bank to the bridge, then slopes down into the trees, with ties, rails and telegraph poles','A freight train crosses the Iron Ferry bridge twice a day: west in the morning, back east in the evening. Listen for the horn']],
   ['v0.94','Respect',['Letting the right fish go now earns respect: nesting fish, trophies, personal bests and legends','Respect ranks from Newcomer to Legend, shown in your angler stats','The Fly Rod unlocks at Local respect','New outfits earned with respect: Fishing Vest, Wool Plaid, Fly-Patch Hat, Tweed Cap, Guide\u2019s Shirt and more','Luck now fades a little each day, so releasing fish keeps it up']],
   ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
   ['v0.92','Fight rework',['Fish can only take line when they pull past your drag; below it, cranking always gains line','Big fish run harder the more they outweigh your line','Runs are shorter and stay on screen more often','Some runs come straight at you, so reel fast to keep the line tight','Each rod\u2019s reel holds its own amount of line','In Willow Creek a fish that reaches the far bank can wrap you in the roots','Tap a rod in the shop to see what it\u2019s good for and what each upgrade does','A real night sky: constellations turn slowly overhead and change with the seasons','Satellites now and then drift across clear nights']],
