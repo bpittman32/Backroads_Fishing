@@ -1713,7 +1713,8 @@ function updateFish(f,dt){
 }
 
 // ---------------- FIGHT ----------------
-function startFight(f,gut){setTimeout(updateDragUI,0);{const tl=document.querySelector('#tilt .tilt-label');if(tl)tl.hidden=(S.stats.caught||0)>=3;}
+// A fish hooked with dev tools on, or while they're on at any point in the fight, never counts for the leaderboard, even if they're turned off before it lands.
+function startFight(f,gut){if(S.dev||f.devMade)f.devT=true;setTimeout(updateDragUI,0);{const tl=document.querySelector('#tilt .tilt-label');if(tl)tl.hidden=(S.stats.caught||0)>=3;}
   for(const o of G.fish)if(o!==f&&o.state==='follow'){flee(o,3);}
   f.state='fight';G.lure.state='hooked';SFX.hook();vib(70);
   const [a,b]=bandRange(f.sp,f.x);
@@ -1732,7 +1733,7 @@ function nextPhase(F){
     const out=F.f.x-DOCKX,tc=out<110?0:out>400?.42:.3;F.dir=F.f.x>WX-60||Math.random()<tc?-1:1;F.ty=fightTy(sp,F.f.x);if(F.f.y<SURF+30)splash(F.f.x,.5);}
   else{F.phase='rest';F.phaseT=rand(1.3,2.5)*(1.4-.5*tired);F.dir=Math.random()<.5?-1:1;}
 }
-function updateFight(dt){
+function updateFight(dt){if(S.dev&&G.fight)G.fight.f.devT=true;
   const F=G.fight,f=F.f,sp=f.sp,rod=curRod(),reel=curReel(),line=curLine(),U=curSetup();
   F.t+=dt;F.phaseT-=dt;if(F.phaseT<=0)nextPhase(F);
   if(F.thrown){lostFish('It threw the hook mid-jump!','Keep reeling through a jump so the line stays tight');return;}
@@ -1853,7 +1854,7 @@ function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const 
   G.pending.xp=Math.round((6+f.len*.4)*(sp.legend?3:1)+(first?40:0)+(medal>prevMedal?[10,25,60][medal]:0));G.pending.quest=qHits;for(const h of qHits)if(h.done)G.pending.xp+=h.q.xp;
   endFight();
   if(!S.log[sp.id])S.log[sp.id]={n:0,best:0,bestW:0};
-  const r=S.log[sp.id];r.n++;if(f.len>r.best){r.best=f.len;r.bestW=weight;}S.landed=S.landed||{};S.bestLoc=S.bestLoc||{};if(!S.dev&&f.len>(S.landed[sp.id]||0)){S.landed[sp.id]=f.len;S.bestLoc[sp.id]=S.loc;}S.stats.caught++;save();setTimeout(sbSync,1200);
+  const r=S.log[sp.id];r.n++;if(f.len>r.best){r.best=f.len;r.bestW=weight;}S.landed=S.landed||{};S.bestLoc=S.bestLoc||{};if(!S.dev&&!f.devT&&f.len>(S.landed[sp.id]||0)){S.landed[sp.id]=f.len;S.bestLoc[sp.id]=S.loc;}S.stats.caught++;save();setTimeout(sbSync,1200);
   SFX.fanfare();vib([60,40,60,40,120]);
   setTimeout(showCatch,650);gainXP(G.pending.xp);
 }
@@ -3429,7 +3430,7 @@ $('#dvSeason').onchange=()=>{S.yday=(+$('#dvSeason').value)*SEASON_DAYS+((S.yday
 $('#dvWx').onchange=()=>{S.weather=$('#dvWx').value;S.wtimer=600;save();};
 // An armed dev fish takes the bait the moment the lure lands.
 function devHook(){const D=G.devFish;if(!D||!S.dev)return false;const L=G.lure,sp=SPMAP[D.id]||turtleById(D.id);const f=makeFish(sp,L.x);f.len=D.len;f.L=fishPx(D.len,sp);f.x=L.x;f.y=Math.max(SURF+8,L.y+6);
-  G.fish.push(f);L.fish=f;if(!D.repeat)G.devFish=null;startFight(f,false);return true;}
+  f.devMade=true;G.fish.push(f);L.fish=f;if(!D.repeat)G.devFish=null;startFight(f,false);return true;}
 // ---------- lure info pages (tap a lure's picture in the shop) ----------
 const LINFO={
   worm:{rod:'Any rod. Ultralight under a bobber for panfish; the All-Round or Catfish Rod with a sinker rig for bigger fish.',how:'Thread it on the hook. Hang it under a bobber for panfish, pin it to the bottom with a sinker rig for catfish and bullheads, or let it drift down on its own.',reg:['bluegill','pumpkinseed','perch','trout','catfish','brownbull','blackbull','rockbass','chub']},
@@ -3524,7 +3525,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
-  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights one decimal finer, and marks real ties']],
+  ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights one decimal finer, and marks real ties','Fish hooked or fought with dev tools on never reach the leaderboard, even if the tools are turned off before landing']],
   ['v0.95','Docks and boats',['Mossback dock rebuilt: weathered boards, cross-braced pilings, a mooring post, cleat, tire bumper, ladder and bait bucket','Big Rock Lake boat is now an aluminum V-hull with an outboard, bow seat and anchor line','The Amazon canoe is now a wooden dugout with a paddle across it','Hulls sit in the water instead of on top of it','Willow Creek: a granite ledge with lichen, moss and a fern, stepping down into the water through smaller rocks with foam curling off them','Iron Ferry: the gravel bar has a wet edge, big cobbles, grass, a driftwood log and a tackle box','Every location has its own skyline: steeper ridges on the creek, snow-capped mountains and the big granite bluff behind Big Rock Lake, low country on the river and flat jungle with towering kapok trees in the Amazon','A cabin across Mossback Pond, with smoke from the chimney and lit windows at night','The lake boat no longer overlaps fish being landed','At Iron Ferry the old bridge now stands over a side river that winds back and opens into the water you fish','A railroad grade runs along the far bank to the bridge, then slopes down into the trees, with ties, rails and telegraph poles','A freight train crosses the Iron Ferry bridge twice a day: west in the morning, back east in the evening. Listen for the horn']],
   ['v0.94','Respect',['Letting the right fish go now earns respect: nesting fish, trophies, personal bests and legends','Respect ranks from Newcomer to Legend, shown in your angler stats','The Fly Rod unlocks at Local respect','New outfits earned with respect: Fishing Vest, Wool Plaid, Fly-Patch Hat, Tweed Cap, Guide\u2019s Shirt and more','Luck now fades a little each day, so releasing fish keeps it up']],
   ['v0.93','Fly fishing',['New Fly Rod in the shop. It comes with a few dry flies','Four new flies: Dry Fly, Popping Bug, Bead-head Nymph and Woolly Bugger','Fly casts roll a loop out over the water and land softly','With the fly rod, STRIP pulls the fly in a little with each tap. RECAST lifts the line and keeps false casting until you tap CAST','Some dawns and dusks bring a bug hatch. Fish rise everywhere and dry flies shine','Pike, muskie, pickerel, bowfin and piranha can bite through light line. A Wire Bite Leader in the shop stops it','Smallmouth and rock bass now come up for topwater','The fly rod casts flies only, and flies need the fly rod','Trout, sunfish, bass and more take flies']],
