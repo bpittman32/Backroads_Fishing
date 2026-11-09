@@ -1048,7 +1048,7 @@ const PAL={dryfly:[['Caddis','#c9a46a'],['Royal Wulff','#d8463a'],['Black Gnat',
   cjig:[['White','#f4f0e6'],['Pink','#f08ab0'],['Black','#2e2e36']],swim:[['Shad','#9fb4b8'],['Firetiger','#f08a1e'],['Black','#2e2e36']],
   prop:[['Bone','#e8dcc0'],['Firetiger','#f08a1e'],['Black','#2e2e36']]};
 const SIZES={small:{name:'Small',tag:'Panfish',hook:-1,sink:.8,draw:.8,mouth:[1.4,1,.65],dive:45},reg:{name:'Regular',tag:'All-round',hook:0,sink:1,draw:1,mouth:[1,1,1],dive:70},large:{name:'Large',tag:'Big fish',hook:1,sink:1.2,draw:1.3,mouth:[.45,.9,1.4],dive:100}};for(const k in LHOOK)LURES[k].hook=LHOOK[k];
-const MOUTH={piranha:1,peacock:2,arowana:2,pacu:1,oscar:1,redtail:2,arapaima:2,walleye:2,pike:2,whitebass:1,drum:1,tigermuskie:2,flathead:2,smallmouth:2,brook:1,brown:1,rockbass:1,fallfish:1,chub:0,sucker:0,undercut:2,brownbull:1,blackbull:1,pumpkinseed:0,crappie:1,pickerel:2,bowfin:2,bluegill:0,perch:0,trout:1,carp:1,eel:1,koi:1,bass:2,catfish:2,pike:2,mossback:2,spottedgar:1,alligatorgar:2,warmouth:1,redear:0,flier:0,bluecat:2,cutthroat:1,grayling:0,golden:0,whitefish:0,laketrout:2,mackinaw:2,redfish:2,seatrout:1,sheepshead:0,flounder:2,mackerel:1,pompano:0,hardhead:1,tarpon:2};SPECIES.forEach(s=>s.mouth=MOUTH[s.id]);
+const MOUTH={piranha:1,peacock:2,arowana:2,pacu:1,oscar:1,redtail:2,arapaima:2,walleye:2,pike:2,whitebass:1,drum:1,tigermuskie:2,flathead:2,smallmouth:2,brook:1,brown:1,rockbass:1,fallfish:1,chub:0,sucker:0,undercut:2,brownbull:1,blackbull:1,pumpkinseed:0,crappie:1,pickerel:2,bowfin:2,bluegill:0,perch:0,trout:1,carp:1,eel:1,koi:1,bass:2,catfish:2,mossback:2,spottedgar:1,alligatorgar:2,warmouth:1,redear:0,flier:0,bluecat:2,cutthroat:1,grayling:0,golden:0,whitefish:0,laketrout:2,mackinaw:2,redfish:2,seatrout:1,sheepshead:0,flounder:2,mackerel:1,pompano:0,hardhead:1,tarpon:2};SPECIES.forEach(s=>s.mouth=MOUTH[s.id]);
 const MOUTHN=['Small','Medium','Large'];
 // Fish with teeth that can cut light line.
 const TEETH={pike:1,tigermuskie:1.2,pickerel:.8,bowfin:.7,piranha:1.5,walleye:.3,mackerel:1.4,spottedgar:.5,alligatorgar:.9,seatrout:.25,flounder:.3,tarpon:.6};
@@ -3852,7 +3852,7 @@ function startGame(){
   if(G.refundMsg){const r=G.refundMsg;G.refundMsg=0;setTimeout(()=>toast('Rods are now complete setups',`Refunded ${r} coins for your old rods, reels and line`),2600);}
 }
 function pauseGame(){if(G.mode!=='play')return;G.paused=true;G.input.reel=false;G.charging=false;$('#bReel').classList.remove('down');$('#bAction').classList.remove('down');G.stack=[];show('pause');save();}
-function resume(){G.paused=G.tut!=null;G.stack=[];show(null);updateHUD(true);refreshControls();flushLv();}
+function resume(){if(G.pending&&G.mode==='play'){G.stack=[];showCatch();return;}G.paused=G.tut!=null;G.stack=[];show(null);updateHUD(true);refreshControls();flushLv();}
 $('#pauseBtn').onclick=pauseGame;
 $('#clockChip').onclick=()=>{if(G.mode!=='play'||G.fight)return;if(G.tut!=null)return;pauseGame();G.stack=[];open('map');G.stack=[];};
 $('#shopBtn').onclick=()=>{if(G.mode!=='play'||G.fight)return;G.paused=true;G.input.reel=false;G.charging=false;$('#bReel').classList.remove('down');G.stack=[];open('shop');G.stack=[];};
@@ -4230,7 +4230,7 @@ function renderMap(){
       b.onclick=()=>{if(lv<Lc.lv||S.coins<Lc.fee)return;S.coins-=Lc.fee;S.unlocked[id]=true;save();SFX.coin();toast(`${Lc.name} unlocked`,`${Lc.feeName} bought`);renderMap();updateHUD(true);};d.append(b);}
     else if(!here){const b=document.createElement('button');b.className='btn primary';b.textContent=`Travel to ${Lc.name}`;if(Lc.perTrip){b.innerHTML=`${Lc.feeName} \u00b7 <span class="coin"></span> ${Lc.fee} \u2192 Go`;b.disabled=S.coins<Lc.fee;}b.onclick=()=>travel(id);d.append(b);}
     box.append(d);}}
-function travel(id){if(!locOK(id))return;if(G.fight){toast('Land your fish first');return;}
+function travel(id){if(!locOK(id))return;if(G.fight){toast('Land your fish first');return;}if(G.pending){showCatch();return;}
   const Lt=LOCS[id];if(Lt.perTrip&&id!==S.loc){if(S.coins<Lt.fee){toast(`You need ${Lt.fee} coins`,`${Lt.feeName} costs ${Lt.fee} coins a trip`);return;}S.coins-=Lt.fee;SFX.coin();}
   S.loc=id;G.logTab=id;save();G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.cam=0;G.pan=null;G.schoolHint=null;G.dry=0;ROPE.pts=null;
   resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}SFX.ui();
