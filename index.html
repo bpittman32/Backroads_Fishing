@@ -3676,6 +3676,11 @@ function sbFetch(path,opt){opt=opt||{};const ctl=new AbortController(),tm=setTim
   return fetch(SB_URL+path,Object.assign({},opt,{signal:ctl.signal,headers:Object.assign({apikey:SB_KEY,'Content-Type':'application/json'},opt.headers||{})}))
     .then(r=>r.ok?r.json():r.text().then(t=>{let m=t;try{const j=JSON.parse(t);m=j.message||j.msg||j.error||t;}catch(e){}throw new Error(r.status+': '+String(m).slice(0,120));})).finally(()=>clearTimeout(tm));}
 let sbBusy=false;
+// A send that fails because the server rejected it (4xx) is skipped for this session so it can't hold up the rest;
+// a network hiccup or timeout just waits 30 seconds and tries again. Only a missing table/function turns a board off.
+function sbFail(err,key,loc){const m=String(err&&err.message||err);G.sbErr=m;G.sbSkip=G.sbSkip||{};
+  if(loc&&/PGRST202|PGRST205|does not exist|Could not find/i.test(m)){G.sbLocOff=true;return;}
+  if(/^4\d\d:/.test(m)){G.sbSkip[key]=1;return;}G.sbRetryAt=Date.now()+30000;}
 // Send any personal best the board hasn't seen yet (one at a time; whatever fails is retried after the next catch or launch).
 // Per-location bests go to loc_bests. If that table isn't set up yet, this quietly stops for the session and the old board keeps working.
 // ---------- play stats (opt-in) ----------
@@ -3714,13 +3719,13 @@ function renderStatsView(){const cur=sessionPayload(),on=S.settings.stats===true
 $('#stYes').onclick=()=>{S.settings.stats=true;save();SFX.ui();resume();setTimeout(showNotices,400);};
 $('#stNo').onclick=()=>{S.settings.stats=false;save();SFX.ui();resume();setTimeout(showNotices,400);};
 function sbSyncLoc(){if(G.sbLocOff||!S.landedL)return false;S.sbSentL=S.sbSentL||{};
-  const k=Object.keys(S.landedL).find(k=>SPMAP[k.split('|')[0]]&&S.landedL[k]>(S.sbSentL[k]||0));if(!k)return false;
+  const k=Object.keys(S.landedL).find(k=>SPMAP[k.split('|')[0]]&&S.landedL[k]>(S.sbSentL[k]||0)&&!(G.sbSkip||{})['L'+k]);if(!k)return false;
   const [id,loc]=k.split('|'),sp=SPMAP[id],len=S.landedL[k],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046;
   sbBusy=true;sbFetch('/rest/v1/rpc/submit_loc_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
     .then(()=>{S.sbSentL[k]=len;save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
-    .catch(err=>{sbBusy=false;G.sbLocOff=true;G.sbErr=String(err&&err.message||err);setTimeout(sbSync,300);});return true;}
-function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;S.sbSent=S.sbSent||{};if(sbSyncLoc())return;
-  const id=Object.keys(S.landed).find(k=>SPMAP[k]&&S.landed[k]>(S.sbSent[k]||0));
+    .catch(err=>{sbBusy=false;sbFail(err,'L'+k,true);setTimeout(sbSync,300);});return true;}
+function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;if(G.sbRetryAt&&Date.now()<G.sbRetryAt){clearTimeout(sbSync.t);sbSync.t=setTimeout(sbSync,G.sbRetryAt-Date.now()+50);return;}S.sbSent=S.sbSent||{};if(sbSyncLoc())return;
+  const id=Object.keys(S.landed).find(k=>SPMAP[k]&&S.landed[k]>(S.sbSent[k]||0)&&!(G.sbSkip||{})[k]);
   if(!id){// nothing new to send: if the name, outfit or level changed since the board last saw them, update this angler's rows
     const prof=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');if(S.sbProf===prof||!Object.keys(S.sbSent).length)return;
     sbBusy=true;sbFetch('/rest/v1/rpc/set_profile',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l})})
@@ -3729,7 +3734,7 @@ function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;S.sbSent=
   const sp=SPMAP[id],len=S.landed[id],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046,loc=(S.bestLoc&&S.bestLoc[id])||(sp.locs||['pond'])[0];
   sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
     .then(()=>{S.sbSent[id]=len;S.sbProf=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
-    .catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});}
+    .catch(err=>{sbBusy=false;sbFail(err,id);setTimeout(sbSync,300);});}
 const sbCache={};
 function lookStr(){const lk=look();return`${lk.hat}.${lk.shirt}.${lk.rod}`;}
 // A small picture of an angler in their outfit (from the board's "hat.shirt.rod"), for leaderboard rows.
@@ -3755,7 +3760,7 @@ function renderBoard(){
     const rk=rows.map(r=>1+rows.filter(o=>(+o.lb)>(+r.lb)+1e-9||(Math.abs(o.lb-r.lb)<1e-9&&(+o.len_cm)>(+r.len_cm)+1e-9)).length),tied=rows.map(r=>rows.filter(o=>key(o)===key(r)).length>1);
     const pid=S.pid,cls=['gold','silver','bronze'];
     list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
-      +(()=>{const lk=cur+'|'+lt,mine=(S.landedL||{})[lk];return pid&&!rows.some(r=>r.player_id===pid)&&mine?`<div class="board-msg">Your best here is ${fLen(mine,2)}${(S.sbSentL||{})[lk]>=mine?'':' (not sent yet)'}.</div>`:'';})();
+      +(()=>{const lk=cur+'|'+lt,mine=(S.landedL||{})[lk];return pid&&!rows.some(r=>r.player_id===pid)&&mine?`<div class="board-msg">Your best here is ${fLen(mine,2)}${(S.sbSentL||{})[lk]>=mine?'':` (not sent yet${G.sbErr?': '+esc(G.sbErr.slice(0,80)):''})`}.</div>`:'';})();
     list.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));};
   const ck=cur+'|'+lt,c=sbCache[ck];if(c&&Date.now()-c.t<60000){show(c.rows);return;}
   list.innerHTML='<div class="board-msg">Checking the board\u2026</div>';
