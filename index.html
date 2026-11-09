@@ -1632,9 +1632,7 @@ function updateLure(dt){
   if(isBait()&&!(L.fish&&L.fish.state==='bite')){
     const r=rig(),ppf=pxPerFt(),room=Math.max(4,bot-SURF-6),bottomRig=r.type==='carolina'||r.type==='dropshot'||r.type==='threeway';let ty=bot;
     if(r.type==='bobber')ty=Math.min(bot,warpY(SURF+r.depth*ppf));
-    else if(r.type==='carolina')ty=bot-Math.min(r.leader/12*ppf*(S.lure==='minnow'?.6:.35),room);
-    else if(r.type==='dropshot')ty=bot-Math.min(r.leader/12*ppf,room);
-    else if(r.type==='threeway')ty=bot-Math.min(r.leader/12*ppf*.25,room);
+    else if(bottomRig)ty=bot-rigLift(r,room);
     if(G.input.reel){const sp=curReel().speed*(L.bare?1.3:1);L.x-=sp*dt;L.moving=true;reelClick(dt);
       if(r.type==='bobber'||bottomRig){L.y+=(ty-L.y)*Math.min(1,dt*2);if(r.type==='bobber'&&Math.random()<dt*6)ripple(L.x,.3);}else L.y-=sp*riseRate()*dt;}
     else{if(L.y<ty)L.y=Math.min(ty,L.y+sinkRate()*dt);else L.y=Math.max(ty,L.y-40*dt);}
@@ -2911,15 +2909,19 @@ function drawBobber(c,x,y,type,k=1,tilt=0){c.save();c.translate(x,y+tilt*1.2);c.
   c.fillStyle='rgba(255,255,255,.45)';c.beginPath();c.arc(-1,-1.4,.8,0,TAU);c.fill();c.restore();}
 function rigIcon(id){const cv=document.createElement('canvas');cv.width=cv.height=80;const x=cv.getContext('2d');x.scale(5,5);
   if(GEAR.bobbers[id])drawBobber(x,8,8.5,id);else if(id==='swivel')drawSwivel(x,8,8,1.4);else drawSinker(x,8,8,id,1.4);return cv;}
+// How far above the bottom the bait rides on a bottom rig once the sinker is down.
+function rigLift(r,room){const ppf=pxPerFt();return Math.min(r.leader/12*ppf*(r.type==='carolina'?(S.lure==='minnow'?.6:.35):r.type==='dropshot'?1:.25),room);}
+// While the rig is still sinking, the sinker is only that far below the bait; it settles onto the bottom when the rig does.
+function sinkerY(r,ly,bx){const b=bottomAt(bx)-3,bl=bottomAt(G.lure.x);return Math.min(b,ly+rigLift(r,Math.max(4,bl-SURF-6))+3);}
 function rigGeom(lx,ly){const r=rig(),ppf=pxPerFt(),L=G.lure,biting=L.fish&&L.fish.state==='bite';
   switch(r.type){
     case'bobber':{const B=G.bob||{x:lx,tilt:0},lay=biting&&L.fish.layDown,under=biting&&!lay,bx=B.x;
       const by=SURF+(under?8+Math.sin(G.t*9)*1.5:lay?-1.2:0)+(G.bobJig>0?Math.sin(G.t*45)*(r.bob==='fixed'?2.2:1.1):0)+Math.sin(G.t*2)*.5;
       const d=Math.hypot(bx-lx,by+2-ly),sf=d>8?Math.min(r.shot/12*ppf,d-4)/d:0,shot=rigSinker()==='split'&&sf>0?[lx+(bx-lx)*sf,ly+(by+2-ly)*sf]:null;
       return{anchor:[bx,by],segs:[[[bx,by+2],[lx,ly]]],bob:[bx,by,r.bob,lay?1:under?.3:B.tilt],shot,ang:Math.atan2(by+2-ly,bx-lx)};}
-    case'carolina':{const lp=r.leader/12*ppf*.85,sx=lx-lp,sy=bottomAt(sx)-3;return{anchor:[sx,sy],segs:[[[sx,sy],[sx+5,sy-1],[lx,ly]]],sink:[sx,sy,'egg'],swiv:[sx+5,sy-1],ang:Math.atan2(sy-1-ly,sx+5-lx)};}
-    case'dropshot':{const bot=bottomAt(lx+2)-3;return{anchor:[lx,ly],segs:[[[lx,ly],[lx+1,bot]]],sink:[lx+1,bot,'teardrop'],ang:Math.PI};}
-    case'threeway':{const lp=r.leader/12*ppf*.8,wx=lx-lp,wy=bottomAt(wx)-12,dx=wx-2,dy=bottomAt(dx)-3;return{anchor:[wx,wy],segs:[[[wx,wy],[dx,dy]],[[wx,wy],[lx,ly]]],sink:[dx,dy,'bank'],swiv:[wx,wy],ang:Math.atan2(wy-ly,wx-lx)};}
+    case'carolina':{const lp=r.leader/12*ppf*.85,sx=lx-lp,sy=sinkerY(r,ly,sx);return{anchor:[sx,sy],segs:[[[sx,sy],[sx+5,sy-1],[lx,ly]]],sink:[sx,sy,'egg'],swiv:[sx+5,sy-1],ang:Math.atan2(sy-1-ly,sx+5-lx)};}
+    case'dropshot':{const bot=sinkerY(r,ly,lx+2);return{anchor:[lx,ly],segs:[[[lx,ly],[lx+1,bot]]],sink:[lx+1,bot,'teardrop'],ang:Math.PI};}
+    case'threeway':{const lp=r.leader/12*ppf*.8,wx=lx-lp,dy0=sinkerY(r,ly,wx-2),wy=dy0-9,dx=wx-2,dy=dy0;return{anchor:[wx,wy],segs:[[[wx,wy],[dx,dy]],[[wx,wy],[lx,ly]]],sink:[dx,dy,'bank'],swiv:[wx,wy],ang:Math.atan2(wy-ly,wx-lx)};}
     default:return null;}}
 const ROPE={pts:null,k:1.1,t:0};
 function stepRope(ax,ay,bx,by,targetK,fixedLen){
