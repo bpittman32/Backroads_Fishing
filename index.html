@@ -683,6 +683,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
     <div class="tabs board-sp" id="boardSp"></div>
     <div class="board-list" id="boardList"></div>
     <p class="board-note">Each angler's biggest of each species at this spot, from every phone playing Backroads Fishing.</p>
+    <p class="board-note" id="boardSync"></p>
   </div>
 </section>
 
@@ -775,7 +776,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.98';
+const VERSION='v0.98a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1974,7 +1975,7 @@ function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const 
   endFight();
   if(!S.log[sp.id])S.log[sp.id]={n:0,best:0,bestW:0};
   G.sess.fish++;const r=S.log[sp.id];r.n++;if(f.len>r.best){r.best=f.len;r.bestW=weight;}S.landed=S.landed||{};S.bestLoc=S.bestLoc||{};if(!S.dev&&!f.devT&&f.len>(S.landed[sp.id]||0)){S.landed[sp.id]=f.len;S.bestLoc[sp.id]=S.loc;}
-  if(!S.dev&&!f.devT){S.landedL=S.landedL||{};const lk=sp.id+'|'+S.loc;if(f.len>(S.landedL[lk]||0))S.landedL[lk]=f.len;}S.stats.caught++;save();setTimeout(sbSync,1200);
+  if(!S.dev&&!f.devT){S.landedL=S.landedL||{};const lk=sp.id+'|'+S.loc;if(f.len>(S.landedL[lk]||0)){S.landedL[lk]=f.len;G.sbWatch=lk;}}S.stats.caught++;save();setTimeout(sbSync,1200);
   SFX.fanfare();vib([60,40,60,40,120]);
   setTimeout(showCatch,650);gainXP(G.pending.xp);
 }
@@ -3680,7 +3681,7 @@ function sbFetch(path,opt){opt=opt||{};const ctl=new AbortController(),tm=setTim
 let sbBusy=false;
 // A send that fails because the server rejected it (4xx) is skipped for this session so it can't hold up the rest;
 // a network hiccup or timeout just waits 30 seconds and tries again. Only a missing table/function turns a board off.
-function sbFail(err,key,loc){const m=String(err&&err.message||err);G.sbErr=m;G.sbSkip=G.sbSkip||{};
+function sbFail(err,key,loc){const m=String(err&&err.message||err);G.sbErr=m;G.sbSkip=G.sbSkip||{};if(loc&&G.sbWatch&&key==='L'+G.sbWatch){G.sbWatch=null;toast(`Leaderboard didn\u2019t get it yet (${m.slice(0,60)}). It\u2019ll keep trying.`);}
   if(loc&&/PGRST202|PGRST205|does not exist|Could not find/i.test(m)){G.sbLocOff=true;return;}
   if(/^4\d\d:/.test(m)){G.sbSkip[key]=1;return;}G.sbRetryAt=Date.now()+30000;}
 // Send any personal best the board hasn't seen yet (one at a time; whatever fails is retried after the next catch or launch).
@@ -3724,7 +3725,7 @@ function sbSyncLoc(){if(G.sbLocOff||!S.landedL)return false;S.sbSentL=S.sbSentL|
   const k=Object.keys(S.landedL).find(k=>SPMAP[k.split('|')[0]]&&S.landedL[k]>(S.sbSentL[k]||0)&&!(G.sbSkip||{})['L'+k]);if(!k)return false;
   const [id,loc]=k.split('|'),sp=SPMAP[id],len=S.landedL[k],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046;
   sbBusy=true;sbFetch('/rest/v1/rpc/submit_loc_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
-    .then(()=>{S.sbSentL[k]=len;save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
+    .then(()=>{S.sbSentL[k]=len;if(G.sbWatch===k){G.sbWatch=null;toast(`Leaderboard: your ${sp.name} is up at ${(LOCS[loc]||{}).name||loc}`);}save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
     .catch(err=>{sbBusy=false;sbFail(err,'L'+k,true);setTimeout(sbSync,300);});return true;}
 function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;if(G.sbRetryAt&&Date.now()<G.sbRetryAt){clearTimeout(sbSync.t);sbSync.t=setTimeout(sbSync,G.sbRetryAt-Date.now()+50);return;}S.sbSent=S.sbSent||{};if(sbSyncLoc())return;
   const id=Object.keys(S.landed).find(k=>SPMAP[k]&&S.landed[k]>(S.sbSent[k]||0)&&!(G.sbSkip||{})[k]);
@@ -3748,6 +3749,8 @@ function anglerIcon(str){const [h,sh,rd]=String(str||'').split('.'),lk={hat:LOOK
   x.strokeStyle=LOOKS.shirt[lk.shirt].col;x.lineWidth=4;x.beginPath();x.moveTo(3,-28);x.lineTo(9,-20);x.stroke();
   return c;}
 function renderBoard(){
+  {const L=S.landedL||{},T=S.sbSentL||{},wait=Object.keys(L).filter(k=>SPMAP[k.split('|')[0]]&&L[k]>(T[k]||0)).length;
+   $('#boardSync').textContent=S.dev?'Dev tools are on, so your catches aren\u2019t sent.':wait?`${wait} of your bests ${wait===1?'is':'are'} waiting to send${G.sbErr?' \u2014 last try: '+G.sbErr.slice(0,80):''}.`:'All your bests are on the board.';}
   const tb=$('#boardTabs'),chips=$('#boardSp'),list=$('#boardList');tb.innerHTML='';chips.innerHTML='';
   const locs=LOC_ORDER.filter(id=>locOK(id));const lt=locs.includes(G.boardLoc)?G.boardLoc:(locs.includes(S.loc)?S.loc:'pond');G.boardLoc=lt;
   tb.hidden=locs.length<2;for(const id of locs){const b=document.createElement('button');b.textContent=LOCS[id].name;b.setAttribute('aria-selected',lt===id);b.onclick=()=>{G.boardLoc=id;SFX.ui();renderBoard();};tb.append(b);}
