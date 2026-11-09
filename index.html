@@ -798,12 +798,12 @@ const VERSION='v0.97a';
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
    WORLD           LOCS (every fishing spot and its flags), lakebed shapes, locOK()
-   PLAY TWEAKS     mods(): easy-spot and name-trait (Lucy, Jason) adjustments, all in one place
+   PLAY TWEAKS     mods(): the easy-spot adjustments (Carter at the Amazon), all in one place
    STATE / CLOCK   game state, time of day, weather
    LURE / FISH AI  cast, rigs, line; noticing, following, nibbling, biting, stealing
    FIGHT           tension, runs, dock escapes, landing
    RENDER          scenery, fish art, line, HUD canvas bits
-   SCREENS         menus, shop, log, Where & When, tutorial, name traits (Nick)
+   SCREENS         menus, shop, log, Where & When, tutorial, name screen (Carter's spot)
    TRAVEL / BOOT   switching spots, startup
    To add a spot: one LOCS entry (+ optional bottomAt shape) and species with locs:[id]. */
 const $=s=>document.querySelector(s);
@@ -1229,12 +1229,9 @@ function LOC(){return LOCS[(typeof S!=='undefined'&&S&&S.loc)||'pond']||LOCS.pon
 // ---------------- PLAY TWEAKS ----------------
 // Every location- and name-based change to how fishing plays lives here.
 // Gameplay code reads mods() instead of checking locations or names itself.
-// (Nick's "won't cast" bit is its own mode, further down with the name screen.)
 const TWEAK_BASE={stealSkip:0,biteWindow:1,fightPull:1,snapGrace:0,hookSet:1,dockEscape:1,dockBigLen:40,fav:null,favSight:1,favBite:1,pop:1,sight:1};
 const EASY_TWEAKS={stealSkip:.7,biteWindow:1.6,fightPull:.72,snapGrace:.6,hookSet:1.2,dockEscape:0,pop:1.3,sight:1.35};   // easy:true spots, only for that spot's freeFor angler
 const NAME_TWEAKS={
-  lucy:{fav:'trout',favSight:1.5,favBite:3},   // rainbow trout come running
-  jason:{dockEscape:2.2,dockBigLen:25},         // fish love to thrash off at the dock without a net
 };
 let _modKey='',_mods=null;
 function nameKey(){return(S.name||'').trim().toLowerCase();}
@@ -1588,7 +1585,7 @@ function stealTurtle(f){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10
 function stealCheck(f){
   if(!isBait())return false;
   if(f.sp.turtle){const r=Math.random();if(r>=.012&&r<.4){f.state='wander';f.cool=rand(15,30);G.lure.fish=null;newWanderTarget(f);refreshControls();return true;}if(r<.012){stealTurtle(f);return true;}return false;}
-  const d=hookFit(f.sp);const p=nickHot()||Math.random()<mods().stealSkip?0:Math.min(.6,(d>=2?.32:d===1?.15:.04)*(LURES[S.lure].soft||1));
+  const d=hookFit(f.sp);const p=Math.random()<mods().stealSkip?0:Math.min(.6,(d>=2?.32:d===1?.15:.04)*(LURES[S.lure].soft||1));
   if(Math.random()<p){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10);f.wise=true;SFX.lose();toast(`It stole your ${bn}`,d>0?'That hook is too big for its mouth':'A quick nibbler');refreshControls();return true;}
   return false;
 }
@@ -1598,7 +1595,6 @@ function spookAtBoat(){for(const f of G.fish){if(f.state==='fight'||f.bed||f.dea
   if(Math.random()<ch){f.state='flee';f.timer=2.4;f.cool=rand(10,18);f.tx=clamp(DOCKX+160+rand(0,140),DOCKX+30,WX-10);const [a,b]=bandRange(sp,f.tx);f.ty=rand(a,b);if(f.school)for(const m of f.school.m)if(m!==f&&m.state!=='fight'){m.state='flee';m.timer=2.4;m.cool=f.cool;m.tx=f.tx+rand(-20,20);m.ty=f.ty+rand(-10,10);}}}}
 function cast(){spookAtBoat();
   G.schoolHint=null;G.dry=(G.dry||0)+1;if(G.dry>=5&&G.dry%3===2)chatter('drought',.7);
-  if(nickHot())G.nickCasts--;
   const L=G.lure,t=tip(),p=G.power;
   L.rockLuck=rand(.4,1.6);L.onRock=null;
   L.state='flying';L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
@@ -1733,11 +1729,11 @@ function fishSocial(dt){
 function flee(f,cool=8){f.state='flee';f.timer=2;f.cool=cool;const L=G.lure;const away=Math.sign(f.x-(L.x||f.x))||1;f.tx=clamp(f.x+away*120,DOCKX+30,WX-10);const [a,b]=bandRange(f.sp,f.tx);f.ty=rand(a,b);if(L.fish===f)L.fish=null;}
 function spook(f,msg){flee(f,8);f.wise=true;if(msg)toast(msg);SFX.lose();refreshControls();}
 function checkNotice(f,dt){
-  const L=G.lure,sp=f.sp,hot=nickHot();if(f.wise||L.bare||(!hot&&!sp.lures.includes(S.lure)))return;
+  const L=G.lure,sp=f.sp;if(f.wise||L.bare||!sp.lures.includes(S.lure))return;
   if(L.fish&&L.fish!==f&&L.fish.L>f.L*1.7&&dist(f.x,f.y,L.x,L.y)<L.fish.L*2+40)return;
   const upTop=sp.rises&&LURES[S.lure].float&&L.y<SURF+6;
   // A rising fish spots a bug on top from well below, so depth counts for less than distance across.
-  const d=upTop?Math.hypot(f.x-L.x,(f.y-L.y)*.4):dist(f.x,f.y,L.x,L.y);let sight=mods().sight*(sp.id===mods().fav?mods().favSight:1)*(sp.legend?190:135)*(sp.scent?1:(.6+.4*visMul()))*(hot?1.7:1);if(sp.scent&&isBait())sight*=S.lure==='liver'?1.7:1.3;if(sp.ambush)sight*=.7;if(d>sight)return;
+  const d=upTop?Math.hypot(f.x-L.x,(f.y-L.y)*.4):dist(f.x,f.y,L.x,L.y);let sight=mods().sight*(sp.id===mods().fav?mods().favSight:1)*(sp.legend?190:135)*(sp.scent?1:(.6+.4*visMul()));if(sp.scent&&isBait())sight*=S.lure==='liver'?1.7:1.3;if(sp.ambush)sight*=.7;if(d>sight)return;
   // Fish that rise will come up from their depth for something floating on top, the way trout take a dry fly.
   if(!sp.surface&&!hot&&!upTop){const [a,b]=bandRange(sp,L.x);if(L.y<a-45||L.y>b+45)return;}
   let action=(G.t-L.lastTwitch<1.6)?'twitch':L.moving?'move':'still';if(action==='still'&&S.lure==='minnow')action='move';if(action==='still'&&(S.lure==='cricket'||S.lure==='shrimp')&&Math.sin(G.t*1.3)>.55)action='twitch';
@@ -1785,8 +1781,8 @@ function updateFish(f,dt){
       if(G.mode!=='play'||L.state!=='water'||L.bare){f.state='wander';newWanderTarget(f);break;}
       {const a=f.fo+G.t*.9,r=f.L*.6+20+Math.sin(G.t*1.7+f.fo)*6;tx=L.x+Math.cos(a)*r;ty=clamp(L.y+Math.sin(a)*12,SURF+4,bottomAt(L.x)-4);}
       spd=Math.max(sp.speed*.75,L.moving?curReel().speed*1.15:0);f.face=L.x>f.x?1:-1;f.t2+=dt;
-      if(!L.fish&&!f.wise&&Math.random()<dt*(nickHot()?2:.6)){if(sp.turtle&&Math.random()<.75){f.state='wander';f.cool=rand(20,40);newWanderTarget(f);break;}f.state='approach';L.fish=f;f.t2=0;refreshControls();}
-      else if(f.t2>(nickHot()?30:12)){f.state='wander';newWanderTarget(f);}
+      if(!L.fish&&!f.wise&&Math.random()<dt*.6){if(sp.turtle&&Math.random()<.75){f.state='wander';f.cool=rand(20,40);newWanderTarget(f);break;}f.state='approach';L.fish=f;f.t2=0;refreshControls();}
+      else if(f.t2>12){f.state='wander';newWanderTarget(f);}
       break;
     case'approach':
       if(!engaged){f.state='wander';break;}
@@ -1798,9 +1794,9 @@ function updateFish(f,dt){
     case'nibble':
       if(!engaged){f.state='wander';break;}
       [tx,ty]=aimAt(f,L,2);spd=sp.speed*.45;
-      if(L.moving&&isBait()&&!nickHot()&&Math.random()<dt*.5*(1-.7*farZ(f.x))){spook(f,'Spooked it!');break;}
+      if(L.moving&&isBait()&&Math.random()<dt*.5*(1-.7*farZ(f.x))){spook(f,'Spooked it!');break;}
       f.timer-=dt;
-      if(f.timer<=0){f.nib--;if(f.nib>0&&f.mood==='shy'&&!f.bed&&!nickHot()&&Math.random()<.13){f.state='wander';f.cool=rand(6,12);L.fish=null;newWanderTarget(f);refreshControls();break;}if(f.nib>0){if(stealCheck(f))break;L.jig=.18;G.bobJig=.4;if(G.bob)ripple(G.bob.x,isBait()&&rig().bob==='fixed'?.4:.22);SFX.nibble();vib(15);ripple(L.x,.25);f.timer=f.mood==='shy'?rand(.6,1.7):rand(.3,1.3);}else if(sp.turtle&&(Math.random()>.025||(S.minutes||0)<(S.turtleNext||0))){if(Math.random()<.08)stealTurtle(f);else{f.state='wander';f.cool=rand(15,30);L.fish=null;newWanderTarget(f);refreshControls();}}else{G.dry=0;f.state='bite';f.biteAt=G.t;f.timer=(sp.bony?1.8:1)*(sp.bite*1.3+.15)*rand(.8,1.25)*mods().biteWindow*(nickHot()?1.6:1)*(isBait()&&rig().type==='bobber'?(rig().bob==='fixed'?1.25:1.1):1)*curSetup().sens*(1+.06*curTier())*(curSetup().botSens&&isBait()&&['carolina','threeway','free','dropshot'].includes(rig().type)?curSetup().botSens:1);SFX.bite();vib([40,30,40]);L.jig=.4;f.layDown=!!G.bob&&['crappie','bluegill','perch','pumpkinseed'].includes(sp.id)&&Math.random()<.4;if(G.bob){splash(G.bob.x,f.layDown?.2:.5);}else splash(L.x,.35);refreshControls();}}
+      if(f.timer<=0){f.nib--;if(f.nib>0&&f.mood==='shy'&&!f.bed&&Math.random()<.13){f.state='wander';f.cool=rand(6,12);L.fish=null;newWanderTarget(f);refreshControls();break;}if(f.nib>0){if(stealCheck(f))break;L.jig=.18;G.bobJig=.4;if(G.bob)ripple(G.bob.x,isBait()&&rig().bob==='fixed'?.4:.22);SFX.nibble();vib(15);ripple(L.x,.25);f.timer=f.mood==='shy'?rand(.6,1.7):rand(.3,1.3);}else if(sp.turtle&&(Math.random()>.025||(S.minutes||0)<(S.turtleNext||0))){if(Math.random()<.08)stealTurtle(f);else{f.state='wander';f.cool=rand(15,30);L.fish=null;newWanderTarget(f);refreshControls();}}else{G.dry=0;f.state='bite';f.biteAt=G.t;f.timer=(sp.bony?1.8:1)*(sp.bite*1.3+.15)*rand(.8,1.25)*mods().biteWindow*(isBait()&&rig().type==='bobber'?(rig().bob==='fixed'?1.25:1.1):1)*curSetup().sens*(1+.06*curTier())*(curSetup().botSens&&isBait()&&['carolina','threeway','free','dropshot'].includes(rig().type)?curSetup().botSens:1);SFX.bite();vib([40,30,40]);L.jig=.4;f.layDown=!!G.bob&&['crappie','bluegill','perch','pumpkinseed'].includes(sp.id)&&Math.random()<.4;if(G.bob){splash(G.bob.x,f.layDown?.2:.5);}else splash(L.x,.35);refreshControls();}}
       break;
     case'bite':
       if(!engaged){f.state='wander';break;}
@@ -2008,7 +2004,7 @@ function updateAmbient(dt){
   for(const r of G.ripples){r.life-=dt*.9;r.r=lerp(r.max,2,r.life);}G.ripples=G.ripples.filter(r=>r.life>0);
   if(S.weather==='rain'){const sn=snowing();for(let i=0;i<Math.ceil(dt*(sn?60:140));i++)G.drops.push({x:rand(-20,W+40),y:rand(-40,0),v:sn?rand(30,55):rand(380,520),sn});if(Math.random()<dt*10)ripple(rand(G.cam||0,(G.cam||0)+W),.15);}
   for(const d of G.drops){d.y+=d.v*dt;d.x-=d.sn?Math.sin(G.t*1.5+d.v)*8*dt:d.v*.12*dt;}G.drops=G.drops.filter(d=>d.y<SURF+2);
-  if(G.mode==='play'&&!G.paused&&gearOn('whistle')){G.puffT=(G.puffT??rand(4,9))-dt;if(G.puffT<=0){G.puffT=rand(9,20);const hy=dockY()-40+(nickSits()?12:0);
+  if(G.mode==='play'&&!G.paused&&gearOn('whistle')){G.puffT=(G.puffT??rand(4,9))-dt;if(G.puffT<=0){G.puffT=rand(9,20);const hy=dockY()-40;
     for(let i=0;i<7;i++)G.parts.push({k:'smoke',x:40+rand(-2,3),y:hy+rand(-2,2),r:rand(2,4),life:rand(2.6,3.4),ph:Math.random()*6});}}
   rainAudio(S.weather==='rain'&&(G.mode==='play'||G.mode==='menu'));
 }
@@ -2888,22 +2884,15 @@ function drawDock(c,dk){
   if(gearOn('lantern')){c.fillStyle=dwood;c.fillRect(20,y-34,3,34);c.fillRect(16,y-36,11,3);c.fillStyle=darkness()>.2?'#ffcf6e':'#a88a4a';c.fillRect(17,y-32,7,9);}
   // angler
   const t=tip(),ax=36,lk=look(),c1=rgbStr(mix(LOOKS.shirt[lk.shirt].col,'#141c26',dk*.7)),skin=rgbStr(mix('#e0a98a','#4a3a32',dk*.7)),hat=rgbStr(mix('#c98a2e','#3a2a12',dk*.7)),pants=rgbStr(mix('#4a5a3a','#151a12',dk*.7));
-  const nick=nickSits(),sy=nick?12:0;
-  if(nick){
-    const rc=rgbStr(mix('#3a2412','#120a06',dk*.6));c.strokeStyle=rc;c.lineWidth=2.2;c.lineCap='round';c.beginPath();c.moveTo(12,y-2);c.lineTo(12+Math.cos(-1.15)*66,y-2+Math.sin(-1.15)*66);c.stroke();
-    c.fillStyle='#9aa3a8';c.beginPath();c.arc(15,y-9,2.2,0,TAU);c.fill();
-    c.fillStyle=rgbStr(mix('#c0392b','#3a1410',dk*.7));c.fillRect(ax+12,y-8,4,6);c.fillStyle='rgba(255,255,255,.5)';c.fillRect(ax+12,y-7,4,1);
-    c.fillStyle=pants;c.fillRect(ax-5,y-6,13,4);c.fillRect(ax+5,y-6,4,9);
-  }else{c.fillStyle=pants;c.fillRect(ax-5,y-14,4,12);c.fillRect(ax+1,y-14,4,12);}
-  drawAnglerBody(c,ax,y+sy,dk,lk,nick);
-  if(nick){c.strokeStyle=c1;c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(ax+3,y-18);c.lineTo(ax+11,y-10);c.stroke();}
+  c.fillStyle=pants;c.fillRect(ax-5,y-14,4,12);c.fillRect(ax+1,y-14,4,12);
+  drawAnglerBody(c,ax,y,dk,lk,false);
   if(G.mode==='play'&&!G.charging){const li=lvlInfo(),lab=(S.name?S.name+' \u00b7 ':'')+'Lv '+li.l;c.font='11px "Lilita One",sans-serif';
-    const tw=Math.max(34,c.measureText(lab).width+12),tx=Math.max(2,ax-tw/2),ty=y-66+sy,cx=tx+tw/2;
+    const tw=Math.max(34,c.measureText(lab).width+12),tx=Math.max(2,ax-tw/2),ty=y-66,cx=tx+tw/2;
     // Level-up celebration: for ~4 s the tag swells and turns gold, sparks burst from it and "LEVEL UP!" rises above;
     // the gold trim then fades over the next ~8 s so the new number stays noticeable.
     const lt=G.lvFx!=null?G.t-G.lvFx:99,hot=lt<4,gold=lt<12?(hot?1:1-(lt-4)/8):0;
     if(hot){const pulse=1+.55*Math.max(0,1-lt/3.2)*(.8+.2*Math.sin(lt*14));
-      c.save();c.globalAlpha=Math.max(0,1-lt/1.6)*.55;c.fillStyle='#ffd36b';c.beginPath();c.arc(ax,y-30+sy,18+lt*70,0,TAU);c.fill();c.restore();
+      c.save();c.globalAlpha=Math.max(0,1-lt/1.6)*.55;c.fillStyle='#ffd36b';c.beginPath();c.arc(ax,y-30,18+lt*70,0,TAU);c.fill();c.restore();
       c.save();for(let i=0;i<14;i++){const a=i/14*TAU+.3,d=10+lt*95*(.7+.3*((i*7)%5)/5),fa=Math.max(0,1-lt/1.4);if(fa<=0)break;c.globalAlpha=fa;c.fillStyle=i%2?'#ffe08a':'#fff6d8';c.beginPath();c.arc(cx+Math.cos(a)*d,ty+8+Math.sin(a)*d*.8,2.2,0,TAU);c.fill();}c.restore();
       const fa=lt<.2?lt/.2:lt>3?Math.max(0,(4-lt)):1,top=(60*UI)/SC+18;c.save();c.globalAlpha=fa;c.font='18px "Lilita One",sans-serif';c.textAlign='center';const lw=c.measureText('LEVEL UP!').width;
       let rx=Math.max(cx,lw/2+6),ry=ty-14-lt*16;if(ry<top){rx=tx+tw*pulse+lw/2+10+lt*4;ry=ty+18;}
@@ -2914,7 +2903,6 @@ function drawDock(c,dk){
     c.fillStyle='rgba(0,0,0,.5)';c.fillRect(tx+4,ty+12.5,tw-8,2);c.fillStyle=gold>.3?'#ffe08a':'#8cc6d8';c.fillRect(tx+4,ty+12.5,(tw-8)*(li.need?li.rem/li.need:1),2);
     if(hot)c.restore();
     c.beginPath();c.moveTo(ax-3,ty+16);c.lineTo(ax+3,ty+16);c.lineTo(ax,ty+19);c.closePath();c.fillStyle='rgba(140,198,216,.55)';c.fill();}
-  if(nick)return;
   // arm
   c.strokeStyle=c1;c.lineWidth=4;c.lineCap='round';c.beginPath();c.moveTo(ax+3,y-28);c.lineTo(t.hx,t.hy);c.stroke();
   // rod
@@ -2962,7 +2950,7 @@ function stepRope(ax,ay,bx,by,targetK,fixedLen){
   return P;
 }
 function drawLine(c){
-  const L=G.lure,t=tip();if(nickSits())return;let lx,ly;
+  const L=G.lure,t=tip();let lx,ly;
   if(L.state==='ready'){lx=t.x;ly=t.y+14+Math.sin(G.t*2)*1;}
   else{lx=L.x;ly=L.y;if(L.jig>0){lx+=Math.sin(G.t*60)*1.4;ly+=Math.sin(G.t*47)*1.4;}}
   const lineCol=darkness()>.5?'rgba(230,235,220,.5)':'rgba(240,245,235,.7)';
@@ -3502,8 +3490,6 @@ function drawCritters(c,dk,vx0,vx1){const Lc=LOC();
 // ---------------- MAIN UPDATE ----------------
 function update(dt){
   tickChatter(dt);updateFlock(dt);updateCritters(dt);updatePlane(dt);
-  if(nickSits()){G.nickT=(G.nickT??12)-dt;if(G.nickT<=0){nickTip();G.nickT=rand(25,40);}}
-  if(nickHot()&&G.nickCasts<=0&&G.lure.state==='ready'&&!G.fight&&!G.pending){G.nickActive=false;G.nickTries=0;G.nickT=rand(15,25);{const d=qPick(NICK_DONE);toast(d[0],d[1]);}}
   tickClock(dt);
   G.spawnT-=dt;if(G.spawnT<=0){spawnTick(false);G.spawnT=6;}
   const kt=G.input.keyTilt;
@@ -3582,7 +3568,7 @@ function updateHint(){
   if(!S.settings.hints)k='';
   else if(G.fc&&G.fc.sel!=null)k='Laying it out on the next forward cast…';
   else if(G.charging)k=G.tapCast?'False casting… tap CAST at the power you want':'Let go at the top of the swing';
-  else if(L.state==='ready')k=nickSits()?NICK_HINTS[Math.floor(G.t/14)%NICK_HINTS.length]:G.schoolHint?`The school is still here. Cast back for another ${G.schoolHint.toLowerCase()}`:nickHot()?`Nick is up! ${G.nickCasts} cast${G.nickCasts===1?'':'s'} left`:S.stats.caught===0&&!curSetup().fly?'Hold CAST, then release at full power':curSetup().fly?`${LURES[S.lure].name} ready · tap CAST to start false casting`:`${LURES[S.lure].name} ready · drag the water to look around`;
+  else if(L.state==='ready')k=G.schoolHint?`The school is still here. Cast back for another ${G.schoolHint.toLowerCase()}`:S.stats.caught===0&&!curSetup().fly?'Hold CAST, then release at full power':curSetup().fly?`${LURES[S.lure].name} ready · tap CAST to start false casting`:`${LURES[S.lure].name} ready · drag the water to look around`;
   else if(L.state==='water'){
     if(L.bare)k='Bait\u2019s gone. Reel in to rebait';
     else if(L.fish?.state==='bite')k=!isBait()&&G.input.reel?'Strike! Keep reeling and tap HOOK!':'Now! Tap HOOK!';
@@ -3602,7 +3588,7 @@ function actionDown(){
   if(G.mode!=='play'||G.paused)return;audio();
   if(G.charging&&G.tapCast==='free'){G.tapCast=null;if(G.fc){G.fc.sel=G.power;G.charging=false;refreshControls();}else releaseCast();return;}
   if(G.fc)return;
-  const L=G.lure;if(isNick()&&L.state==='ready'&&!G.nickActive){nickRefuse();return;}if(nickHot()&&L.state==='ready'&&G.nickCasts<=0)return;
+  const L=G.lure;
   if(L.state==='ready'){const hv=S.lures[S.lure];if(!(hv===-1||hv>0)){toast(curSetup().fly?'Out of flies':'Out of that lure',curSetup().fly?'Buy more in the tackle shop':'Pick another in the tackle box');return;}if(!lureOK(S.lure)){toast(curSetup().fly?'Tie on a fly':'That needs the fly rod',curSetup().fly?'Flies are in the tackle shop':'Switch rods in the tackle box');return;}G.charging=true;G.chargeT=0;G.power=0;
     // Fly rod: the first cast winds up just like a recast, false casting from the rod tip until you pick the power.
     if(curSetup().fly){const t=tip();G.tapCast='armed';G.fc={ph:'back',s:0,len:40,T:.5,from:{x:t.x,y:t.y+14},sel:null};refreshControls();}}
@@ -3616,7 +3602,7 @@ function actionDown(){
 function hookDown(){
   if(G.mode!=='play'||G.paused)return;audio();
   const L=G.lure;if(L.state!=='water')return;const f=L.fish;
-  if(f&&f.state==='bite'){if(nickHot()||Math.random()<Math.min(.97,setChance(hookFit(f.sp))*hookSkill()*mods().hookSet*(isBait()?1:G.input.reel?1.1:.85)*(f.sp.bony?(G.t-(f.biteAt||0)<.4?.35:1.15):1))){startFight(f,false);gainXP(3);if(curSetup().power>=3&&f.sp.mouth===0&&!nickHot()&&Math.random()<.22){lostFish('Ripped the hook right out','That heavy rod is too stiff for a small mouth');return;}}else missHook(f,'set');}
+  if(f&&f.state==='bite'){if(Math.random()<Math.min(.97,setChance(hookFit(f.sp))*hookSkill()*mods().hookSet*(isBait()?1:G.input.reel?1.1:.85)*(f.sp.bony?(G.t-(f.biteAt||0)<.4?.35:1.15):1))){startFight(f,false);gainXP(3);if(curSetup().power>=3&&f.sp.mouth===0&&Math.random()<.22){lostFish('Ripped the hook right out','That heavy rod is too stiff for a small mouth');return;}}else missHook(f,'set');}
   else if(f&&f.state==='nibble'){toast('Too early!','Wait for the lure to plunge');spook(f);}
   else{toast('Nothing on yet');SFX.ui();}
 }
@@ -3783,23 +3769,16 @@ let nameThen=null;
 function askName(then){nameThen=then||null;$('#nameInput').value=S.name||'';$('#nameEyebrow').textContent=S.name?'Rename':'New angler';$('#nameGo').textContent=S.name?'Save':'Start fishing';open('name');setTimeout(()=>{try{$('#nameInput').focus();}catch(e){}},60);}
 $('#nameForm').addEventListener('submit',e=>{e.preventDefault();
   S.name=$('#nameInput').value.trim().replace(/\s+/g,' ').slice(0,16)||'Angler';
-  if(isNick()&&!S.nickGranted)grantNick();for(const id in LOCS){const Lc=LOCS[id];if(Lc.freeFor&&nameIs(Lc.freeFor)&&!(S.secretsSeen||[]).includes(id)){S.secretsSeen=(S.secretsSeen||[]).concat(id);if(S.carterSeen&&id==='amazon')continue;setTimeout(()=>toast(Lc.name+' is open!','Tap the clock to go. No level or fee needed for you'),900);}}if(isNick())nickDebug();
+  for(const id in LOCS){const Lc=LOCS[id];if(Lc.freeFor&&nameIs(Lc.freeFor)&&!(S.secretsSeen||[]).includes(id)){S.secretsSeen=(S.secretsSeen||[]).concat(id);if(S.carterSeen&&id==='amazon')continue;setTimeout(()=>toast(Lc.name+' is open!','Tap the clock to go. No level or fee needed for you'),900);}}
   save();updateHUD(true);try{$('#nameInput').blur();}catch(_){}
   const t=nameThen;nameThen=null;if(t){G.stack=[];t();}else back();});
-function nickSits(){return isNick()&&!G.nickActive&&G.lure.state==='ready'&&!G.fight;}
-function nickHot(){return isNick()&&G.nickActive;}
-function isNick(){return(S.name||'').trim().toLowerCase()==='nick';}
-function nickDebug(){let need=0;for(let l=1;l<MAXLV;l++)need+=xpNeed(l);if((S.xp||0)<need)S.xp=need;if(S.coins<20000)S.coins=20000;save();updateHUD(true);}
+function maxOut(){let need=0;for(let l=1;l<MAXLV;l++)need+=xpNeed(l);if((S.xp||0)<need)S.xp=need;if(S.coins<20000)S.coins=20000;save();updateHUD(true);}
 function grantAll(){
   for(const id of ALL_ORDER)if(id!=='worm')S.lures[id]=Math.max(S.lures[id]||0,LURES[id].bait?20:5);
   for(const cat of['rods','reels','lines','hooks','sinkers','bobbers','terminal','gear'])for(const id in GEAR[cat])S.owned[id]=1;
   for(const id of PACKED)packs()[id]=Math.max(packs()[id]||0,PACK);
   for(const id of SETUP_ORDER)S.setups[id]={...(S.setups[id]||{}),owned:true,lvl:2};
-  nickDebug();}
-function grantNick(){
-  S.nickGranted=true;grantAll();
-  G.lvMsg=['Nick showed up with everything',`Full tackle box, every upgrade, level ${lvlInfo().l}. He still won\u2019t cast.`];
-}
+  maxOut();}
 function nameIs(n){return nameKey()===n;}
 const CHAT={
   idle:['Nice day for it.','Something’s down there. I can feel it.','Should’ve packed a sandwich.','C’mon, just one bite.','This is the life.','Bet there’s a big one by those weeds.','I swear they’re watching me.','Water looks good today.','Quiet out here.','Just me and the fish.'],
@@ -3812,48 +3791,21 @@ const CHAT={
   big:['Now THAT’s a fish!','Wait till they see this one.','Whoa, look at the size of it!','That’s a wall-hanger.'],
   lost:['Aw, come on!','It got off!','That one’s telling his friends about me.','Unbelievable.'],
   snap:['Snapped my line!','There goes my tackle.','Too much, too much.'],
-  net:['Should’ve brought a net.','Right at the dock!','So close to the dock, too.'],
-  nickIdle:['Fishing’s more of a mindset.','Look at that sky.','I could catch that one. If I wanted to.','Ahh. This is the good stuff.','You ever just… sit?','Fish can wait. Fish always wait.','Somebody should cast. Not me. Somebody.','Pass the snacks.','I can hear the big ones laughing.','Best seat on the lake.','This chair was made for me.','Shhh. You’ll wake the fish.']};
+  net:['Should’ve brought a net.','Right at the dock!','So close to the dock, too.']};
 const CHAT_BAG={};let lastChat='';
 function pickChat(k){let bag=CHAT_BAG[k];if(!bag||!bag.length){bag=CHAT_BAG[k]=CHAT[k].slice().sort(()=>Math.random()-.5);if(bag[bag.length-1]===lastChat&&bag.length>1)bag.unshift(bag.pop());}let t=bag.pop();if(t===lastChat&&bag.length)t=bag.pop();lastChat=t;return t;}
 function say(t){if(S.settings.chatter===false)return;const life=clamp(3+String(t).split(/\s+/).length*.45,5.5,11);G.bubble={t,life,max:life};G.chatCD=40;}
-function chatter(k,prob){if(G.mode!=='play'||S.settings.chatter===false||(nickSits()&&k!=='nickIdle'))return;if((G.chatCD||0)>0)return;if(Math.random()>(prob??.4))return;say(pickChat(k));}
+function chatter(k,prob){if(G.mode!=='play'||S.settings.chatter===false)return;if((G.chatCD||0)>0)return;if(Math.random()>(prob??.4))return;say(pickChat(k));}
 function tickChatter(dt){G.chatCD=Math.max(0,(G.chatCD||0)-dt);if(G.bubble){G.bubble.life-=dt;if(G.bubble.life<=0)G.bubble=null;}
   if(G.mode!=='play'||G.paused||G.fight)return;G.idleChatT=(G.idleChatT??rand(50,90))-dt;
-  if(G.idleChatT<=0){G.idleChatT=rand(70,140);const pool=S.weather==='rain'&&Math.random()<.5?'rain':S.weather==='fog'&&Math.random()<.5?'fog':period()==='night'&&Math.random()<.5?'night':'idle';chatter(nickSits()?'nickIdle':pool,.6);}}
+  if(G.idleChatT<=0){G.idleChatT=rand(70,140);const pool=S.weather==='rain'&&Math.random()<.5?'rain':S.weather==='fog'&&Math.random()<.5?'fog':period()==='night'&&Math.random()<.5?'night':'idle';chatter(pool,.6);}}
 function drawBubble(c,cam){const B=G.bubble;if(!B||G.mode!=='play')return;const a=Math.min(1,B.life/.4,(B.max-B.life)/.25);
   c.save();c.globalAlpha=a;c.font='600 10px "Atkinson Hyperlegible",system-ui,sans-serif';const words=B.t.split(' '),lines=[];let cur='';
   for(const w of words){const tt=cur?cur+' '+w:w;if(c.measureText(tt).width>130&&cur){lines.push(cur);cur=w;}else cur=tt;}lines.push(cur);
-  const bw=Math.max(...lines.map(l=>c.measureText(l).width))+14,bh=lines.length*12+9,ax=clamp(36-cam,14,W-20),y0=dockY()-70-(nickSits()?-12:0)-bh,x0=clamp(ax-14,6,W-bw-6);
+  const bw=Math.max(...lines.map(l=>c.measureText(l).width))+14,bh=lines.length*12+9,ax=clamp(36-cam,14,W-20),y0=dockY()-70-bh,x0=clamp(ax-14,6,W-bw-6);
   c.fillStyle='rgba(250,248,240,.96)';c.strokeStyle='rgba(20,30,25,.5)';c.lineWidth=1;c.beginPath();c.roundRect?c.roundRect(x0,y0,bw,bh,7):c.rect(x0,y0,bw,bh);c.fill();c.stroke();
   c.beginPath();c.moveTo(ax-4,y0+bh-.5);c.lineTo(ax+3,y0+bh-.5);c.lineTo(ax-2,y0+bh+6);c.closePath();c.fill();
   c.fillStyle='#1d2a24';c.textAlign='left';c.textBaseline='top';lines.forEach((l,i)=>c.fillText(l,x0+7,y0+5+i*12));c.textBaseline='alphabetic';c.restore();}
-// Nick's excuses. Shuffled so none repeat until the whole list has been used.
-const NICK_NO=['Nick’s just here for the company','Nick says he’ll fish next time','Nick is happy watching','Nick: “Nah, you go ahead.”','Nick cracks open a drink instead','Nick knows where they are. He’s not casting.','Nick: “Naw, I already took my pants off.”',
-  'Nick: “The fish need a day off too.”','Nick is “letting the water rest”','Nick: “I’m scouting. Totally different from fishing.”','Nick says the barometric pressure is all wrong','Nick: “My casting arm is in airplane mode.”',
-  'Nick is reorganizing the tackle box. Again.','Nick: “I fish with my mind now.”','Nick: “If I catch them all, what are you gonna catch?”','Nick is waiting for the fish to come to him','Nick: “I’m more of a fish whisperer.”',
-  'Nick: “Rod’s in the truck.” The rod is in his hand.','Nick: “Can’t. Just put sunscreen on my hands.”','Nick is pretending he didn’t hear you','Nick: “The fish and I have an understanding.”',
-  'Nick: “Five more minutes.” It’s been forty.','Nick is busy naming the ducks','Nick: “I’m on the clock. The clock says nap.”','Nick: “Real pros let the lake come to them.”',
-  'Nick: “I’ll cast when the wind is right.” There is no wind.','Nick is watching a fishing video instead','Nick: “I caught a huge one yesterday.” Nobody saw it.','Nick: “Rule one: never look desperate.”',
-  'Nick: “My lucky socks are in the wash.”','Nick taps his temple. “Strategy.”','Nick: “You can’t rush greatness.”','Nick is negotiating with a dragonfly','Nick: “I don’t want to embarrass the fish.”',
-  'Nick: “I’m saving my good cast for later.”','Nick is explaining fishing to a frog','Nick: “That’s a catch-and-release lake. I’m releasing myself.”','Nick: “My hook is still drying.”'];
-const NICK_PEST=['Nick: “Ask me one more time.”','Nick sighs the longest sigh ever recorded','Nick pulls his hat down over his eyes','Nick: “Keep tapping. See what happens.”','Nick is considering it. No, he isn’t.',
-  'Nick: “Wow. Persistent.”','Nick slowly reaches for the rod… and scratches his ankle','Nick: “Fine, fine, hold on.” He does not hold on.','Nick: “You’re scaring the fish with all that tapping.”','Nick stands up, stretches, and sits right back down'];
-const NICK_GO=[['Fine. Nick grabs his rod.',n=>`He’ll give you ${n} casts. Watch this.`],['Nick cracks his knuckles',n=>`“${n} casts. Then I’m done.”`],['Nick sets down his drink',n=>`“Alright. ${n} casts. Take notes.”`],['“Ugh. FINE.”',n=>`Nick takes ${n} casts, tops.`]];
-const NICK_DONE=[['Nick sits back down','That’s enough fishing for today, apparently'],['Nick retires. Again.','“Always leave ’em wanting more.”'],['Nick props the rod against the rail','“My work here is done.”'],['Nick lies back down','“Wake me up if something big shows.”']];
-const NICK_HINTS=['Nick is just enjoying the view.','Nick is supervising.','Nick is resting his casting arm.','Nick is “reading the water” with his eyes closed.','Nick is thinking about lunch.','Nick is listening to the fish.','Tap CAST to ask Nick nicely.'];
-CHAT.nickNo=NICK_NO;CHAT.nickPest=NICK_PEST;
-
-function nickRefuse(){
-  G.nickTries=(G.nickTries||0)+1;
-  if(G.nickTries>10&&Math.random()<.3){G.nickActive=true;G.nickCasts=Math.random()<.5?2:3;{const g=qPick(NICK_GO);toast(g[0],g[1](G.nickCasts));}SFX.fanfare();refreshControls();return;}
-  toast(pickChat(G.nickTries>5?'nickPest':'nickNo'));SFX.ui();}
-function nickTip(){
-  const pool=G.fish.filter(f=>f.alpha>.6&&f.state==='wander'&&isActive(f.sp));if(!pool.length)return;
-  const f=pool.sort((a,b)=>(b.len/b.sp.len[1]+(b.sp.rar<4?.6:0))-(a.len/a.sp.len[1]+(a.sp.rar<4?.6:0)))[0],sp=f.sp;
-  const lure=sp.lures[0],how=lure==='worm'?`Worm on a ${['#10','#4','2/0'][sp.mouth]} hook${sp.band[0]>.5?' with a sinker':''}`:`Try a ${LURES[lure].short.toLowerCase()}`;
-  toast(`Nick points out a ${sp.name}`,`${fDist((f.x-DOCKX)/10)} out, ${fDist(depthM(f.y),imp()?0:1)} down. ${how}.`);
-}
 $('#mHelp').onclick=()=>open('help');$('#mBoard').onclick=()=>open('board');$('#pBoard').onclick=()=>open('board');$('#mBoard').hidden=$('#pBoard').hidden=!sbOn();$('#mSettings').onclick=()=>open('settings');
 
 const TUT=[
@@ -3891,7 +3843,7 @@ function startGame(){
   if(!S.landed&&!S.nickLog){S.landed={};for(const k in S.log)if(S.log[k].best>0)S.landed[k]=S.log[k].best;}
   if(!S.landedL){S.landedL={};for(const k in S.landed){const sp=SPMAP[k];if(!sp)continue;const loc=(S.bestLoc||{})[k]||(sp.locs||['pond'])[0];S.landedL[k+'|'+loc]=S.landed[k];}save();}
   setTimeout(sbSync,3000);
-  G.nickT=12;G.mode='play';G.paused=false;G.stack=[];S.started=true;show(null);inGameUI(true);setTimeout(showNotices,900);
+  G.mode='play';G.paused=false;G.stack=[];S.started=true;show(null);inGameUI(true);setTimeout(showNotices,900);
   G.lure.state='ready';G.lure.fish=null;G.fight=null;
   repopulate();G.spawnT=6;updateHUD(true);refreshControls();save();
   toast(PNAME[period()]+' · '+wname(),weatherSub());flushLv();
@@ -4483,7 +4435,6 @@ function start(data){
   resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}ensureQuests();updateQuestBtn();
   show('menu');renderMenu();inGameUI(false);updateHUD(true);refreshControls();
   requestAnimationFrame(frame);
-  if(isNick())nickDebug();
 }
 addEventListener('resize',()=>{const wx0=WX;resize();if(WX!==wx0){for(const f of G.fish){f.x=clamp(f.x,DOCKX+30,WX-15);f.y=clamp(f.y,SURF+6,Math.max(SURF+8,bottomAt(f.x)-8));newWanderTarget(f);}if(G.lure.state==='water'&&G.lure.x>WX-20)G.lure.x=WX-20;if(G.beds){for(const b of G.beds)if(b.guard&&b.guard.state!=='fight'){b.guard.bed=null;b.guard.state='wander';}G.beds=[];updateNests();}}});
 setInterval(()=>{if(G.mode==='play')save();},15000);
