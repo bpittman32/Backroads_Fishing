@@ -220,14 +220,42 @@ function playerDetail(m,id,r,S,E){const old=$('#pdetail');if(old)old.remove();co
   const b=el('button',{},'Compare with another player');b.onclick=()=>{CMP.dim='player';CMP.a=id;CMP.b='';TAB='compare';store.set('bs-tab','compare');render();scrollTo(0,0);};c.append(el('div',{class:'row',style:'margin-top:10px'}),b);
   m.prepend(c);scrollTo({top:0,behavior:'smooth'});}
 
-function viewErrors(m,{S,E,P}){const groups={};for(const e of E){const k=(e.msg||'(no message)').slice(0,160);const g=groups[k]||(groups[k]={msg:k,n:0,players:new Set(),versions:{},devices:{},srcs:{},last:e.at,first:e.at});g.n++;g.players.add(e.player_id);g.versions[e.version]=(g.versions[e.version]||0)+1;g.devices[e.device]=(g.devices[e.device]||0)+1;if(e.src)g.srcs[e.src]=(g.srcs[e.src]||0)+1;if(e.at>g.last)g.last=e.at;if(e.at<g.first)g.first=e.at;}
-  const list=Object.values(groups).sort((a,b)=>b.n-a.n);const s=summarize(S,E);
-  m.append(kpis([[fmt(E.length),'Errors'],[fmt(list.length),'Different errors'],[fmt(new Set(E.map(e=>e.player_id)).size),'Players affected'],[fmt(s.eph,2),'Per hour played']]));
-  const bv=card('Errors per hour by version','Fewer is better. Versions with under 10 minutes of play are left out.');const byV={};for(const x of S)byV[x.version]=(byV[x.version]||0)+(+x.minutes||0);const ev=countBy(E,'version');
-  bv.append(barList(Object.keys(byV).filter(v=>byV[v]>=10).sort().reverse().slice(0,8).map(v=>({name:v,v:(ev[v]||0)/(byV[v]/60)})),v=>fmt(v,2)));m.append(bv);
-  const c=card('What broke','Grouped by message, most common first. Tap one for details.');if(!list.length)c.append(el('div',{class:'empty'},'No errors in this range.'));
-  for(const g of list){const d=el('details',{style:'border-top:1px solid var(--line);padding:8px 0'});d.innerHTML=`<summary><b class="${g.n>2?'err':''}">${g.n}×</b> ${esc(g.msg)} <span class="muted">· ${g.players.size} player${g.players.size>1?'s':''} · last ${ago(g.last)}</span></summary>
-    <div style="padding:6px 0 0 14px;font-size:13px"><div>Versions: ${Object.entries(g.versions).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div><div>Devices: ${Object.entries(g.devices).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div>${Object.keys(g.srcs).length?`<div>Where: ${Object.entries(g.srcs).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div>`:''}<div class="muted">First seen ${ago(g.first)}</div></div>`;c.append(d);}
+// Versions like v0.97a, v0.98, v0.98b: compare the numbers, then the letter ('' before 'a' before 'b').
+function vparts(v){const m=/(\d+)\.(\d+)([a-z]*)/.exec(v||'');return m?[+m[1],+m[2],m[3]]:[0,0,''];}
+function vcmp(a,b){const x=vparts(a),y=vparts(b);return x[0]-y[0]||x[1]-y[1]||(x[2]<y[2]?-1:x[2]>y[2]?1:0);}
+let ERRV=store.get('bs-errv')||'open',ERRLATEST=store.get('bs-errlatest')==='1';
+async function setFix(msg,ver,undo){
+  if(DEMO){RAW.fixes=(RAW.fixes||[]).filter(f=>f.msg!==msg);if(!undo)RAW.fixes.push({msg,fixed_version:ver,fixed_at:new Date().toISOString()});render();return;}
+  try{const r=await fetch(SB_URL+'/rest/v1/rpc/error_fix',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:store.get('bs-key'),p_msg:msg,p_version:ver,p_undo:!!undo})});
+    if(!r.ok){const t=await r.text();let m=t;try{m=JSON.parse(t).message||t}catch(e){}throw new Error(m);}load();}
+  catch(e){alert('Couldn’t save that: '+(/error_fix/.test(String(e.message))?'run the error-fixes SQL in Supabase first.':e.message));}}
+function viewErrors(m,{S,E,P}){
+  const latest=[...new Set([...S,...E].map(x=>x.version).filter(Boolean))].sort(vcmp).pop()||'';
+  const FIX={};for(const f of (RAW.fixes||[]))FIX[f.msg]=f;
+  const groups={};for(const e of E){const k=(e.msg||'(no message)').slice(0,160);const g=groups[k]||(groups[k]={msg:k,n:0,players:new Set(),versions:{},devices:{},srcs:{},last:e.at,first:e.at,ev:[]});g.n++;g.ev.push(e);g.players.add(e.player_id);g.versions[e.version]=(g.versions[e.version]||0)+1;g.devices[e.device]=(g.devices[e.device]||0)+1;if(e.src)g.srcs[e.src]=(g.srcs[e.src]||0)+1;if(e.at>g.last)g.last=e.at;if(e.at<g.first)g.first=e.at;}
+  // A fixed error stays hidden while reports come only from the version it was fixed on or older (phones not updated yet).
+  // If it shows up on a newer version, the fix didn't hold: it comes back, flagged.
+  for(const g of Object.values(groups)){const f=FIX[g.msg];g.newest=Object.keys(g.versions).sort(vcmp).pop();
+    g.status=!f?'open':g.ev.some(e=>vcmp(e.version,f.fixed_version)>0)?'back':'fixed';g.fix=f;g.onLatest=!!g.versions[latest];}
+  let all=Object.values(groups);if(ERRLATEST)all=all.filter(g=>g.onLatest);
+  const open=all.filter(g=>g.status!=='fixed'),fixed=all.filter(g=>g.status==='fixed');
+  const list=(ERRV==='fixed'?fixed:ERRV==='all'?all:open).sort((a,b)=>(b.status==='back')-(a.status==='back')||b.n-a.n);
+  const OE=open.flatMap(g=>g.ev),s=summarize(S,OE);
+  m.append(kpis([[fmt(OE.length),'Open errors'],[fmt(open.length),'Different errors'],[fmt(new Set(OE.map(e=>e.player_id)).size),'Players affected'],[fmt(s.eph,2),'Per hour played']]));
+  const bv=card('Errors per hour by version','Fewer is better. All errors, fixed or not. Versions with under 10 minutes of play are left out.');const byV={};for(const x of S)byV[x.version]=(byV[x.version]||0)+(+x.minutes||0);const ev=countBy(E,'version');
+  bv.append(barList(Object.keys(byV).filter(v=>byV[v]>=10).sort(vcmp).reverse().slice(0,8).map(v=>({name:v,v:(ev[v]||0)/(byV[v]/60)})),v=>fmt(v,2)));m.append(bv);
+  const c=card('What broke','Grouped by message. Mark one fixed once a fix is out; it hides until it shows up again on a newer version.');
+  const bar=el('div',{style:'display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px'});
+  for(const [k,n] of [['open',`Open (${open.length})`],['fixed',`Fixed (${fixed.length})`],['all','All']]){const b=el('button',{class:'chip'+(ERRV===k?' on':'')},n);b.onclick=()=>{ERRV=k;store.set('bs-errv',k);render();};bar.append(b);}
+  const lb=el('button',{class:'chip'+(ERRLATEST?' on':'')},`Only ${latest||'latest'}`);lb.onclick=()=>{ERRLATEST=!ERRLATEST;store.set('bs-errlatest',ERRLATEST?'1':'0');render();};bar.append(lb);c.append(bar);
+  if(!RAW.fixes&&!DEMO)c.append(el('div',{class:'muted',style:'font-size:13px;margin-bottom:6px'},'Marking errors fixed needs the error-fixes SQL run in Supabase.'));
+  if(!list.length)c.append(el('div',{class:'empty'},ERRV==='fixed'?'Nothing marked fixed in this range.':'No open errors in this range.'));
+  for(const g of list){const d=el('details',{style:'border-top:1px solid var(--line);padding:8px 0'});
+    const badge=g.status==='back'?' <span class="tag" style="background:var(--bad);color:#fff">Came back</span>':g.status==='fixed'?' <span class="tag">Fixed in '+esc(g.fix.fixed_version||'?')+'</span>':'';
+    d.innerHTML=`<summary><b class="${g.n>2&&g.status!=='fixed'?'err':''}">${g.n}×</b> ${esc(g.msg)}${badge} <span class="muted">· ${g.players.size} player${g.players.size>1?'s':''} · last ${ago(g.last)}</span></summary>
+    <div style="padding:6px 0 0 14px;font-size:13px"><div>Versions: ${Object.entries(g.versions).sort((a,b)=>vcmp(a[0],b[0])).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div><div>Devices: ${Object.entries(g.devices).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div>${Object.keys(g.srcs).length?`<div>Where: ${Object.entries(g.srcs).map(([k,v])=>`<span class="tag">${esc(k)} ×${v}</span>`).join('')}</div>`:''}<div class="muted">First seen ${ago(g.first)}${g.fix?` · marked fixed ${ago(g.fix.fixed_at)}`:''}</div></div>`;
+    const btn=el('button',{class:'chip',style:'margin:8px 0 0 14px'},g.status==='fixed'?'Undo fixed':g.status==='back'?'Mark fixed again':'Mark fixed');
+    btn.onclick=()=>setFix(g.msg,g.status==='fixed'?g.fix.fixed_version:g.newest,g.status==='fixed');d.append(btn);c.append(d);}
   m.append(c);}
 
 // ---------- sample data, to see how the page looks before real data comes in ----------
