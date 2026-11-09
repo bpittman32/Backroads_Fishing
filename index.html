@@ -776,7 +776,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.98a';
+const VERSION='v0.98b';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -3675,9 +3675,11 @@ function back(){const prev=G.stack.pop();if(prev){show(prev);render_(prev);}else
 const SB_URL='https://ihctnwgpcnjbjsxcvgyg.supabase.co',SB_KEY='sb_publishable_ZO8hj5a-GLz0RVA9Do9syQ_XALYglUa';
 function sbOn(){return!!(SB_URL&&SB_KEY);}
 function sbPid(){if(!S.pid){S.pid=crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const r=Math.random()*16|0;return(ch==='x'?r:(r&3|8)).toString(16);});save();}return S.pid;}
+// A successful call to a function that returns nothing comes back empty (204). Read it as text, since Safari's
+// json() throws on an empty body, which once made every successful leaderboard send look like a failure.
 function sbFetch(path,opt){opt=opt||{};const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),8000);
   return fetch(SB_URL+path,Object.assign({},opt,{signal:ctl.signal,headers:Object.assign({apikey:SB_KEY,'Content-Type':'application/json'},opt.headers||{})}))
-    .then(r=>r.ok?r.json():r.text().then(t=>{let m=t;try{const j=JSON.parse(t);m=j.message||j.msg||j.error||t;}catch(e){}throw new Error(r.status+': '+String(m).slice(0,120));})).finally(()=>clearTimeout(tm));}
+    .then(r=>r.ok?r.text().then(t=>{if(!t)return null;try{return JSON.parse(t);}catch(e){return null;}}):r.text().then(t=>{let m=t;try{const j=JSON.parse(t);m=j.message||j.msg||j.error||t;}catch(e){}throw new Error(r.status+': '+String(m).slice(0,120));})).finally(()=>clearTimeout(tm));}
 let sbBusy=false;
 // A send that fails because the server rejected it (4xx) is skipped for this session so it can't hold up the rest;
 // a network hiccup or timeout just waits 30 seconds and tries again. Only a missing table/function turns a board off.
