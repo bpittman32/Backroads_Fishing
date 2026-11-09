@@ -216,14 +216,6 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .board-row.me{border-color:var(--lichen);box-shadow:0 0 0 1px var(--lichen) inset}
 .board-row.gold .rk{color:#f2c14e}.board-row.silver .rk{color:#cfd6dc}.board-row.bronze .rk{color:#d89a64}
 .board-msg{padding:22px 8px;text-align:center;opacity:.75}
-.dev-panel{border:1px dashed var(--amber)}
-#devBadge{display:inline-block;margin-bottom:10px;padding:8px 18px;border-radius:999px;background:#f2b134;color:#1b1406;font-weight:900;font-size:17px;letter-spacing:.05em;text-transform:uppercase;box-shadow:0 2px 10px rgba(0,0,0,.45),0 0 0 2px rgba(27,20,6,.55) inset}
-#devBadge.pop{animation:devpop .5s ease}
-@keyframes devpop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
-.dv-col{flex-direction:column;align-items:stretch}
-.dv-ctl{display:flex;flex-direction:column;gap:8px;margin-top:8px}
-.dv-ctl select{width:100%;padding:9px;border-radius:10px;background:#1c2a24;color:#e8eedd;border:1px solid rgba(255,255,255,.18);font:inherit;font-size:14px}
-.dev-panel .btn.small{white-space:nowrap}
 .dv-col>div:first-child{text-align:left;align-self:stretch}
 .dv-3{flex-direction:row}.dv-3 select{flex:1;min-width:0}
 .dv-len{display:flex;gap:10px;align-items:center}.dv-len input{flex:1}.dv-len span{min-width:110px;text-align:right;font-weight:700}
@@ -509,8 +501,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 <section class="screen" id="menu">
   <div class="menu-inner">
     <div class="brand">
-      <div id="devBadge" hidden>Dev tools on &middot; in Settings</div>
-      <div class="eyebrow">Ponds, creeks and backwaters</div>
+            <div class="eyebrow">Ponds, creeks and backwaters</div>
       <h1>Backroads<br><em>Fishing</em></h1>
       <p class="tag">Find the quiet water off the back roads, read it, and land the fish nobody in town believes in.</p>
     </div>
@@ -608,16 +599,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
       <div class="row"><div><b>Angler chatter</b><p>Your angler says something now and then.</p></div><button class="tog" role="switch" id="sChat" aria-label="Angler chatter"></button></div>
       <div class="row"><div><b>Fish Finder labels</b><p>Names and depths over fish you've caught before. Needs the Fish Finder from the shop.</p></div><button class="tog" role="switch" id="sFinder" aria-label="Fish Finder labels"></button></div>
     </div>
-    <div class="panel dev-panel" id="devPanel" hidden>
-      <div class="row"><div><b>Dev tools</b><p>Only on this device. While these are on, nothing you catch goes to the leaderboard.</p></div><button class="btn small" id="dvOff">Turn off</button></div>
-      <div class="row"><div><b>Max everything</b><p>Top level, 20,000 coins, every place, all gear and full tackle packs.</p></div><button class="btn small" id="dvMax">Do it</button></div>
-      <div class="row dv-col"><div><b>Hook a fish</b><p id="dvFishTxt">Your next cast hooks this fish, wherever it lands.</p></div>
-        <div class="dv-ctl"><select id="dvSp"></select><div class="dv-len"><input type="range" id="dvLen" min="0" max="100" value="60"><span id="dvLenV"></span></div>
-        <label class="dv-chk"><input type="checkbox" id="dvRepeat"> Every cast until turned off</label><button class="btn small" id="dvArm">Hook it next cast</button></div></div>
-      <div class="row dv-col"><div><b>Time, season, weather</b></div>
-        <div class="dv-ctl dv-3"><select id="dvHour"></select><select id="dvSeason"></select><select id="dvWx"></select></div></div>
-    </div>
-    <h3 class="set-h">Privacy</h3>
+        <h3 class="set-h">Privacy</h3>
     <div class="panel">
       <div class="row"><div><b>Share play stats</b><p>Anonymous error reports and a short summary of each play session, to help fix bugs.</p></div><button class="tog" role="switch" id="sStats" aria-label="Share play stats"></button></div>
       <div class="row"><div><b>What's sent</b><p>See exactly what the game sends, and what it's sent lately.</p></div><button class="btn small" id="sStatsView">View</button></div>
@@ -1110,7 +1092,7 @@ let S;
 function adopt(o){const d=DEF();S=Object.assign(d,o||{});S.settings=Object.assign(d.settings,(o&&o.settings)||{});S.stats=Object.assign(d.stats,(o&&o.stats)||{});S.owned=Object.assign(d.owned,(o&&o.owned)||{});S.lures=Object.assign({worm:-1},(o&&o.lures)||d.lures);if(!LURES[S.lure])S.lure='worm';if(o&&o.xp==null)S.xp=Math.round((S.stats.caught||0)*20);if(!S.setups){S.setups={medium:{owned:true,lvl:0}};S.setup='medium';if(o){let ref=0;const old={carbon:180,heart:750,swift:150,tourney:550,l8:80,l14:260,l25:650};for(const k in old)if(S.owned[k]){ref+=old[k];delete S.owned[k];}if(ref){S.coins+=ref;G.refundMsg=ref;}}}
   if(!S.rig){S.rig={type:S.sinker==='egg'?'carolina':S.sinker==='split'?'split':'free'};if(S.owned.egg)S.owned.swivel=1;}
   if(!S.packs){S.packs={};for(const id of PACKED)if(S.owned[id])S.packs[id]=PACK;}}
-function load(){let o=null;try{const r=localStorage.getItem(KEY);if(r)o=JSON.parse(r);}catch(e){}adopt(o);}
+function load(){let o=null;try{const r=localStorage.getItem(KEY);if(r)o=JSON.parse(r);}catch(e){}adopt(o);if(typeof DEV_BUILD==='undefined')S.dev=false;}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof sbSync==='function'&&!sbBusy){clearTimeout(save.t);save.t=setTimeout(sbSync,1500);}}
 
 // ---------------- AUDIO ----------------
@@ -1602,8 +1584,7 @@ function cast(){spookAtBoat();
   SFX.cast();
 }
 function landLure(){
-  const L=G.lure;L.state='water';L.y=SURF+1;G.bob=null;if(G.devFish&&S.dev){L.lastTwitch=G.t;setTimeout(devHook,350);return;}
-  if(isBait()&&rig().type==='bobber'){const r=rig(),dp=r.depth*pxPerFt();G.bob={x:L.x,th:r.bob==='fixed'?1.1:0,out:r.bob==='fixed'?dp:0,tilt:r.bob==='slip'?1:0};if(r.bob==='fixed')L.x+=Math.min(dp*.9,40);}L.lastTwitch=G.t-3;gainXP(1);if(L.flung){L.flung=false;L.bare=true;useBait();toast('The liver flew off the hook','Soft bait. Cast a little gentler');refreshControls();}splash(L.x,curSetup().fly?.3:LURES[S.lure].float?.6:.8);
+  const L=G.lure;L.state='water';L.y=SURF+1;G.bob=null;  if(isBait()&&rig().type==='bobber'){const r=rig(),dp=r.depth*pxPerFt();G.bob={x:L.x,th:r.bob==='fixed'?1.1:0,out:r.bob==='fixed'?dp:0,tilt:r.bob==='slip'?1:0};if(r.bob==='fixed')L.x+=Math.min(dp*.9,40);}L.lastTwitch=G.t-3;gainXP(1);if(L.flung){L.flung=false;L.bare=true;useBait();toast('The liver flew off the hook','Soft bait. Cast a little gentler');refreshControls();}splash(L.x,curSetup().fly?.3:LURES[S.lure].float?.6:.8);
   for(const f of G.fish){if(f.state==='wander'&&dist(f.x,f.y,L.x,L.y)<(f.sp.spooky?70:26)+(isBait()?(rig().type==='bobber'?12:['bank','egg'].includes(rigSinker())?8:0):0)&&Math.random()<(f.sp.spooky?.65:.3)*(1-.85*farZ(f.x))*(curSetup().fly?.35:1)&&!(S.lure==='popper'||S.lure==='frog')){flee(f,3);} }
 }
 function retrieve(){const L=G.lure;L.bare=false;G.bob=null;if(L.fish&&L.fish.state!=='fight'){L.fish.state='wander';newWanderTarget(L.fish);}L.fish=null;L.state='ready';refreshControls();}
@@ -3772,13 +3753,6 @@ $('#nameForm').addEventListener('submit',e=>{e.preventDefault();
   for(const id in LOCS){const Lc=LOCS[id];if(Lc.freeFor&&nameIs(Lc.freeFor)&&!(S.secretsSeen||[]).includes(id)){S.secretsSeen=(S.secretsSeen||[]).concat(id);if(S.carterSeen&&id==='amazon')continue;setTimeout(()=>toast(Lc.name+' is open!','Tap the clock to go. No level or fee needed for you'),900);}}
   save();updateHUD(true);try{$('#nameInput').blur();}catch(_){}
   const t=nameThen;nameThen=null;if(t){G.stack=[];t();}else back();});
-function maxOut(){let need=0;for(let l=1;l<MAXLV;l++)need+=xpNeed(l);if((S.xp||0)<need)S.xp=need;if(S.coins<20000)S.coins=20000;save();updateHUD(true);}
-function grantAll(){
-  for(const id of ALL_ORDER)if(id!=='worm')S.lures[id]=Math.max(S.lures[id]||0,LURES[id].bait?20:5);
-  for(const cat of['rods','reels','lines','hooks','sinkers','bobbers','terminal','gear'])for(const id in GEAR[cat])S.owned[id]=1;
-  for(const id of PACKED)packs()[id]=Math.max(packs()[id]||0,PACK);
-  for(const id of SETUP_ORDER)S.setups[id]={...(S.setups[id]||{}),owned:true,lvl:2};
-  maxOut();}
 function nameIs(n){return nameKey()===n;}
 const CHAT={
   idle:['Nice day for it.','Something’s down there. I can feel it.','Should’ve packed a sandwich.','C’mon, just one bite.','This is the life.','Bet there’s a big one by those weeds.','I swear they’re watching me.','Water looks good today.','Quiet out here.','Just me and the fish.'],
@@ -4031,32 +4005,6 @@ function renderLog(){
 }
 
 // Settings
-// ---------- hidden dev tools: tap the version tag 7 times ----------
-document.querySelectorAll('.ver-tag').forEach(e=>e.addEventListener('click',()=>{const now=Date.now();G.verTaps=(now-(G.verTapT||0)<2500?(G.verTaps||0):0)+1;G.verTapT=now;
-  if(G.verTaps>=7){G.verTaps=0;S.dev=!S.dev;if(!S.dev)G.devFish=null;save();devBadge(true);if($('#menu').hidden)toast(S.dev?'Dev tools on':'Dev tools off',S.dev?'They\u2019re at the bottom of Settings':'');SFX.ui();if(!$('#settings').hidden)renderSettings();}}));
-function devBadge(pop){const b=$('#devBadge');b.hidden=!S.dev;b.classList.remove('pop');if(pop&&S.dev){void b.offsetWidth;b.classList.add('pop');}}
-function devFill(){const sel=$('#dvSp');if(sel.options.length)return;
-  for(const sp of[...SPECIES,...Object.values(TURTLES)]){const o=document.createElement('option');o.value=sp.id;o.textContent=`${sp.name} (${(sp.locs||['pond']).map(l=>LOCS[l].name).join(', ')})`;sel.append(o);}
-  for(let h=0;h<24;h+=1){const o=document.createElement('option');o.value=h;o.textContent=`${(h%12)||12}:00 ${h<12?'AM':'PM'}`;$('#dvHour').append(o);}
-  ['Spring','Summer','Fall','Winter'].forEach((n,i)=>{const o=document.createElement('option');o.value=i;o.textContent=n;$('#dvSeason').append(o);});
-  ['clear','rain','fog'].forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent=w[0].toUpperCase()+w.slice(1);$('#dvWx').append(o);});}
-function turtleById(id){return Object.values(TURTLES).find(t=>t.id===id);}
-function devLen(){const sp=SPMAP[$('#dvSp').value]||turtleById($('#dvSp').value),u=$('#dvLen').value/100;return+(sp.len[0]+(sp.len[1]-sp.len[0])*u).toFixed(1);}
-function devLabel(){const sp=SPMAP[$('#dvSp').value]||turtleById($('#dvSp').value),len=devLen();$('#dvLenV').textContent=`${fLen(len)} \u00b7 ${fWt(SHAPES[sp.shape].k*Math.pow(len,3))}`;
-  $('#dvFishTxt').textContent=G.devFish?`Armed: ${(SPMAP[G.devFish.id]||turtleById(G.devFish.id)).name}, ${fLen(G.devFish.len)}${G.devFish.repeat?', every cast':''}. Cast anywhere.`:'Your next cast hooks this fish, wherever it lands.';}
-function renderDev(){const on=!!S.dev;$('#devPanel').hidden=!on;if(!on)return;devFill();
-  $('#dvHour').value=Math.floor(S.minutes/60)%24;$('#dvSeason').value=seasonIdx();$('#dvWx').value=S.weather;devLabel();}
-$('#dvOff').onclick=()=>{S.dev=false;G.devFish=null;save();devBadge();renderSettings();toast('Dev tools off');};
-$('#dvMax').onclick=()=>{grantAll();for(const id in LOCS){S.unlocked=S.unlocked||{};S.unlocked[id]=1;}save();updateHUD(true);toast('Maxed out','Every place, all gear, top level');};
-function devRearm(){if(G.devFish)G.devFish={id:$('#dvSp').value,len:devLen(),repeat:$('#dvRepeat').checked};devLabel();}
-$('#dvSp').onchange=devRearm;$('#dvLen').oninput=devRearm;$('#dvRepeat').onchange=devRearm;
-$('#dvArm').onclick=()=>{G.devFish={id:$('#dvSp').value,len:devLen(),repeat:$('#dvRepeat').checked};devLabel();SFX.ui();toast('Armed',`${(SPMAP[G.devFish.id]||turtleById(G.devFish.id)).name}, ${fLen(G.devFish.len)}. Cast anywhere`);};
-$('#dvHour').onchange=()=>{const d=Math.floor(S.minutes/1440);S.minutes=d*1440+(+$('#dvHour').value)*60;save();};
-$('#dvSeason').onchange=()=>{S.yday=(+$('#dvSeason').value)*SEASON_DAYS+((S.yday||0)%SEASON_DAYS);for(const k in SNAPS)delete SNAPS[k];if(G.mode==='play')repopulate();save();};
-$('#dvWx').onchange=()=>{S.weather=$('#dvWx').value;S.wtimer=600;save();};
-// An armed dev fish takes the bait the moment the lure lands.
-function devHook(){const D=G.devFish;if(!D||!S.dev)return false;const L=G.lure,sp=SPMAP[D.id]||turtleById(D.id);const f=makeFish(sp,L.x);f.len=D.len;f.L=fishPx(D.len,sp);f.x=L.x;f.y=Math.max(SURF+8,L.y+6);
-  f.devMade=true;G.fish.push(f);L.fish=f;if(!D.repeat)G.devFish=null;startFight(f,false);return true;}
 // ---------- lure info pages (tap a lure's picture in the shop) ----------
 const LINFO={
   worm:{rod:'Any rod. Ultralight under a bobber for panfish; the All-Round or Catfish Rod with a sinker rig for bigger fish.',how:'Thread it on the hook. Hang it under a bobber for panfish, pin it to the bottom with a sinker rig for catfish and bullheads, or let it drift down on its own.',reg:['bluegill','pumpkinseed','perch','trout','catfish','brownbull','blackbull','rockbass','chub']},
@@ -4179,7 +4127,7 @@ const NOTES=[
   ['v0.74','Big fish',['Heavy fish are matched against your line strength','Adjustable drag during fights','Simpler pause menu']]];
 function renderNotes(){$('#notesList').innerHTML=NOTES.map(([v,t,l])=>`<div class="note-v"><b>${v}</b><span>${t}</span></div><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('');}
 $('#mNotes').onclick=()=>{SFX.ui();open('notes');};
-function renderSettings(){renderDev();$('#sStats').setAttribute('aria-checked',S.settings.stats===true);{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
+function renderSettings(){$('#sStats').setAttribute('aria-checked',S.settings.stats===true);{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
 $('#sStats').onclick=()=>{S.settings.stats=S.settings.stats!==true;save();renderSettings();SFX.ui();};
 $('#sStatsView').onclick=()=>{SFX.ui();open('statsView');};
 $('#sVol').oninput=e=>{const v=+e.target.value;S.settings.vol=v;S.settings.sound=v>0;$('#sVolV').textContent=v?v+'%':'Off';if(master)master.gain.value=.69*v/100;if(!v&&rainGain)rainGain.gain.value=0;};
@@ -4426,7 +4374,6 @@ function renderOutfit(box,row,pill,buyHtml){
       row(lookIcon(slot,id),it.name,it.desc,it.quests?`Unlocks after ${it.quests} quests`:it.resp?`Earned at ${it.resp} respect`:'',[a]);}}}
 
 document.querySelectorAll('.ver-tag').forEach(e=>e.textContent='Backroads Fishing '+VERSION);
-try{devBadge();}catch(e){}
 try{installBtn();}catch(e){}
 
 // ---------------- BOOT ----------------
