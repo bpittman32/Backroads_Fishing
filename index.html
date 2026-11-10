@@ -347,6 +347,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 .badge.alt{background:var(--reed);color:#0c1915}
 .catch-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .catch-actions .btn{font-size:18px;flex-direction:column;gap:2px}
+.catch-keep{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.catch-keep[hidden]{display:none}.catch-keep .btn{font-size:15px;flex-direction:column;gap:1px;padding-top:7px;padding-bottom:7px}.catch-keep .btn small{font-family:var(--f-body);font-size:11.5px;font-weight:700;opacity:.75}.catch-keep .btn[hidden]{display:none}
 .catch-actions .btn small{font-family:var(--f-body);font-size:12px;font-weight:700;opacity:.8}
 
 /* Lure picker */
@@ -359,6 +360,10 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 .tb-tile{display:flex;flex-direction:column;align-items:center;gap:0;padding:6px 2px;border-radius:14px;background:rgba(0,0,0,.28);border:1px solid var(--line);font-weight:700;font-size:12.5px;min-width:0}
 .tb-tile[aria-pressed="true"]{border-color:var(--amber);background:rgba(242,169,59,.14)}
 .tb-tile canvas{width:34px;height:34px}
+.bucket{margin-top:10px;padding:8px 10px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid var(--line)}
+.bk-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}.bk-head span{font-size:12.5px;opacity:.75;font-weight:700}
+.bk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--line)}.bk-row>span{display:flex;flex-direction:column;min-width:0}.bk-row b{font-size:14px}.bk-row small{font-size:12px;opacity:.7}
+.bk-row>span{flex:1 1 auto}.bk-row .btn{width:auto;padding:6px 12px;font-size:13px;min-height:0;flex:0 0 auto;white-space:nowrap}
 .tb-tile .ct{font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--lichen-dim)}
 .tb-head b{display:block;font-size:16px}.tb-head span{font-size:13px;color:var(--lichen-dim);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tb-tabs button{flex:1}
@@ -450,13 +455,15 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
   html.short #controls{grid-template-columns:80px 1fr 80px}
   html.short #tilt .tilt-track{height:80px;font-size:19px}
   html.short .drag-ctl button,html.short .drag-meter{height:40px}
-  html.short .catch-card{max-width:760px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"eb eb" "nm nm" "cv bd" "cv st" "cv ac";gap:8px 16px;align-items:center;padding:12px 16px}
+  html.short .catch-card{max-width:760px;display:grid;grid-template-columns:1.1fr 1fr;grid-template-areas:"eb eb" "nm nm" "cv bd" "cv st" "cv ac" "cv kp";gap:8px 16px;align-items:center;padding:12px 16px}
   html.short .catch-card .eyebrow{grid-area:eb}
   html.short .catch-card h2{grid-area:nm;font-size:28px}
   html.short #catchCanvas{grid-area:cv}
   html.short .catch-card .badges{grid-area:bd}
   html.short .catch-card .catch-stats{grid-area:st}
   html.short .catch-card .catch-actions{grid-area:ac}
+  html.short .catch-card .catch-keep{grid-area:kp;margin-top:0}
+  html.short .catch-keep .btn{padding-top:4px;padding-bottom:4px;font-size:14px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -715,6 +722,10 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
       <button class="btn primary" id="cSell">Sell<small id="cSellAmt">+0 coins</small></button>
       <button class="btn" id="cRelease">Release<small id="cRelAmt">+0 · luck up</small></button>
     </div>
+    <div class="catch-keep" id="cKeep">
+      <button class="btn" id="cBucket">Bait bucket<small id="cBucketAmt">Keep it alive</small></button>
+      <button class="btn" id="cCut">Cut bait<small id="cCutAmt">0 strips</small></button>
+    </div>
   </div>
 </section>
 
@@ -776,7 +787,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v0.98c';
+const VERSION='v0.99a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -810,6 +821,8 @@ const LURES={
   worm:{name:'Nightcrawler',desc:'Live worm. Free and endless. Sinks slowly; most fish will try it.',price:0,sink:22,float:false,rise:.35,color:'#d9748a'},
   cricket:{name:'Live Crickets',desc:'Kicking crickets. Sunfish and trout can\u2019t resist them.',price:12,pack:10,sink:12,float:false,rise:.4,color:'#3a2c1c',bait:true,soft:1.2},
   minnow:{name:'Live Minnows',desc:'A lively minnow keeps swimming even when you stop reeling. Predators love it.',price:20,pack:6,sink:18,float:false,rise:.3,color:'#c9d3d8',bait:true,soft:.8},
+  livebait:{name:'Live Bait',desc:'',price:0,sink:18,float:false,rise:.3,color:'#c9d3d8',bait:true,soft:.8,own:true},
+  cutbait:{name:'Cut Bait',desc:'',price:0,sink:32,float:false,rise:.22,color:'#c97a6a',bait:true,soft:1.4,own:true},
   liver:{name:'Chicken Livers',desc:'Strong-smelling and soft. Catfish, bullheads and eels track it from far off, but hard casts can fling it off.',price:10,pack:8,sink:30,float:false,rise:.25,color:'#6a1e1a',bait:true,soft:1.8,fling:true},
   dough:{name:'Carp Dough Balls',desc:'Sweet dough molded on the hook. The classic carp bait, sitting still on the bottom.',price:8,pack:10,sink:35,float:false,rise:.2,color:'#e9d79a',bait:true,soft:1.5},
   corn:{name:'Sweet Corn',desc:'A few kernels on the hook. Tough and bright. Carp, stocked trout and bullheads take it.',price:5,pack:12,sink:40,float:false,rise:.2,color:'#f2cc3b',bait:true,soft:.6},
@@ -865,6 +878,7 @@ const GEAR={
     net:{name:'Landing Net',price:60,desc:'Scoops big fish at the dock before they can thrash free in the last few feet.'},
     dropnet:{name:'Pier Drop Net',price:90,desc:'A hoop net on a long rope. A landing net can\u2019t reach the water from a high pier, so you lower this and haul big fish up in it instead of lifting them on the line.'},
     leader:{name:'Wire Bite Leader',price:45,desc:'A short wire leader ahead of the hook. Pike, muskie and other toothy fish can\u2019t bite through it, but wary fish notice it.'},
+    bucket:{name:'Bait Bucket',price:60,desc:'An aerated bucket that keeps small fish alive. Drop bait-sized catches in from the catch card and fish them live, or cut them up for bait. Holds 6.'},
     whistle:{name:'Fish Whistle',price:200,desc:'An old angler’s good-luck charm. Puffs a little smoke now and then and nudges rare fish your way.'}
   }
 };
@@ -897,12 +911,16 @@ function lineTest(){return(LINE_TEST[S.setup]||[8,8,8])[curTier()];}
 const TIERS=[{name:'Stock'},{name:'Tuned',desc:'Better reel and fresh line'},{name:'Pro',desc:'Top reel, premium line'}];
 function setupOK(id){const st=S.setups&&S.setups[id];return!!(st&&st.owned);}
 function curSetup(){if(!S.setups||!S.setups[S.setup]||!S.setups[S.setup].owned)S.setup='medium';return SETUPS[S.setup];}
+// The line on a rod as it is now: test strength from its upgrade tier, plus the line type (mono, braid...).
+// Use this anywhere line is shown; SETUPS[id].line is only the stock line.
+function tierOf(id){return(S.setups&&S.setups[id]&&S.setups[id].lvl)||0;}
+function lineLabel(id){return`${(LINE_TEST[id]||[8,8,8])[tierOf(id)]} lb ${SETUPS[id].line.replace(/^[\d.]+ lb /,'')}`;}
 function curTier(){return(S.setups&&S.setups[S.setup]&&S.setups[S.setup].lvl)||0;}
 function tierCost(id,t){const b=SETUPS[id].price||120;return Math.round((t===1?.6:1.4)*Math.max(b,140)/10)*10;}
 function curRod(){const u=curSetup(),t=curTier();return{grace:u.grace+.12*t,damp:u.power===1?.7:u.power===3?.85:1};}
 function curReel(){const u=curSetup();return{speed:u.speed*(1+.12*curTier())};}
 function curLine(){const u=curSetup();return{f:u.f*(1-.08*curTier()),vis:u.vis};}
-function tackleWeight(id=S.lure){const lu=LURES[id];if(!lu)return 1;if(lu.bait){const r=rig();const sk={none:0,split:.8,egg:3,teardrop:2.5,bank:4}[rigSinker()]||0;const base={worm:1,cricket:.5,minnow:1.5,liver:1.5,dough:1.5,corn:1,shrimp:1.2}[id]||1;return base+sk+(r.type==='bobber'?1:0);}
+function tackleWeight(id=S.lure){const lu=LURES[id];if(!lu)return 1;if(lu.bait){const r=rig();const sk={none:0,split:.8,egg:3,teardrop:2.5,bank:4}[rigSinker()]||0;const base={worm:1,cricket:.5,minnow:1.5,cutbait:1.3,livebait:ownLive()?.5+ownLive().len/7:1.5,liver:1.5,dough:1.5,corn:1,shrimp:1.2}[id]||1;return base+sk+(r.type==='bobber'?1:0);}
   const base={dryfly:.2,popbug:.4,nymph:.3,bugger:.6,spinner:2,spoon:3,popper:2.5,crank:3,jig:2.5,fly:.5,frog:4.5,mouse:2.2,plastic:2,spinnerbait:3,buzz:3.5,jerk:2.2,lipless:3,grub:1.2,cjig:.6,swim:4.5,prop:3}[id]||2;return base*({small:.7,reg:1,large:1.4}[lureVar(id).size]||1);}
 function castFit(){const u=curSetup(),w=tackleWeight();if(w<u.cast[0])return{m:Math.max(.45,Math.pow(w/u.cast[0],.7)),why:'light'};if(w>u.cast[1])return{m:Math.max(.5,Math.pow(u.cast[1]/w,.8)),why:'heavy'};return{m:1,why:''};}
 // The fly rod casts flies only, and flies need the fly rod.
@@ -972,7 +990,7 @@ function rigOrderText(r){const out=[];if(r.type==='bobber')out.push(GEAR.bobbers
   if(r.type==='carolina')out.push('Egg sinker','Swivel','Leader');if(r.type==='threeway')out.push('Three-way swivel','Bank sinker on dropper','Leader');
   out.push('Hook + bait');if(r.type==='dropshot')out.push('Leader','Teardrop sinker');return out.join(' → ');}
 
-const SHAPES={turtle:{h:.42,k:1.2e-4},walleye:{h:.22,k:1.15e-5},round:{h:.5,k:2.4e-5},perch:{h:.32,k:1.3e-5},bass:{h:.34,k:1.5e-5},long:{h:.24,k:1.1e-5},cat:{h:.24,k:1e-5},pike:{h:.16,k:.6e-5},carp:{h:.36,k:1.6e-5},eel:{h:.08,k:.25e-5},koi:{h:.3,k:1.4e-5},crappie:{h:.44,k:1.5e-5},bowfin:{h:.22,k:1.2e-5},bullhead:{h:.3,k:1.3e-5},gar:{h:.15,k:6e-6},mack:{h:.2,k:.9e-5},flounder:{h:.46,k:1.3e-5}};
+const SHAPES={turtle:{h:.42,k:1.2e-4},walleye:{h:.22,k:1.15e-5},round:{h:.5,k:2.4e-5},perch:{h:.32,k:1.3e-5},bass:{h:.34,k:1.5e-5},long:{h:.24,k:1.1e-5},cat:{h:.24,k:1e-5},pike:{h:.16,k:.6e-5},carp:{h:.36,k:1.6e-5},eel:{h:.08,k:.25e-5},koi:{h:.3,k:1.4e-5},crappie:{h:.44,k:1.5e-5},bowfin:{h:.22,k:1.2e-5},bullhead:{h:.3,k:1.3e-5},gar:{h:.15,k:6e-6},mack:{h:.2,k:.9e-5},flounder:{h:.46,k:1.3e-5},goliath:{h:.27,k:1.45e-5},tigerfish:{h:.23,k:1.2e-5},nileperch:{h:.33,k:1.55e-5},vundu:{h:.21,k:1.1e-5},africanpike:{h:.16,k:.9e-5},butterflyfish:{h:.18,k:.9e-5},distichodus:{h:.33,k:2e-5},redbreast:{h:.38,k:2.4e-5},nembwe:{h:.29,k:1.7e-5},sprat:{h:.2,k:.85e-5}};
 const SPECIES=[
   {id:'bluegill',locs:['pond','lake','bayou'],name:'Bluegill',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.05,.5],lures:['cricket','worm','spinner','fly','dryfly','popbug','nymph'],likes:'twitch',power:.22,speed:38,end:.6,bite:.75,rar:10,len:[12,25],price:10,shape:'round',col:'#4f7fa8',belly:'#e8a83a',mark:'bar',school:[4,7],nibbles:[2,4],rises:true,hint:'Small schools near the weeds. Feeds hardest at dawn and dusk and nibbles a few times before it bites.'},
   {id:'pumpkinseed',name:'Pumpkinseed',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.02,.4],lures:['cricket','worm','fly','spinner','dryfly','popbug','nymph'],likes:'still',power:.2,speed:36,end:.6,bite:.75,rar:8,len:[10,22],price:11,shape:'round',col:'#6f7d45',belly:'#f0a030',mark:'pumpkin',school:[2,3],nibbles:[2,4],rises:true,hint:'Pairs and small groups tucked in the weeds. Feeds all day, most in the afternoon. Small hook, still worm.'},
@@ -1030,6 +1048,17 @@ const SPECIES=[
   {id:'mackerel',locs:['pier'],name:'Spanish Mackerel',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','rain'],band:[0,.45],lures:['spoon','jig','minnow','spinner','jerk','swim','shrimp'],likes:'move',power:.48,speed:125,end:.9,bite:.5,rar:6,len:[30,70],price:22,shape:'mack',col:'#3f7a8c',belly:'#f2f4f2',mark:'mackerel',school:[4,7],seas:[1,1.2,1,.1],nibbles:[1,1],jumps:.35,hint:'Lightning-fast schools that slash through bait in the daytime. Burn a shiny spoon past them. Razor teeth cut light line in a blink.'},
   {id:'pompano',locs:['pier'],name:'Florida Pompano',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','fog'],band:[.75,1],lures:['shrimp','jig','grub','worm'],likes:'twitch',power:.45,speed:75,end:1,bite:.5,rar:5,len:[25,50],price:38,shape:'crappie',col:'#b7bfc3',belly:'#f2d34c',mark:'pompano',school:[2,4],seas:[1.3,1,1.1,.3],nibbles:[1,2],hint:'Silver with a yellow belly and fins, and the best eating fish on the pier. Bumps along the sand eating sand fleas. A small hopping jig or a bit of shrimp on the bottom.'},
   {id:'hardhead',locs:['pier'],name:'Hardhead Catfish',times:['dawn','day','dusk','night'],peak:['night'],off:.9,weather:['clear','rain','fog'],band:[.75,1],lures:['shrimp','worm','liver','minnow','dough'],likes:'still',power:.35,speed:45,end:.9,bite:.85,rar:9,len:[20,45],price:4,shape:'cat',col:'#787a78',belly:'#ece9e2',mark:'none',scent:true,deep:true,school:[3,6],seas:[1,1.2,1,.4],nibbles:[1,2],hint:'The pier pest. Gangs of them steal bait off the bottom, they croak when you land them, and their spines sting. Nobody wants one, but they bite all day.'},
+  // Boyoma Falls, the Congo at Kisangani
+  {id:'sprat',locs:['congo'],name:'Royal Sprat',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[0,.4],rest:[.2,.6],lures:['worm','cricket','fly','dryfly','nymph'],likes:'move',power:.1,speed:90,end:.3,bite:.6,rar:5,len:[5,10],price:2,shape:'sprat',col:'#4a7c80',belly:'#f6f8f4',mark:'none',school:[5,9],nibbles:[1,2],hint:'A tiny silver freshwater herring that schools in the open river. Everything at Boyoma eats them. Use a small hook and a scrap of worm.'},
+  {id:'butterflyfish',locs:['congo'],name:'African Butterflyfish',times:['dawn','dusk','night'],peak:['dusk','night'],off:.7,weather:['clear','rain','fog'],band:[0,.05],lures:['cricket','dryfly','popbug','fly'],likes:'still',power:.12,speed:60,end:.3,bite:.55,rar:3,len:[6,13],price:8,shape:'butterflyfish',col:'#5c5a3e',belly:'#e6e2d0',mark:'none',surface:true,lie:.7,nibbles:[1,1],jumps:.5,hint:'Hangs motionless right under the surface with its wing-like fins spread, waiting for insects to fall in. It can leap clear of the water. Try a bug at dusk in the slack water.'},
+  {id:'redbreast',locs:['congo'],name:'Redbreast Tilapia',times:['dawn','day','dusk'],peak:['day'],off:.75,weather:['clear','rain','fog'],band:[.5,1],rest:[.7,1],lures:['worm','corn','dough','cricket','nymph'],likes:'still',power:.35,speed:55,end:.9,bite:.5,rar:6,len:[14,40],price:10,shape:'redbreast',col:'#34503a',belly:'#e4a888',mark:'none',school:[2,4],nibbles:[1,3],hint:'A deep-bodied cichlid with a rosy throat. It grazes plants and picks at the bottom along the rocks. Corn, dough or a worm, fished still.'},
+  {id:'distichodus',locs:['congo'],name:'Six-barred Distichodus',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.55,1],rest:[.7,1],minDep:.25,lures:['corn','dough','worm','nymph'],likes:'still',power:.6,speed:75,end:1.3,bite:.4,rar:4,len:[20,70],price:30,shape:'distichodus',col:'#e0a04c',belly:'#f4daa0',mark:'none',school:[3,5],nibbles:[1,2],jumps:.15,hint:'Orange with six black bars and red fins. Travels in small groups over the deeper rocks, mostly eating plants. Strong for its size. Corn or dough on the bottom.'},
+  {id:'nembwe',locs:['congo'],name:'Nembwe',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.35,.95],rest:[.6,1],lures:['minnow','spinner','crank','swim','jig','grub'],likes:'move',power:.55,speed:85,end:1.1,bite:.55,rar:4,len:[18,50],price:30,shape:'nembwe',col:'#8eaa72',belly:'#e8d888',mark:'none',school:[1,2],ambush:true,nibbles:[1,1],hint:'A big-mouthed predatory cichlid that lurks by the rocks and grabs small fish. Strictly a fish of the upper Congo, so it is rare this far down. Spinners, jigs and live minnows.'},
+  {id:'africanpike',locs:['congo'],name:'African Pike',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.75,weather:['clear','rain','fog'],band:[0,.45],rest:[.05,.5],lures:['minnow','spinner','spoon','jerk','swim'],likes:'move',power:.5,speed:95,end:.9,bite:.55,rar:3.5,len:[20,55],price:25,shape:'africanpike',col:'#bcaa72',belly:'#ece2c0',mark:'none',ambush:true,lie:.5,nibbles:[1,1],hint:'Not a true pike, but it hunts like one: still and hidden in the shallows, then a lunge. Spotted fins and dark lines running back from the eye. Sharp teeth.'},
+  {id:'tigerfish',locs:['congo'],name:'African Tigerfish',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[0,.55],rest:[.3,.8],lures:['minnow','spinner','spoon','crank','swim','jerk'],likes:'move',power:.85,speed:135,end:1.7,bite:.5,rar:3,len:[30,90],price:70,shape:'tigerfish',col:'#c4ccc8',belly:'#f2f2ec',mark:'none',school:[2,5],jumps:.7,runs:1.3,bony:true,nibbles:[1,1],hint:'Silver with black stripes, red fins and teeth on the outside of its jaws. Packs of them hunt the sprat in the fast water. It hits like a truck, leaps again and again, and its bony mouth throws hooks.'},
+  {id:'nileperch',locs:['congo'],name:'Nile Perch',times:['dawn','dusk','night'],peak:['night'],off:.7,weather:['clear','rain','fog'],band:[.6,1],rest:[.75,1],minDep:.4,lures:['minnow','swim','crank','liver'],likes:'move',power:1,speed:90,end:2.4,bite:.45,rar:1.6,len:[60,190],price:220,shape:'nileperch',col:'#b8c4c4',belly:'#eceee8',mark:'none',ambush:true,nibbles:[1,1],jumps:.25,hint:'A giant, humpbacked perch with a glowing yellow-ringed eye. It lies deep in the eddies and comes up at night to feed. A big live bait on heavy line.'},
+  {id:'vundu',locs:['congo'],name:'Vundu',times:['dusk','night'],peak:['night'],off:.6,weather:['clear','rain','fog'],band:[.85,1],rest:[.92,1],minDep:.45,lures:['liver','worm','dough','corn'],likes:'still',power:1.15,speed:70,end:3,bite:.45,rar:2,len:[60,150],price:260,shape:'vundu',col:'#76786a',belly:'#d8d4c2',mark:'none',bottom:true,nibbles:[2,3],hint:'A huge, flat-headed catfish that sits in the deepest holes and feeds at night, mostly by smell. Smelly bait on the bottom, and the strongest rod you have.'},
+  {id:'goliath',locs:['congo'],name:'Goliath Tigerfish',times:['dawn','dusk'],peak:['dusk'],weather:['clear','rain','fog'],band:[.25,.85],rest:[.5,.95],minDep:.35,lures:['minnow','swim'],likes:'move',power:1.35,speed:140,end:3.6,bite:.38,rar:.4,len:[110,150],price:600,shape:'goliath',col:'#b4bec2',belly:'#eef0ea',mark:'none',legend:true,legendName:'Mbenga!',bigOnly:true,ambush:true,jumps:.45,runs:1.6,bony:true,nibbles:[1,1],hint:'Mbenga, the dangerous fish. Only the Congo has it. It waits in the calm water behind the rapids and runs down anything that drifts past, with teeth like a dog. Bring a wire leader, a live bait, and every pound of line you own.'},
   {id:'tarpon',locs:['pier'],name:'Tarpon',times:['dawn','dusk','night'],peak:['dusk'],weather:['clear','rain','fog'],band:[0,.5],lures:['minnow','swim','jerk','shrimp'],likes:'move',power:1.25,speed:120,end:3.5,bite:.35,rar:.45,len:[140,210],price:500,shape:'long',col:'#8fa2aa',belly:'#f4f6f6',mark:'tarpon',legend:true,legendName:'The Silver King!',surface:true,gulp:true,bigOnly:true,nibbles:[1,1],jumps:.5,runs:1.6,bony:true,seas:[.5,1.4,.8,.05],hint:'Huge, armor-scaled and chrome bright. Rolls at the surface at dusk to gulp air. Its mouth is like concrete and it jumps again and again: most people lose them. A live bait at dusk is your shot.'}
 ];
 LURES.worm.bait=true;
@@ -1049,10 +1078,10 @@ const PAL={dryfly:[['Caddis','#c9a46a'],['Royal Wulff','#d8463a'],['Black Gnat',
   cjig:[['White','#f4f0e6'],['Pink','#f08ab0'],['Black','#2e2e36']],swim:[['Shad','#9fb4b8'],['Firetiger','#f08a1e'],['Black','#2e2e36']],
   prop:[['Bone','#e8dcc0'],['Firetiger','#f08a1e'],['Black','#2e2e36']]};
 const SIZES={small:{name:'Small',tag:'Panfish',hook:-1,sink:.8,draw:.8,mouth:[1.4,1,.65],dive:45},reg:{name:'Regular',tag:'All-round',hook:0,sink:1,draw:1,mouth:[1,1,1],dive:70},large:{name:'Large',tag:'Big fish',hook:1,sink:1.2,draw:1.3,mouth:[.45,.9,1.4],dive:100}};for(const k in LHOOK)LURES[k].hook=LHOOK[k];
-const MOUTH={piranha:1,peacock:2,arowana:2,pacu:1,oscar:1,redtail:2,arapaima:2,walleye:2,pike:2,whitebass:1,drum:1,tigermuskie:2,flathead:2,smallmouth:2,brook:1,brown:1,rockbass:1,fallfish:1,chub:0,sucker:0,undercut:2,brownbull:1,blackbull:1,pumpkinseed:0,crappie:1,pickerel:2,bowfin:2,bluegill:0,perch:0,trout:1,carp:1,eel:1,koi:1,bass:2,catfish:2,mossback:2,spottedgar:1,alligatorgar:2,warmouth:1,redear:0,flier:0,bluecat:2,cutthroat:1,grayling:0,golden:0,whitefish:0,laketrout:2,mackinaw:2,redfish:2,seatrout:1,sheepshead:0,flounder:2,mackerel:1,pompano:0,hardhead:1,tarpon:2};SPECIES.forEach(s=>s.mouth=MOUTH[s.id]);
+const MOUTH={sprat:0,butterflyfish:0,redbreast:0,distichodus:0,nembwe:2,africanpike:2,tigerfish:2,nileperch:2,vundu:2,goliath:2,piranha:1,peacock:2,arowana:2,pacu:1,oscar:1,redtail:2,arapaima:2,walleye:2,pike:2,whitebass:1,drum:1,tigermuskie:2,flathead:2,smallmouth:2,brook:1,brown:1,rockbass:1,fallfish:1,chub:0,sucker:0,undercut:2,brownbull:1,blackbull:1,pumpkinseed:0,crappie:1,pickerel:2,bowfin:2,bluegill:0,perch:0,trout:1,carp:1,eel:1,koi:1,bass:2,catfish:2,mossback:2,spottedgar:1,alligatorgar:2,warmouth:1,redear:0,flier:0,bluecat:2,cutthroat:1,grayling:0,golden:0,whitefish:0,laketrout:2,mackinaw:2,redfish:2,seatrout:1,sheepshead:0,flounder:2,mackerel:1,pompano:0,hardhead:1,tarpon:2};SPECIES.forEach(s=>s.mouth=MOUTH[s.id]);
 const MOUTHN=['Small','Medium','Large'];
 // Fish with teeth that can cut light line.
-const TEETH={pike:1,tigermuskie:1.2,pickerel:.8,bowfin:.7,piranha:1.5,walleye:.3,mackerel:1.4,spottedgar:.5,alligatorgar:.9,seatrout:.25,flounder:.3,tarpon:.6};
+const TEETH={tigerfish:1.5,goliath:2,africanpike:.8,pike:1,tigermuskie:1.2,pickerel:.8,bowfin:.7,piranha:1.5,walleye:.3,mackerel:1.4,spottedgar:.5,alligatorgar:.9,seatrout:.25,flounder:.3,tarpon:.6};
 // New lures (v0.84): which fish take them, added to each species' list.
 const LURE_TAKERS={plastic:['bass','smallmouth','peacock','rockbass'],spinnerbait:['bass','smallmouth','pickerel','pike','tigermuskie','peacock','bowfin'],buzz:['bass','pickerel','pike','tigermuskie','bowfin','peacock'],jerk:['walleye','smallmouth','bass','pike','brown','whitebass','trout','tigermuskie'],lipless:['whitebass','bass','smallmouth','drum','peacock','pike','walleye'],grub:['crappie','perch','rockbass','smallmouth','walleye','whitebass'],cjig:['crappie','perch','bluegill','pumpkinseed','trout','rockbass','whitebass'],swim:['bass','pike','tigermuskie','walleye','peacock','arowana','smallmouth','bowfin','arapaima'],prop:['peacock','arowana','bass','tigermuskie']};
 for(const lu in LURE_TAKERS)for(const id of LURE_TAKERS[lu]){const sp=SPECIES.find(x=>x.id===id);if(sp&&!sp.lures.includes(lu))sp.lures.push(lu);}
@@ -1070,7 +1099,12 @@ Object.assign(BAITPULL.cricket,{arowana:1.5,oscar:1.4});
 BAITPULL.shrimp={redfish:2,seatrout:2.2,sheepshead:2.4,flounder:1.6,pompano:1.8,hardhead:1.8,tarpon:1.3,mackerel:1.1,spottedgar:1.1,bluecat:1.2};BAITPULL.worm={sheepshead:.6,pompano:.6,redear:1.4};
 Object.assign(BAITPULL.cricket,{flier:1.6,warmouth:1.3,redear:1.2,cutthroat:1.4,grayling:1.4,golden:1.6,whitefish:1.2});Object.assign(BAITPULL.minnow,{spottedgar:1.6,alligatorgar:2,warmouth:1.4,bluecat:1.3,laketrout:1.6,mackinaw:2,redfish:1.4,seatrout:1.6,flounder:1.8,tarpon:1.8,cutthroat:1.2});Object.assign(BAITPULL.liver,{bluecat:2,hardhead:1.4});
 Object.assign(BAITPULL.cricket,{brook:1.5,rockbass:1.3,fallfish:1.2,chub:1.2});Object.assign(BAITPULL.minnow,{smallmouth:1.6,brown:1.5,rockbass:1.3});Object.assign(BAITPULL.corn,{fallfish:1.3,chub:1.3,sucker:1.2});Object.assign(BAITPULL.dough,{sucker:1.4,chub:1.2});
-function lureAppeal(sp){const lu=LURES[S.lure];if(lu.bait)return(BAITPULL[S.lure]&&BAITPULL[S.lure][sp.id])||1;const v=lureVar();return(v.color===condPref()?1.5:.8)*SIZES[v.size].mouth[sp.mouth];}
+function lureAppeal(sp,f){const lu=LURES[S.lure];
+  if(S.lure==='livebait'){const o=ownLive();let m=(BAITPULL.minnow[sp.id]||1)*((o&&LIVEPREF[o.sp]&&LIVEPREF[o.sp][sp.id])||1);
+    // A fish won't try to swallow bait more than about a third of its own length.
+    if(o&&f&&o.len>f.len*.35)m*=Math.max(.04,Math.pow(f.len*.35/o.len,3));return m;}
+  if(S.lure==='cutbait'){const src=BK().cs;return(CUTPULL[sp.id]||1)*(OILY[src]?1.3:1);}
+  if(lu.bait)return(BAITPULL[S.lure]&&BAITPULL[S.lure][sp.id])||1;const v=lureVar();return(v.color===condPref()?1.5:.8)*SIZES[v.size].mouth[sp.mouth];}
 const TROPHY={bluegill:[18,21,24],pumpkinseed:[15,18,21],perch:[22,27,32],crappie:[25,30,34],bass:[40,50,58],trout:[38,46,52],catfish:[55,68,78],pickerel:[48,56,63],carp:[65,78,88],eel:[70,85,96],bowfin:[65,75,85],brownbull:[30,34,38],blackbull:[25,28,31],smallmouth:[30,40,48],brook:[20,26,31],brown:[38,48,56],rockbass:[18,22,25],fallfish:[25,32,37],chub:[15,19,23],sucker:[33,40,46],undercut:[72,78,83],walleye:[50,61,68],pike:[70,85,97],whitebass:[33,38,42],drum:[45,55,63],tigermuskie:[100,110,120],flathead:[95,105,115],piranha:[22,26,30],peacock:[45,55,63],arowana:[65,75,84],pacu:[45,55,61],oscar:[24,29,33],redtail:[75,90,102],arapaima:[180,210,235],spottedgar:[70,79,85],alligatorgar:[190,212,230],warmouth:[20,24,27],redear:[24,27,29],flier:[15,17,19],bluecat:[80,95,105],cutthroat:[40,47,52],grayling:[36,40,43],golden:[32,38,42],whitefish:[38,44,48],laketrout:[65,76,84],mackinaw:[110,117,122],redfish:[70,82,90],seatrout:[50,57,63],sheepshead:[45,52,57],flounder:[48,56,62],mackerel:[55,62,67],pompano:[38,44,48],hardhead:[34,39,42],tarpon:[170,190,203]};
 const MEDALS=['bronze','silver','gold'],MEDALN=['Bronze','Silver','Gold'];
 // Respect: earned by letting the right fish go. Permanent, and it unlocks gear and outfits money can't buy.
@@ -1084,6 +1118,53 @@ function rankUnlocks(i){const nm=RANKS[i][0],out=[];for(const k of SETUP_ORDER)i
 function medalFor(id,len){const t=TROPHY[id];let m=-1;if(t)for(let i=0;i<3;i++)if(len>=t[i])m=i;return m;}
 function trophyCounts(){const c=[0,0,0];for(const sp of SPECIES){const r=S.log[sp.id];if(!r)continue;const m=medalFor(sp.id,r.best);if(m>=0)c[m]++;}return c;}
 const SPMAP=Object.fromEntries(SPECIES.map(s=>[s.id,s]));
+// ---------- Your own bait: live fish from the bucket, and cut bait ----------
+// Which live baitfish each predator would rather eat. Unlisted pairs count as 1.
+const LIVEPREF={sprat:{goliath:1.7,tigerfish:1.8,africanpike:1.5,nembwe:1.4,nileperch:1.2},butterflyfish:{tigerfish:1.3,africanpike:1.3},
+  redbreast:{nileperch:1.8,goliath:1.3,vundu:1.2,nembwe:1.2},bluegill:{flathead:1.7,bass:1.3,bluecat:1.3,alligatorgar:1.2},
+  perch:{walleye:1.5,pike:1.4,tigermuskie:1.3,smallmouth:1.2},chub:{brown:1.5,smallmouth:1.4,walleye:1.3,pike:1.2},fallfish:{brown:1.4,smallmouth:1.3,pike:1.2},
+  crappie:{bass:1.2,pike:1.2,flathead:1.3},warmouth:{bass:1.2,spottedgar:1.2,bluecat:1.2},flier:{bass:1.2,spottedgar:1.3},redear:{bass:1.2,flathead:1.3},
+  piranha:{arapaima:1.5,redtail:1.4,peacock:1.2},oscar:{arapaima:1.3,peacock:1.2},rockbass:{smallmouth:1.3,brown:1.2}};
+// Fish that find cut bait by smell, and how much they like it.
+const CUTPULL={catfish:2.2,bluecat:2.5,flathead:1.1,brownbull:1.9,blackbull:1.9,eel:1.9,bowfin:1.5,spottedgar:1.5,alligatorgar:1.8,redtail:2.1,piranha:2,
+  arapaima:1.1,drum:1.3,redfish:1.9,hardhead:1.7,flounder:1.2,tarpon:1.1,mackerel:1.1,vundu:2.3,goliath:1.6,tigerfish:1.3,nileperch:1,africanpike:1.1};
+// Oily fish leave a stronger scent trail.
+const OILY={sprat:1,mackerel:1,butterflyfish:1,chub:1,fallfish:1,sucker:1,carp:1,whitefish:1,laketrout:1,mackinaw:1,trout:1,brown:1,brook:1,cutthroat:1};
+for(const sp of SPECIES){if(sp.lures.includes('minnow')||(LIVEPREF.sprat[sp.id]))sp.lures.push('livebait');if(CUTPULL[sp.id])sp.lures.push('cutbait');}
+const BUCKET_MAX=6,BAIT_LIFE=1440;
+function absMin(){return(S.yday||0)*1440+S.minutes;}
+function BK(){const b=S.bait||(S.bait={});b.live=b.live||[];b.dead=b.dead||[];b.cut=b.cut||[];return b;}
+function bucketCount(){const b=BK();return b.live.length+b.dead.length;}
+// A catch can go in the bucket if it's a small fish of a small kind.
+function baitSized(sp,len){return!sp.legend&&!sp.turtle&&sp.len[1]<=40&&len<=20;}
+function cutStrips(kg){return clamp(1+Math.floor(kg*2.2046*3),1,8);}
+function ownLive(){const b=BK();return b.live.find(o=>o.sp===b.ls)||null;}
+function isLive(){return S.lure==='minnow'||S.lure==='livebait';}
+function groupBy(arr,k){const g={};for(const o of arr)g[o.sp]=(g[o.sp]||0)+(k?o[k]:1);return g;}
+function fishKg(id,len){const sp=SPMAP[id];return SHAPES[sp.shape].k*Math.pow(len,3);}
+// Age the bucket and the cut bait, then keep the tackle-box counts in step.
+function syncOwnBait(quiet){const b=BK(),now=absMin(),msgs=[];
+  const died=b.live.filter(o=>now-o.t>=BAIT_LIFE);if(died.length){b.live=b.live.filter(o=>now-o.t<BAIT_LIFE);for(const o of died){o.t+=BAIT_LIFE;b.dead.push(o);}msgs.push(['Your live bait died','Dead baitfish are still good for cutting, until tomorrow']);}
+  const rot=b.dead.filter(o=>now-o.t>=BAIT_LIFE).length;if(rot)b.dead=b.dead.filter(o=>now-o.t<BAIT_LIFE);
+  const bad=b.cut.filter(o=>now-o.t>=BAIT_LIFE);if(bad.length){b.cut=b.cut.filter(o=>now-o.t<BAIT_LIFE&&o.n>0);msgs.push(['Your cut bait went bad','It only keeps for a day']);}
+  b.cut=b.cut.filter(o=>o.n>0);
+  if(!b.live.some(o=>o.sp===b.ls))b.ls=b.live.length?b.live[0].sp:null;
+  if(!b.cut.some(o=>o.sp===b.cs))b.cs=b.cut.length?b.cut[0].sp:null;
+  const nl=b.live.filter(o=>o.sp===b.ls).length,nc=b.cut.filter(o=>o.sp===b.cs).reduce((a,o)=>a+o.n,0);
+  if(nl)S.lures.livebait=nl;else delete S.lures.livebait;if(nc)S.lures.cutbait=nc;else delete S.lures.cutbait;
+  if(LURES[S.lure].own&&!(S.lures[S.lure]>0)&&(!G.lure||G.lure.state==='ready'))S.lure=fallbackLure();
+  if(!quiet)for(const m of msgs)toast(m[0],m[1]);return msgs.length;}
+function useOwnBait(){const b=BK(),nm=LURES[S.lure].name;
+  if(S.lure==='livebait'){const i=b.live.findIndex(o=>o.sp===b.ls);if(i>=0)b.live.splice(i,1);}
+  else{const o=b.cut.filter(o=>o.sp===b.cs).sort((x,y)=>x.t-y.t)[0];if(o)o.n--;}
+  syncOwnBait(true);if(!(S.lures[S.lure]>0)){const was=S.lure;S.lure=fallbackLure();if(was!==S.lure)toast('Out of '+nm,'Switched to '+LURES[S.lure].name);}save();updateHUD(true);}
+function cutOne(id,from){const b=BK(),arr=b[from],i=arr.findIndex(o=>o.sp===id);if(i<0)return 0;const o=arr.splice(i,1)[0],n=cutStrips(fishKg(id,o.len));
+  b.cut.push({sp:id,n,t:absMin()});b.cs=id;syncOwnBait(true);return n;}
+for(const [k,kind] of [['livebait','live'],['cutbait','cut']])Object.defineProperties(LURES[k],{
+  name:{get(){const id=BK()[kind==='live'?'ls':'cs'];return(kind==='live'?'Live ':'Cut ')+(id?SPMAP[id].name:'Bait');}},
+  short:{get(){const id=BK()[kind==='live'?'ls':'cs'];return id?(kind==='live'?'Live ':'Cut ')+SPMAP[id].name.split(' ').pop():(kind==='live'?'Live Bait':'Cut Bait');}},
+  color:{get(){const id=BK()[kind==='live'?'ls':'cs'];return id?SPMAP[id].col:'#c9d3d8';}},
+  desc:{get(){return kind==='live'?'A baitfish from your bucket. It swims on its own, and predators pick the prey they know. Big baits only interest fish big enough to swallow them.':'Strips of fresh fish. Sits still and bleeds scent, so catfish and other scent feeders track it down. Oily fish work best. Goes bad a day after cutting.';}}});
 
 // ---------------- SAVE ----------------
 const KEY='mossback-pond-v1';
@@ -1093,7 +1174,11 @@ let S;
 function adopt(o){const d=DEF();S=Object.assign(d,o||{});S.settings=Object.assign(d.settings,(o&&o.settings)||{});S.stats=Object.assign(d.stats,(o&&o.stats)||{});S.owned=Object.assign(d.owned,(o&&o.owned)||{});S.lures=Object.assign({worm:-1},(o&&o.lures)||d.lures);if(!LURES[S.lure])S.lure='worm';if(o&&o.xp==null)S.xp=Math.round((S.stats.caught||0)*20);if(!S.setups){S.setups={medium:{owned:true,lvl:0}};S.setup='medium';if(o){let ref=0;const old={carbon:180,heart:750,swift:150,tourney:550,l8:80,l14:260,l25:650};for(const k in old)if(S.owned[k]){ref+=old[k];delete S.owned[k];}if(ref){S.coins+=ref;G.refundMsg=ref;}}}
   if(!S.rig){S.rig={type:S.sinker==='egg'?'carolina':S.sinker==='split'?'split':'free'};if(S.owned.egg)S.owned.swivel=1;}
   if(!S.packs){S.packs={};for(const id of PACKED)if(S.owned[id])S.packs[id]=PACK;}}
-function load(){let o=null;try{const r=localStorage.getItem(KEY);if(r)o=JSON.parse(r);}catch(e){}adopt(o);if(typeof DEV_BUILD==='undefined')S.dev=false;}
+function load(){let o=null;try{const r=localStorage.getItem(KEY);if(r)o=JSON.parse(r);}catch(e){}adopt(o);if(!window.DEV_BUILD)S.dev=false;if(S.bait)syncOwnBait(true);giftMom();}
+// One-time make-good for Mom's second copy of the game (browser vs installed): bring it up to level 11 with 1000 coins. Ends Nov 24, 2026.
+function giftMom(){if(S.giftMom||!S.name||S.name.trim().toLowerCase()!=='mom'||Date.now()>=Date.UTC(2026,10,24))return;S.giftMom=1;
+  if(lvlInfo().l<11){let x=0;for(let l=1;l<11;l++)x+=xpNeed(l);S.xp=Math.max(S.xp||0,x);S.coins=(S.coins||0)+1000;setTimeout(()=>{try{toast('A gift for Mom','Level 11 and 1000 coins');updateHUD(true);updateLvChip();}catch(e){}},2500);}
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof sbSync==='function'&&!sbBusy){clearTimeout(save.t);save.t=setTimeout(sbSync,1500);}}
 
 // ---------------- AUDIO ----------------
@@ -1183,7 +1268,7 @@ const DEPTH_WARP=2.2;
 function warpY(y){const D=GROUND-SURF,t=(y-SURF)/D;return t<=0||t>=1?y:SURF+D*(1-Math.pow(1-t,DEPTH_WARP));}
 function unwarpY(y){const D=GROUND-SURF,w=(y-SURF)/D;return w<=0||w>=1?y:SURF+D*(1-Math.pow(1-w,1/DEPTH_WARP));}
 function bottomAt(x){return warpY(rawBottomAt(x));}
-function rawBottomAt(x){const lid=(typeof S!=='undefined'&&S&&S.loc)||'pond';if(lid==='amazon')return amazonBottom(x);if(lid==='bayou')return bayouBottom(x);if(lid==='alpine')return alpineBottom(x);if(lid==='pier')return pierBottom(x);if(lid==='creek')return creekBottom(x);if(lid==='lake')return lakeBottom(x);if(lid==='river')return riverBottom(x);const u=x/TW;const ft=profFt(u,POND_PTS)+(1-nestZoneW(u))*(.5*Math.sin(u*27)+.9*Math.sin(u*9+1)*smooth(1.05,1.4,u));return Math.min(GROUND,ftToY(Math.max(1.5,ft)));}
+function rawBottomAt(x){const lid=(typeof S!=='undefined'&&S&&S.loc)||'pond';if(lid==='amazon')return amazonBottom(x);if(lid==='bayou')return bayouBottom(x);if(lid==='alpine')return alpineBottom(x);if(lid==='pier')return pierBottom(x);if(lid==='congo')return congoBottom(x);if(lid==='creek')return creekBottom(x);if(lid==='lake')return lakeBottom(x);if(lid==='river')return riverBottom(x);const u=x/TW;const ft=profFt(u,POND_PTS)+(1-nestZoneW(u))*(.5*Math.sin(u*27)+.9*Math.sin(u*9+1)*smooth(1.05,1.4,u));return Math.min(GROUND,ftToY(Math.max(1.5,ft)));}
 const POND_PTS=[[0,2.5],[.17,4.2],[.24,5],[.6,5],[.74,9],[1.06,9],[1.24,18.5],[1.5,19.5],[1.75,19],[2.05,19.5]];
 // Depth profile from control points: [u (screen widths from the bank), depth in feet]. Smooth between points
 // and level at each one, so two points at the same depth make a true flat.
@@ -1205,8 +1290,11 @@ Object.assign(LOCS,{
     water:['#3a8ea2','#4a8a98','#08283a'],preview:8.6,boulders:[.4,.46,.53,.62,.74,.98,1.1,1.42,1.85],sunken:[1.6],holds:[.7,1.3,1.75]},
   pier:{north:0,name:'Pelican Point Pier',tag:'Salt water on the Gulf of Mexico',desc:'An old wooden pier running out over green Gulf water. Sheepshead pick the pilings, flounder hide in the sand, and tarpon roll past at dusk.',seed:101,maxDepth:7,
     nests:[],lv:24,fee:1200,feeName:'Saltwater License',feeWhy:'Fishing the Gulf takes a saltwater fishing license.',shore:'pier',salt:true,warm:true,noPads:true,snags:.3,
-    water:['#3d9187','#4c8a82','#0b3438'],preview:7.8,boulders:[1.22,1.3,1.37,1.43],holds:[.2,.36,1.3,1.8]}});
-const LOC_ORDER=['pond','creek','lake','bayou','river','alpine','amazon','pier'];
+    water:['#3d9187','#4c8a82','#0b3438'],preview:7.8,boulders:[1.22,1.3,1.37,1.43],holds:[.2,.36,1.3,1.8]},
+  congo:{north:0,name:'Boyoma Falls',tag:'The Congo River at Kisangani',desc:'The Congo pours over a string of rapids on the equator. Wagenia fishermen work their basket traps in the white water, and below the rocks the river scours out deep eddies where the goliath tigerfish waits.',seed:131,maxDepth:14,
+    nests:[],lv:27,fee:2500,feeName:'Congo Expedition',feeWhy:'It takes a long flight, a river boat up from Kinshasa and a local guide. A Wagenia fisherman paddles you out to the rocks below the falls.',shore:'congo',jungle:true,congo:true,current:20,flow:true,rocky:true,snags:1,noPads:true,
+    water:['#8a6a3c','#7a6440','#2a1d0e'],preview:7.2,boulders:[.25,.33,.8,.87,.95,1.6],sunken:[.44],holds:[.52,.64,1.36,1.47]}});
+const LOC_ORDER=['pond','creek','lake','bayou','river','alpine','amazon','pier','congo'];
 function LOC(){return LOCS[(typeof S!=='undefined'&&S&&S.loc)||'pond']||LOCS.pond;}
 
 // ---------------- PLAY TWEAKS ----------------
@@ -1270,7 +1358,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   stones=[];for(let x=DOCKX;x<WX;x+=r()*40+20)stones.push({x,r:3+r()*7,s:r()});
   // Each place has its own skyline: rolling hills at the pond, steep wooded ridges on the creek, mountains behind the big lake, low country on the river, and flat jungle in the Amazon.
   // Skyline shapes: rolling hills, long creek-valley ridges with notches, jagged mountain peaks, flat river country with a few buttes, flat jungle.
-  const KIND={pond:'roll',creek:'ridge',lake:'peaks',river:'mesa',amazon:'flat',bayou:'canopy',alpine:'alps',pier:'flat'}[S.loc]||'roll';
+  const KIND={pond:'roll',creek:'ridge',lake:'peaks',river:'mesa',amazon:'flat',bayou:'canopy',alpine:'alps',pier:'flat',congo:'flat'}[S.loc]||'roll';
   const hsh=n=>{const v=Math.sin(n*127.1+Lc.seed*31.7)*43758.5453;return v-Math.floor(v);};
   const sky=(x,amp,sc,jit)=>{const X=x*sc;switch(KIND){
     case'ridge':return amp*(.78+.22*Math.sin(X*.004))-amp*.6*Math.pow(Math.abs(Math.cos(X*.011+.7)),10)+jit;
@@ -1281,7 +1369,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
     case'alps':{const Sp=48,i0=Math.floor(X/Sp);let v=.2+.08*Math.sin(X*.05);for(let i=i0-3;i<=i0+3;i++){const px=(i+hsh(i))*Sp,hh=.35+.65*Math.pow(hsh(i+7),1.3),sl=(hsh(i+13)*.8+.7)/(Sp*.9),sk=X<px?1+hsh(i+21)*.5:1;v=Math.max(v,hh-sl*sk*Math.abs(X-px));}
       const teeth=.05*Math.abs(Math.sin(X*.37))*Math.abs(Math.sin(X*.83+1))+.03*Math.abs(Math.sin(X*1.7));return amp*(v+teeth*v)+jit*.3;}
     default:return Math.sin(X*.011)*amp+Math.sin(X*.031+2)*amp*.45+jit;}};
-  const RP={pond:[22,10,40,26,12,58],creek:[30,14,48,38,18,72],lake:[16,7,34,34,14,58],river:[10,5,32,22,6,40],amazon:[3,2,24,0,0,0],bayou:[12,4,14,4,2,26],alpine:[14,8,36,30,12,50],pier:[0,0,0,0,0,0]}[S.loc]||[22,10,40,26,12,58];
+  const RP={pond:[22,10,40,26,12,58],creek:[30,14,48,38,18,72],lake:[16,7,34,34,14,58],river:[10,5,32,22,6,40],amazon:[3,2,24,0,0,0],bayou:[12,4,14,4,2,26],alpine:[14,8,36,30,12,50],pier:[0,0,0,0,0,0],congo:[0,0,0,0,0,0]}[S.loc]||[22,10,40,26,12,58];
   hills=[];for(let x=-20;x<=WX*.4+W+40;x+=20)hills.push([x,SURF-RP[2]-sky(x,RP[0]+RP[1]*.6,1,r()*4)]);
   trees=[];for(let x=-10;x<WX*.5+W+30;x+=r()*15+7){const con=r()<(Lc.jungle?0:Lc.deciduous?.18:Lc.shore==='boat'?.75:.62);trees.push({x,con,h:con?26+r()*34:18+r()*16,w:con?6+r()*5:10+r()*8,t:r()});}
   // River scenery uses its own random stream so the rest of the world layout stays the same.
@@ -1298,7 +1386,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
     ridge2=[];if(RP[5])for(let x=-40;x<=WX*.08+W+60;x+=Lc.alpine?15:30)ridge2.push([x,SURF-RP[5]*1.25-sky(x+1300,RP[3]*1.3+RP[4]*.5,.45,q()*4)]);
     // far-shore landmarks
     farMarks=[];if(S.loc==='lake')farMarks.push({k:'bluff',x:TW*.95});if(S.loc==='pond'){const cx=TW*1.15;nearMarks=[{k:'cabin',x:cx}];trees=trees.filter(t=>Math.abs(t.x-cx)>15);}else nearMarks=[];
-    if(Lc.jungle)for(let x=30+q()*60;x<WX*.3+W;x+=90+q()*110)farMarks.push({k:'kapok',x,h:46+q()*24,w:22+q()*12});
+    if(Lc.jungle&&!Lc.congo)for(let x=30+q()*60;x<WX*.3+W;x+=90+q()*110)farMarks.push({k:'kapok',x,h:46+q()*24,w:22+q()*12});
     // Tupelo Bayou: a fish camp on stilts across the water, cypress standing along the bank, knees poking up in the shallows
     if(Lc.cypress){const cx=TW*1.22;nearMarks=[{k:'camp',x:cx},{k:'egret',x:TW*.74}];trees=trees.filter(t=>Math.abs(t.x-cx)>22);
       for(const t of trees){t.cyp=q()<.62;t.h*=t.cyp?1.25:.55;t.w*=t.cyp?1.1:.9;t.moss=Array.from({length:5},()=>[q()-.5,.3+q()*.5]);}
@@ -1315,6 +1403,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   if(Lc.noPads){pads=[];}
   if(Lc.jungle){for(const w of weeds)for(const bl of w.blades)bl.h*=.6;}
   if(Lc.salt){reeds=[];weeds=weeds.filter(w=>w.type==='ribbon'&&bottomAt(w.x)-SURF<(GROUND-SURF)*.7);for(const w of weeds){w.grass=true;for(const bl of w.blades)bl.h*=.45;}}
+  if(Lc.congo){reeds=[];weeds=weeds.filter((w,i)=>i%4===0&&bottomAt(w.x)-SURF<(GROUND-SURF)*.3);}
   if(Lc.alpine){reeds=[];weeds=weeds.filter((w,i)=>i%3===0&&bottomAt(w.x)-SURF<(GROUND-SURF)*.45);for(const w of weeds)for(const bl of w.blades)bl.h*=.5;}
   if(Lc.cypress){pads=pads.concat(pads.map(p=>({...p,x:p.x+40,r:p.r*.8})));for(const p of pads)p.hy=true;reeds=reeds.filter((r2,i)=>i%2);}
   if(Lc.shore==='boat'){weeds=weeds.filter(w=>bottomAt(w.x)-SURF<(GROUND-SURF)*.55);}
@@ -1328,6 +1417,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
     for(const u of Lc.sunken||[]){const x=u*TW;cboulders.push({x,r:52,y:bottomAt(x)-8,t:r(),log:true});}
     holds=cboulders.map(k=>({x:k.x-k.r-10,y:k.y}));for(const u of Lc.holds||[])holds.push({x:u*TW,y:bottomAt(u*TW)-20});if(Lc.stumps)for(const k of cboulders){k.y=bottomAt(k.x);}}
   else{cboulders=[];holds=[];}
+  if(Lc.congo)buildCongoRocks();else congoRocks=[];
   specks=[];for(let i=0;i<Math.round(WX/5);i++)specks.push({x:r()*WX,y:SURF+8+r()*(GROUND-SURF),s:.5+r()*1.1,ph:r()*6,v:2+r()*4});
   for(const f of G.fish){const [a,b]=bandRange(f.sp,f.x);f.y=clamp(f.y,a,b);f.ty=clamp(f.ty,a,b);}
   if(G.lure.state==='water')G.lure.y=clamp(G.lure.y,SURF+1,bottomAt(G.lure.x)-3);
@@ -1427,11 +1517,13 @@ function makeFish(sp,x){
   const f={sp,len,L,x,y,vx:0,vy:0,face:-1,state:'wander',tx:x-40,ty:y,timer:0,cool:2,alpha:0,wig:Math.random()*6,nib:0,t2:0};
   newWanderTarget(f);return f;
 }
-function fishFloor(f,hk){if(f.sp.shape==='flounder'){let m=Infinity;for(const k of[-.2,0,.2])m=Math.min(m,bottomAt(f.x+k*f.L));return m-f.L*.12*hk+2;}const L=f.L,hh=L*(SHAPES[f.sp.shape]||{h:.2}).h*hk;let m=Infinity;for(const k of[-.5,-.25,0,.25,.5])m=Math.min(m,bottomAt(f.x+k*L));return m-hh;}
+function fishFloor(f,hk){if(f.sp.shape==='flounder'){let m=Infinity;for(const k of[-.2,0,.2])m=Math.min(m,bottomAt(f.x+k*f.L));return m-f.L*.12*hk+2;}const L=f.L,hh=L*(SHAPES[f.sp.shape]||{h:.2}).h*hk;let m=Infinity;const ks=f.sp.band[0]>=.8?[-.22,0,.22]:[-.5,-.25,0,.25,.5];for(const k of ks)m=Math.min(m,bottomAt(f.x+k*L));return m-hh;}
 function pushFromBank(f){for(let i=0;i<6;i++){if(fishFloor(f,.2)>SURF+6)break;f.x+=i<2?2:4;}if(f.tx!=null&&bottomAt(f.tx)-SURF<f.L*.5)f.tx=f.x+30;}
 function ld0(f){const l=f.school?schoolLead(f):null;return !!l&&l!==f;}
 function lingerP(sp){return sp.speed>=110||sp.shape==='mack'?.08:sp.shape==='round'||sp.shape==='crappie'||sp.shape==='perch'?.6:sp.likes==='still'?.45:.3;}
-function newWanderTarget(f){f.lieT=false;f.hold=0;_nwt(f);if(f.sp.shape==='flounder'&&f.tx!=null)f.ty=bottomAt(f.tx)-f.L*.05;if((f.sp.wary||f.sp.spooky||f.L>60)&&!f.bed&&f.tx<DOCKX+80&&Math.random()<.75)f.tx=DOCKX+80+rand(0,80);if(G.beds&&!f.bed)for(const b of G.beds)if(b.guard&&Math.abs(f.tx-b.x)<b.r+40&&f.ty>b.y-60){f.tx=clamp(b.x+(f.x<b.x?-1:1)*(b.r+50+rand(0,30)),DOCKX+30,WX-15);}}
+// Big deep-water fish (sp.minDep, a fraction of full depth) keep to water at least that deep.
+function deepX(sp,x){if(!sp.minDep)return x;const need=sp.minDep*(GROUND-SURF);if(bottomAt(x)-SURF>=need)return x;for(let i=0;i<10;i++){const t=rand(DOCKX+40,WX-20);if(bottomAt(t)-SURF>=need)return t;}return x;}
+function newWanderTarget(f){f.lieT=false;f.hold=0;_nwt(f);if(f.sp.minDep&&f.tx!=null){const nx=deepX(f.sp,f.tx);if(nx!==f.tx){f.tx=nx;const [a,b]=bandRange(f.sp,nx,!isActive(f.sp));f.ty=rand(a,b);}}if(f.sp.shape==='flounder'&&f.tx!=null)f.ty=bottomAt(f.tx)-f.L*.05;if((f.sp.wary||f.sp.spooky||f.L>60)&&!f.bed&&f.tx<DOCKX+80&&Math.random()<.75)f.tx=DOCKX+80+rand(0,80);if(G.beds&&!f.bed)for(const b of G.beds)if(b.guard&&Math.abs(f.tx-b.x)<b.r+40&&f.ty>b.y-60){f.tx=clamp(b.x+(f.x<b.x?-1:1)*(b.r+50+rand(0,30)),DOCKX+30,WX-15);}}
 function _nwt(f){if(f.sp.lie&&isActive(f.sp)&&Math.random()<f.sp.lie){f.tx=clamp(f.x+rand(-10,10),DOCKX+30,WX-15);f.ty=f.y+rand(-2,2);f.timer=rand(8,20);f.lieT=true;return;}if(f.sp.home==='pier'&&isActive(f.sp)&&Math.random()<.75){f.tx=rand(DOCKX+32,DOCKX+150);const [a,b]=bandRange(f.sp,f.tx);f.ty=rand(lerp(a,b,.3),b);f.timer=rand(4,9);return;}const L=G.lure;if(holds.length&&isActive(f.sp)&&!f.sp.legend&&Math.random()<.65){const cand=holds.filter(h=>Math.abs(h.x-f.x)<280);if(cand.length){const h=cand[Math.floor(Math.random()*cand.length)];f.tx=clamp(h.x+rand(-10,10),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=clamp(h.y+rand(-8,8),a,b);f.timer=rand(5,10);return;}}if(!isActive(f.sp)){f.tx=clamp(f.x+rand(-14,14),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx,true);f.ty=f.rest?clamp(f.y+rand(-4,4),a,b):lerp(a,b,.55+Math.random()*.45);f.rest=true;f.timer=rand(16,32);return;}f.rest=false;if(G.mode==='play'&&L.state==='water'&&!L.bare&&!f.wise&&f.sp.lures.includes(S.lure)&&Math.random()<.45){f.tx=clamp(L.x+rand(-50,50),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=clamp(L.y+rand(-30,30),a,b);f.timer=rand(2,5);return;}f.tx=clamp(f.x+rand(-130,130),DOCKX+30,WX-15);const [a,b]=bandRange(f.sp,f.tx);f.ty=rand(a,b);f.timer=rand(3,8);}
 // Fish come and go by swimming. Near an open right edge they swim out the side; everywhere else they head off into the murk,
 // shrinking and taking on the water's color. New fish arrive the same way in reverse.
@@ -1451,7 +1543,7 @@ function spawnTick(initial){
   for(const f of G.fish)if(f.state==='leave'&&f.school)for(const m of f.school.m)if(m.state!=='fight'&&m.state!=='leave'&&G.lure.fish!==m){m.state='leave';m.exit=f.exit;}
   const alive=G.fish.filter(f=>f.state!=='leave').length;
   const reach0=DOCKX+34+(TW-DOCKX-56);let flip=G.fish.filter(f=>f.x<reach0&&f.state!=='leave').length<alive*.5;
-  for(let i=0,need=popTarget()-alive;i<need;){flip=!flip;let x=flip?rand(DOCKX+60,reach0):rand(reach0,WX-20);const sp=pickSpecies(x);if(!sp){i++;continue;}if(sp.home==='far')x=rand(WX-170,WX-50);if(sp.home==='pier')x=rand(DOCKX+40,DOCKX+150);
+  for(let i=0,need=popTarget()-alive;i<need;){flip=!flip;let x=flip?rand(DOCKX+60,reach0):rand(reach0,WX-20);const sp=pickSpecies(x);if(!sp){i++;continue;}if(sp.home==='far')x=rand(WX-170,WX-50);if(sp.home==='pier')x=rand(DOCKX+40,DOCKX+150);x=deepX(sp,x);
     const n=sp.school?schoolSize(sp):1,sc=n>1?{m:[]}:null;
     for(let k=0;k<n;k++){const f=makeFish(sp,clamp(x+rand(-30,30),DOCKX+40,WX-20));
       if(sc){if(k>0){const ld=sc.m[0];f.len=+clamp(ld.len*rand(.85,1.15),sp.len[0],sp.len[1]).toFixed(1);f.L=fishPx(f.len,sp);f.y=ld.y+rand(-14,14);f.off={dx:rand(-42,42),dy:rand(-18,18)};}f.school=sc;sc.m.push(f);}
@@ -1499,7 +1591,7 @@ function drawBeds(c,dk,vx0,vx1){for(const b of G.beds||[]){if(b.x<vx0-20||b.x>vx
 const MIN_PER_SEC=1.25;
 function rollWeather(){const p=period();const fogW=(p==='night'||p==='dawn')?.3:.14;const r=Math.random();return r<fogW?'fog':r<fogW+.28?'rain':'clear';}
 function tickClock(dt){
-  const before=period(),m0=S.minutes;S.minutes=(S.minutes+dt*MIN_PER_SEC)%1440;if(S.minutes<m0)newDay();
+  const before=period(),m0=S.minutes;S.minutes=(S.minutes+dt*MIN_PER_SEC)%1440;if(S.minutes<m0)newDay();if(S.bait&&(G.bkT=(G.bkT||0)+dt)>3){G.bkT=0;if(syncOwnBait())updateHUD(true);}
   S.wtimer-=dt*MIN_PER_SEC;
   if(S.wtimer<=0){const old=S.weather;S.weather=rollWeather();S.wtimer=rand(160,340);if(old!==S.weather){toast({clear:'The sky clears',rain:'Rain rolls in',fog:'Fog settles on the water'}[S.weather],weatherSub());spawnTick(false);}}
   if(period()!==before&&period()==='night'&&nameIs('lucy'))setTimeout(()=>{if(G.mode==='play'&&S.settings.chatter!==false)say('Just one more cast…');},1800);
@@ -1564,8 +1656,8 @@ function missHook(f,why){
   toast(msg,sub);refreshControls();
   if(bait&&d<0&&!S.owned.h4){S.tips=S.tips||{};S.tips.small=(S.tips.small||0)+1;if(S.tips.small===2&&!S.tips.smallShown){S.tips.smallShown=true;save();setTimeout(()=>toast('Tip: try a #4 hook','Bigger mouths spit a small hook. Shop \u203a Hooks, 8 coins'),1900);}}
 }
-function useBait(){if(!isBait()||S.lure==='worm')return;S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];const nm=LURES[S.lure].name;S.lure='worm';toast('Out of '+nm,'Switched back to worms');}save();updateHUD(true);}
-function baitNoun(){return{worm:'worm',cricket:'cricket',minnow:'minnow',liver:'liver',dough:'dough ball',corn:'corn',shrimp:'shrimp'}[S.lure]||'bait';}
+function useBait(){if(!isBait()||S.lure==='worm')return;if(LURES[S.lure].own){useOwnBait();return;}S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];const nm=LURES[S.lure].name;S.lure='worm';toast('Out of '+nm,'Switched back to worms');}save();updateHUD(true);}
+function baitNoun(){if(S.lure==='livebait'){const o=ownLive();return o?SPMAP[o.sp].name.toLowerCase():'baitfish';}if(S.lure==='cutbait')return'cut bait';return{worm:'worm',cricket:'cricket',minnow:'minnow',liver:'liver',dough:'dough ball',corn:'corn',shrimp:'shrimp'}[S.lure]||'bait';}
 function stealTurtle(f){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10);f.wise=true;SFX.lose();toast(`A turtle stole your ${bn}`,'They\u2019re sneaky like that');G.lure.fish=null;refreshControls();}
 function stealCheck(f){
   if(!isBait())return false;
@@ -1608,7 +1700,7 @@ function twitch(){
 }
 function updateLure(dt){
   const L=G.lure,lu=LURES[S.lure];G.bobJig=Math.max(0,(G.bobJig||0)-dt);
-  L.jig=Math.max(0,L.jig-dt);if(L.state==='water'&&!L.bare&&(S.lure==='minnow'||S.lure==='cricket'||S.lure==='shrimp')&&Math.random()<dt*2)L.jig=.15;
+  L.jig=Math.max(0,L.jig-dt);if(L.state==='water'&&!L.bare&&(isLive()||S.lure==='cricket'||S.lure==='shrimp')&&Math.random()<dt*2)L.jig=.15;
   if(L.state==='flying'){L.ft+=dt;const k=Math.min(1,L.ft/L.fd);
     // A fly cast: the loop rolls out ahead and the fly trails on the top leg until the line turns over and lays it down.
     if(curSetup().fly){const t=tip();L.lpx=lerp(t.x,L.tx,Math.min(1,k*1.15));L.lpy=lerp(t.y,SURF-5,k);L.lph=3+20*(1-k);L.x=lerp(L.sx-(L.bl||60),L.tx,Math.pow(k,1.7));L.y=Math.min(SURF,L.lpy-L.lph+Math.max(0,k-.85)/.15*L.lph);}
@@ -1674,7 +1766,7 @@ function rallySchool(f){if(!f.school)return;let n=0;for(const m of f.school.m){i
 // Different species give each other room; small fish keep clear of big predators; now and then an
 // active predator makes a run at a small fish (about 1 in 3 runs ends in a gulp, never with blood); and a big fish moving in on
 // the bait makes the small ones back off. Nothing gets eaten.
-const PREDATORS=new Set(['spottedgar','alligatorgar','bluecat','laketrout','mackinaw','redfish','seatrout','flounder','mackerel','tarpon','cutthroat','bass','smallmouth','pickerel','pike','walleye','brown','trout','catfish','flathead','tigermuskie','bowfin','peacock','arowana','redtail','undercut']);
+const PREDATORS=new Set(['spottedgar','alligatorgar','bluecat','laketrout','mackinaw','redfish','seatrout','flounder','mackerel','tarpon','cutthroat','bass','smallmouth','pickerel','pike','walleye','brown','trout','catfish','flathead','tigermuskie','bowfin','peacock','arowana','redtail','undercut','tigerfish','goliath','nileperch','africanpike','nembwe','vundu']);
 function isPred(sp){return PREDATORS.has(sp.id);}
 function preyOf(p,f){return f!==p&&!f.sp.turtle&&!p.sp.turtle&&!isPred(f.sp)&&f.L<p.L*.5&&f.state!=='fight';}
 function fleeFrom(f,src,t=1.6){if(f.state==='fight')return;const G2=G.lure;if(G2.fish===f){G2.fish=null;refreshControls();}
@@ -1715,13 +1807,13 @@ function checkNotice(f,dt){
   if(L.fish&&L.fish!==f&&L.fish.L>f.L*1.7&&dist(f.x,f.y,L.x,L.y)<L.fish.L*2+40)return;
   const upTop=sp.rises&&LURES[S.lure].float&&L.y<SURF+6;
   // A rising fish spots a bug on top from well below, so depth counts for less than distance across.
-  const d=upTop?Math.hypot(f.x-L.x,(f.y-L.y)*.4):dist(f.x,f.y,L.x,L.y);let sight=mods().sight*(sp.id===mods().fav?mods().favSight:1)*(sp.legend?190:135)*(sp.scent?1:(.6+.4*visMul()));if(sp.scent&&isBait())sight*=S.lure==='liver'?1.7:1.3;if(sp.ambush)sight*=.7;if(d>sight)return;
+  const d=upTop?Math.hypot(f.x-L.x,(f.y-L.y)*.4):dist(f.x,f.y,L.x,L.y);let sight=mods().sight*(sp.id===mods().fav?mods().favSight:1)*(sp.legend?190:135)*(sp.scent?1:(.6+.4*visMul()));if(sp.scent&&isBait())sight*=S.lure==='liver'||S.lure==='cutbait'?1.7:1.3;if(sp.ambush)sight*=.7;if(d>sight)return;
   // Fish that rise will come up from their depth for something floating on top, the way trout take a dry fly.
   if(!sp.surface&&!upTop){const [a,b]=bandRange(sp,L.x);if(L.y<a-45||L.y>b+45)return;}
-  let action=(G.t-L.lastTwitch<1.6)?'twitch':L.moving?'move':'still';if(action==='still'&&S.lure==='minnow')action='move';if(action==='still'&&(S.lure==='cricket'||S.lure==='shrimp')&&Math.sin(G.t*1.3)>.55)action='twitch';
+  let action=(G.t-L.lastTwitch<1.6)?'twitch':L.moving?'move':'still';if(action==='still'&&isLive())action='move';if(action==='still'&&(S.lure==='cricket'||S.lure==='shrimp')&&Math.sin(G.t*1.3)>.55)action='twitch';
   let m=action===sp.likes?1.8:(action==='still'?.65:.95);
   if(S.lure==='spinner'&&action==='move')m*=1.3;
-  if(S.lure==='frog')m*=1.4;m*=lureAppeal(sp);
+  if(S.lure==='frog')m*=1.4;m*=lureAppeal(sp,f);
   if(G.hatch&&sp.rises)m*=['dryfly','popbug','fly'].includes(S.lure)?1.8:S.lure==='nymph'?1.3:.85;
   if(gearOn('leader')&&sp.wary)m*=.7;
   if(LOC().current&&isBait()&&!L.moving)m*=['free','split','bobber'].includes(rig().type)?1.35:.8;
@@ -1824,7 +1916,7 @@ function updateFish(f,dt){
   // pull the step back along its path and settle it on the bottom again.
   {const mx=(Math.hypot(f.vx,f.vy)+6)*dt*1.1,mvd=Math.hypot(f.x-x0,f.y-y0);if(mvd>mx&&mvd>.5){const kk=mx/mvd;f.x=x0+(f.x-x0)*kk;f.y=y0+(f.y-y0)*kk;
     if(!eng)f.y=Math.min(f.y,Math.max(SURF+6,fishFloor(f,.45)-3));f.vx*=.9;}}
-  const pt=eng&&f.aim!=null?f.aim:f.sp.shape==='flounder'&&!eng?clamp(Math.atan2((bottomAt(f.x+6)-bottomAt(f.x-6))*f.face,12),-.4,.4):clamp(Math.atan2(f.vy*.6,Math.abs(f.vx)+14),-.45,.45);
+  const pt=eng&&f.aim!=null?f.aim:(f.sp.shape==='flounder'||(f.sp.band[0]>=.8&&bottomAt(f.x)-f.y<f.L*.3))&&!eng?clamp(Math.atan2((bottomAt(f.x+6)-bottomAt(f.x-6))*f.face,12),-.4,.4):clamp(Math.atan2(f.vy*.6,Math.abs(f.vx)+14),-.45,.45);
   f.pitch=(f.pitch||0)+(pt-(f.pitch||0))*Math.min(1,dt*5);
   f.x=clamp(f.x,DOCKX+16,WX-8);
   if(Math.random()<dt*.12)G.parts.push({k:'bub',x:f.x+f.face*f.L*.5,y:f.y,vy:-18,life:2.2,r:1+Math.random()*1.5});
@@ -2100,6 +2192,7 @@ function render(){
   drawSpecks(c,dk,vx0,vx1);
   // ground
   if(LOC().shore==='dock'||LOC().shore==='camp')drawPilings(c,dk);if(LOC().shore==='pier')drawPierPilings(c,dk);
+  if(congoRocks.length)drawCongoRocks(c,dk,vx0,vx1);
   drawGround(c,cam,dk,vx0,vx1);
   drawBeds(c,dk,vx0,vx1);
   if(LOC().riffles)drawRiffles(c,dk,vx0,vx1,48);if(LOC().flow)drawRiffles(c,dk,vx0,vx1,9999);if(LOC().undercut)drawUndercut(c,dk);
@@ -2222,6 +2315,7 @@ function drawBackdrop(c,cam,dk,fog,rain,h){
   c.save();c.translate(-cam*.12,0);
   const SKC={pond:['#3d6b55','#24473a','#7aa0ab'],creek:['#2f5a46','#1a382c','#6a92a0'],lake:['#46666a','#283f44','#8094aa'],river:['#5e7448','#3a4a2e','#a3ad9c'],amazon:['#2f5a38','#1b3a24','#88aaa2'],bayou:['#44583a','#2a3826','#8ea29a'],alpine:['#6f7c70','#4c5850','#8a9cb0'],pier:['#c9b98a','#a8986a','#9ab4c0']}[S.loc]||['#3d6b55','#24473a','#7aa0ab'];
   if(LOC().salt){c.restore();drawSeaBack(c,cam,dk,fog,rain,h);return;}
+  if(LOC().congo){c.restore();drawCongoBack(c,cam,dk,fog,rain,h);return;}
   const Z=sea();let rc=mx(mx(rain?'#6f8790':SKC[2],'#e8eef2',win(Z.p,.7,.78,.95,1)*.55),'#121a2e',dk*.85);if(wm)rc=rc.map((v,i)=>lerp(v,[150,120,140][i],wm*.35*(1-dk)));
   if(ridge2.length){c.save();c.translate(-cam*.05+cam*.12,0);const rc2=mx(rc,rain?'#9aa8ae':'#b9cfd6',.45*(1-dk*.6));c.fillStyle=rgbStr(rc2,fog?.25:.75);c.beginPath();c.moveTo(-40,SURF);for(const p of ridge2)c.lineTo(p[0],p[1]);c.lineTo(ridge2[ridge2.length-1][0],SURF);c.fill();
     if(LOC().alpine)drawSnowCaps(c,ridge2,dk,fog,Z,1);
@@ -2427,6 +2521,140 @@ function drawSeaBack(c,cam,dk,fog,rain,h){const K=(col,a=1)=>rgbStr(mx(col,'#0d1
     c.strokeStyle=K('#4a4a4a',.8);c.lineWidth=.4;c.beginPath();c.moveTo(bx-1,by-2);c.lineTo(bx-1,by-10);c.moveTo(bx-1,by-9);c.lineTo(bx-9,by-4);c.moveTo(bx-1,by-9);c.lineTo(bx+7,by-4);c.stroke();if(dk>.3){c.fillStyle='rgba(255,240,190,.9)';c.fillRect(bx+2,by-4.5,.8,.8);}}
   c.restore();
 }
+// ---------------- Boyoma Falls (the Congo at Kisangani) ----------------
+// The far bank is unbroken equatorial rainforest: a wall of rounded crowns with pale-trunked emergents standing over it,
+// mist hanging along the foot of it in the morning. Out on the river the Wagenia fishing scaffolds stand in the rapids,
+// poles lashed into tripods with long conical basket traps hung down into the white water. Water hyacinth rafts drift
+// past, a dugout pirogue works the edge of the current, and an African fish eagle circles high over it all.
+function congoHaze(h,dk,rain){const wm=warmth(h);let c0=mx(mx(rain?'#9aa4a2':'#a9c0b8','#e9b98a',wm*.55),'#0d1622',dk*.88);return c0;}
+let CGF={key:''};
+function congoForest(c,K,hz,x0,x1){const base=hz+.5,ox=x0+40;
+
+  // A crown is a cluster of rounded lumps, lit from above: the cauliflower texture of a rainforest canopy seen from across a river.
+  const lumps=(x,y,r,col,hi,k)=>{c.fillStyle=col;for(const [dx,dy,rr] of [[0,0,1],[-.55,.25,.7],[.55,.3,.72],[-.2,-.45,.62],[.3,-.35,.55]]){c.beginPath();c.arc(x+dx*r,y+dy*r,rr*r,0,TAU);c.fill();}
+    if(hi){c.fillStyle=hi;c.beginPath();c.arc(x-.25*r,y-.5*r,.42*r,0,TAU);c.fill();if(hs(k,40)>.5){c.beginPath();c.arc(x+.4*r,y-.25*r,.3*r,0,TAU);c.fill();}}};
+  // back canopy: the far forest, softened by distance
+  {const col=K('#4f6e52',1,.5),hi=K('#6f8e66',.9,.45);c.fillStyle=col;c.fillRect(x0,base-20,x1-x0,20);for(let x=x0;x<x1;x+=7){const k=Math.floor(x/7),r=4.5+hs(k,1)*3.5,y=base-21-hs(k,2)*5-2.5*Math.sin(x*.011+1);lumps(x,y,r,col,hi,k);}}
+  // emergent trees standing over the canopy: pale trunks and big domed crowns
+  for(let x=Math.floor((ox-60)/29)*29;x<x1+60;x+=29){const k=Math.floor(x/29);if(hs(k,5)<.55)continue;const ex=x+hs(k,6)*16,top=base-27-hs(k,7)*9,cw=8+hs(k,8)*4;
+    c.strokeStyle=K('#cfc6b0',.9,.42);c.lineWidth=1;c.beginPath();c.moveTo(ex,base-19);c.lineTo(ex+.4,top+cw*.6);c.moveTo(ex+.3,top+cw*.9);c.lineTo(ex-cw*.6,top+cw*.3);c.moveTo(ex+.3,top+cw*.8);c.lineTo(ex+cw*.7,top+cw*.25);c.stroke();
+    c.save();c.translate(ex,top);c.scale(1,.72);for(const [dx,dy,f,kk] of [[-.75,.25,.62,0],[.8,.2,.6,3],[-.25,-.05,.7,5],[.3,-.25,.72,7]])lumps(dx*cw,dy*cw,cw*f,K('#46663f',1,.4),K('#7a9a64',.9,.35),k+kk);c.restore();}
+  // nearer canopy along the bank, darker and sharper
+  {const col=K('#2f4c31',1,.3),hi=K('#4e7444',.85,.28);c.fillStyle=col;c.fillRect(x0,base-11,x1-x0,11);for(let x=x0;x<x1;x+=6){const k=Math.floor(x/6),r=3.6+hs(k,3)*3,y=base-11-hs(k,4)*4;lumps(x,y,r,col,hi,k+11);}}
+  // oil palms leaning out over the water
+  for(let x=Math.floor((ox-30)/13)*13;x<x1+30;x+=13){const k=Math.floor(x/13);if(hs(k,10)<.55)continue;const px=x+hs(k,11)*8,ph=12+hs(k,12)*8,lean=(hs(k,13)-.3)*4;
+    c.strokeStyle=K('#4a4234',1,.22);c.lineWidth=.8;c.beginPath();c.moveTo(px,base-2);c.quadraticCurveTo(px+lean*.4,base-ph*.6,px+lean,base-ph);c.stroke();
+    c.strokeStyle=K('#3a5e32',1,.2);c.lineWidth=.85;const tx=px+lean,ty=base-ph;for(let i=0;i<9;i++){const a=-Math.PI*(.04+.92*i/8),l=4.5+hs(k*9+i,14)*2.5;c.beginPath();c.moveTo(tx,ty);c.quadraticCurveTo(tx+Math.cos(a)*l*.55,ty+Math.sin(a)*l*.55-1.2,tx+Math.cos(a)*l,ty+Math.sin(a)*l*.5+2);c.stroke();}}
+  // dark overhang where the forest meets the water
+  c.fillStyle=K('#18281a',1,.15);c.beginPath();c.moveTo(x0,base-4);for(let x=x0;x<=x1;x+=3)c.lineTo(x,base-4-1.5*Math.abs(Math.sin(x*.19))-hs(Math.floor(x/3),15)*1.2);c.lineTo(x1,base+.8);c.lineTo(x0,base+.8);c.closePath();c.fill();
+}
+function drawCongoBack(c,cam,dk,fog,rain,h){
+  const hz=SURF-17,haze=congoHaze(h,dk,rain),fa=fog?.5:1,wm=warmth(h);
+  const K=(col,a=1,hk=0)=>rgbStr(mx(mx(col,haze,hk),'#0b131c',dk*.86),a*fa);
+  // ---- far bank rainforest (slow parallax), drawn once into a strip and reused while the light holds ----
+  {const pf=.1,X0=-40,X1=Math.max(WX,W)*.1+W+60,top=hz-60,y1=hz+2,key=[Math.round(dk*40),fog?1:0,rain?1:0,Math.round(wm*20),W,H,SC,DPR,WX].join('|');
+    if(CGF.key!==key){const k=DPR*SC,cv=CGF.cv||document.createElement('canvas');cv.width=Math.ceil((X1-X0)*k);cv.height=Math.ceil((y1-top)*k);const x=cv.getContext('2d');x.setTransform(k,0,0,k,-X0*k,-top*k);x.clearRect(X0,top,X1-X0,y1-top);congoForest(x,K,hz,X0,X1);CGF={key,cv,x0:X0,y0:top,w:X1-X0,h:y1-top};}
+    c.save();c.translate(-cam*pf,0);c.drawImage(CGF.cv,CGF.x0,CGF.y0,CGF.w,CGF.h);c.restore();}
+  // mist along the forest foot: heavy at dawn and after rain, gone by midday
+  {const mist=(fog?1:0)+Math.max(0,1-Math.abs(h-6.6)/2.2)*.85+(rain?.4:0)+(dk>.5?.3:0),m=Math.min(1,mist);if(m>.02){const mcol=mx(mx('#e8eeea','#f2d6b8',wm*.5),'#2a3442',dk*.8);
+    for(let i=0;i<3;i++){const y=hz-4-i*4,dx=((G.t*(1.2+i*.5)-cam*.1)%(W+200)+W+200)%(W+200)-100,g=c.createLinearGradient(0,y-5,0,y+4);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.5,rgbStr(mcol,.32*m*(1-i*.25)));g.addColorStop(1,'rgba(255,255,255,0)');
+      c.fillStyle=g;for(let k=-1;k<3;k++){const bx=dx+k*(W*.55)+i*70;c.beginPath();c.ellipse(bx,y,W*.24,4.5,0,0,TAU);c.fill();}}}}
+  // ---- the river out to the far bank: the forest's reflection near the bank, the sky's toward us ----
+  {const wc=LOC().water[0],sky=mx(mx('#bcd2da','#f0c49a',wm*.6),'#1a2434',dk*.85),fr=mx('#2a3e28','#0b131c',dk*.8);
+    const g=c.createLinearGradient(0,hz,0,SURF);g.addColorStop(0,rgbStr(mx(fr,sky,.25),fa));g.addColorStop(.28,rgbStr(mx(mx(sky,wc,.3),'#0b131c',dk*.7),fa));g.addColorStop(.75,rgbStr(mx(mx(sky,wc,.42),'#0b131c',dk*.75),fa));g.addColorStop(1,rgbStr(mx(mx(sky,wc,.6),'#0b131c',dk*.8),fa));c.fillStyle=g;c.fillRect(0,hz,W,SURF-hz+1);
+    // current streaks and glints, all sliding downstream (to the left)
+    c.fillStyle=`rgba(255,250,235,${(fog?.1:.3)*(1-dk*.7)})`;for(let i=0;i<50;i++){const y=hz+3+((i*7)%14)*.95,sp=(y-hz)/16,x=((i*83.1-cam*(.12+sp*.2)-G.t*(7+sp*16+(i%3)*2))%(W+40)+W+40)%(W+40)-20;c.fillRect(x,y,2+(i%4)*1.5+sp*5,.5);}
+    c.fillStyle=rgbStr(mx(fr,'#000000',.2),.35*fa);for(let i=0;i<30;i++){const y=hz+1+((i*5)%5)*.7,x=((i*41.3-cam*.12-G.t*(4+i%3*2))%(W+60)+W+60)%(W+60)-30;c.fillRect(x,y,10+(i*7)%16,.7);}}
+  // water hyacinth rafts riding the current
+  c.save();c.translate(-cam*.16,0);{const span=WX*.16+W+260;for(let i=0;i<5;i++){const x=((TW*.3+i*197-G.t*(5+i%2*1.5))%span+span)%span-120,y=hz+4+(i*3)%9,w=10+(i*13)%16;
+    c.fillStyle=K('#3f6a34',.95,.25);c.beginPath();c.ellipse(x,y,w,1.6,0,0,TAU);c.fill();c.fillStyle=K('#5f9446',.9,.22);for(let k=0;k<5;k++){c.beginPath();c.ellipse(x-w*.7+k*w*.35,y-1.2-(k%2)*.7,1.6,1.2,0,0,TAU);c.fill();}
+    if(i%2===0){c.fillStyle=K('#b7a6e0',.85,.2);c.fillRect(x+w*.2,y-3.2,.9,1.6);}}}c.restore();
+  // ---- the rapids, the Wagenia scaffolds and the spray off them ----
+  c.save();const pr=.22;c.translate(-cam*pr,0);{const rx0=TW*.55,rx1=rx0+TW*1.15,ry=hz+8;
+    // spray haze over the white water
+    for(let k=0;k<7;k++){const cx=rx0+(k+.5)*(rx1-rx0)/7,rr=(rx1-rx0)/9,sg=c.createRadialGradient(cx,ry,0,cx,ry,rr);sg.addColorStop(0,`rgba(244,247,244,${(fog?.15:.32)*(1-dk*.7)})`);sg.addColorStop(1,'rgba(244,247,244,0)');c.fillStyle=sg;c.save();c.translate(cx,ry);c.scale(1,.32);c.translate(-cx,-ry);c.beginPath();c.arc(cx,ry,rr,0,TAU);c.fill();c.restore();}
+    // black rocks with the river piling over them
+    for(let x=rx0;x<rx1;x+=9){const k=Math.floor(x/9);if(hs(k,20)<.35)continue;const rr=2+hs(k,21)*3.5,xx=x+hs(k,22)*6;c.fillStyle=K('#2a2620',1,.12);c.beginPath();c.ellipse(xx,ry-.4,rr*1.3,rr*.7,0,Math.PI,0);c.fill();c.fillStyle=K('#6a6458',.6,.1);c.beginPath();c.ellipse(xx-rr*.4,ry-rr*.45,rr*.5,rr*.18,0,0,TAU);c.fill();}
+    // white water: standing waves and foam tumbling downstream
+    for(let i=0;i<110;i++){const u=hs(i,23),x=rx0+u*(rx1-rx0),ph=(G.t*2.2+hs(i,24)*6)%1,y=ry-1.5+hs(i,25)*5+ph*1.5,rr=1.2+hs(i,26)*2;c.fillStyle=`rgba(250,252,248,${(.92-ph*.55)*(1-dk*.65)*fa})`;c.beginPath();c.ellipse(x-ph*5,y,rr*1.8,rr*.7,0,0,TAU);c.fill();}
+    c.fillStyle=`rgba(235,240,232,${.45*(1-dk*.65)*fa})`;c.fillRect(rx0,ry+2.2,rx1-rx0,1);
+    // the scaffolds: tripods of poles standing in the rapids, crossbars lashed on, cone baskets hung down into the water
+    for(let i=0;i<5;i++){const sx=rx0+TW*.08+i*(rx1-rx0-TW*.16)/4+hs(i,30)*14,ht=27+hs(i,31)*10,wood=K('#6a5236',1,.18),wood2=K('#4a3a26',1,.18);
+      c.strokeStyle=wood;c.lineWidth=1.2;c.beginPath();c.moveTo(sx-5,ry+1);c.lineTo(sx+.5,ry-ht);c.moveTo(sx+5,ry+1.5);c.lineTo(sx-.5,ry-ht);c.moveTo(sx,ry+2);c.lineTo(sx+1,ry-ht*1.08);c.stroke();
+      c.strokeStyle=wood2;c.lineWidth=.6;c.beginPath();for(const f of [.35,.62,.85]){c.moveTo(sx-6,ry-ht*f);c.lineTo(sx+6.5,ry-ht*f-.6);}c.moveTo(sx-6,ry-ht*.62);c.lineTo(sx-14,ry-ht*.5);c.stroke();
+      // baskets: long cones hanging from the crossbar into the white water, mouths upstream
+      for(const bx of [sx-8,sx+5]){c.strokeStyle=K('#8a7448',.9,.15);c.lineWidth=.4;c.beginPath();c.moveTo(bx,ry-ht*.35);c.lineTo(bx,ry-3);c.stroke();
+        c.fillStyle=K('#9a8452',1,.15);c.beginPath();c.moveTo(bx-2.2,ry-3.5);c.lineTo(bx+2.2,ry-3.5);c.lineTo(bx+.5,ry+3.5);c.lineTo(bx-.5,ry+3.5);c.closePath();c.fill();
+        c.strokeStyle=K('#5a4a2c',.7,.15);c.lineWidth=.3;c.beginPath();for(let r2=0;r2<3;r2++){const yy=ry-2.5+r2*2;c.moveTo(bx-1.8+r2*.5,yy);c.lineTo(bx+1.8-r2*.5,yy);}c.stroke();}
+      // a fisherman checking his traps now and then
+      if(i===2&&Math.sin(G.t*.05)>-.2){const fx=sx-1,fy=ry-ht*.62;c.fillStyle=K('#2a2018',1,.15);c.beginPath();c.arc(fx,fy-5.4,.9,0,TAU);c.fill();c.fillRect(fx-.8,fy-4.6,1.6,3.2);c.strokeStyle=K('#2a2018',1,.15);c.lineWidth=.6;c.beginPath();c.moveTo(fx-.4,fy-1.4);c.lineTo(fx-1.2,fy);c.moveTo(fx+.4,fy-1.4);c.lineTo(fx+1,fy);c.moveTo(fx+.6,fy-4);c.lineTo(fx+2.4,fy-2.8+Math.sin(G.t*1.5)*.6);c.stroke();}}}
+  c.restore();
+  // a dugout pirogue working its way along the edge of the current, a man standing to paddle
+  c.save();c.translate(-cam*.2,0);{const span=WX*.2+W+300,per=span/7,x=((G.t*7+TW*.2)%span+span)%span-150,y=hz+11.5,dir=1;
+    c.fillStyle=K('#3a2a1a',1,.12);c.beginPath();c.moveTo(x-12,y-1.2);c.quadraticCurveTo(x,y+1.3,x+12,y-1.6);c.lineTo(x+11,y-.2);c.quadraticCurveTo(x,y+2.2,x-11,y);c.closePath();c.fill();
+    c.fillStyle=K('#1e1610',1,.1);c.beginPath();c.arc(x+3,y-7.6,.95,0,TAU);c.fill();c.fillRect(x+2.2,y-6.8,1.6,4);c.strokeStyle=K('#1e1610',1,.1);c.lineWidth=.6;c.beginPath();c.moveTo(x+2.6,y-2.8);c.lineTo(x+2.2,y-.6);c.moveTo(x+3.4,y-2.8);c.lineTo(x+3.8,y-.6);c.stroke();
+    const pa=Math.sin(G.t*1.6);c.strokeStyle=K('#5a4430',1,.1);c.lineWidth=.55;c.beginPath();c.moveTo(x+3.8+pa*1.6,y-8);c.lineTo(x-1.2-pa*2.6,y+2);c.stroke();c.fillStyle=K('#5a4430',1,.1);c.beginPath();c.ellipse(x-1.4-pa*2.6,y+2,.7,1.6,.4,0,TAU);c.fill();
+    c.fillStyle=K('#2e2a24',1,.12);c.beginPath();c.arc(x-6,y-3.4,.75,0,TAU);c.fill();c.fillRect(x-6.7,y-2.8,1.4,1.8);
+    c.strokeStyle=`rgba(255,250,240,${.3*(1-dk*.7)})`;c.lineWidth=.5;c.beginPath();c.moveTo(x-13,y+.2);c.lineTo(x-20,y+.5);c.moveTo(x-12,y+1);c.lineTo(x-17,y+1.3);c.stroke();}c.restore();
+  // the far waterline seen through the haze
+  {const g=c.createLinearGradient(0,hz-30,0,hz+2);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,rgbStr(haze,(fog?.4:.16)*(1-dk*.6)));c.fillStyle=g;c.fillRect(0,hz-30,W,32);}
+  drawFishEagle(c,dk,fog,cam);
+}
+// An African fish eagle: white head, chest and tail, chestnut belly, broad dark wings. It circles, and now and then stoops to the river.
+function drawFishEagle(c,dk,fog,cam){if(dk>.6)return;const t=G.t,cyc=(t%48)/48,a=(1-dk*1.4)*(fog?.4:1);if(a<=0)return;
+  let x=W*.62+Math.cos(t*.22)*W*.18,y=SURF-78+Math.sin(t*.22)*14,bank=Math.sin(t*.22),sc=1;
+  if(cyc>.82){const u=(cyc-.82)/.18;x=W*.62+Math.cos(t*.22)*W*.18-u*40;y=lerp(SURF-78,SURF-18,Math.sin(u*Math.PI));sc=1-u*.15;}
+  const fl=cyc>.82?.2:Math.sin(t*1.1)*.25+.35;c.save();c.globalAlpha=a;c.translate(x,y);c.scale(Math.cos(t*.22)<0?1:-1,1);
+  c.fillStyle='#3a2c22';for(const sd of [-1,1]){c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(sd*5*sc,-2.4-fl*3,sd*10.5*sc,-.6-fl*2.4);c.lineTo(sd*9.6*sc,.8-fl*1.6);c.quadraticCurveTo(sd*5,.9,0,1.2);c.closePath();c.fill();
+    c.strokeStyle='#2a201a';c.lineWidth=.4;c.beginPath();for(let k=0;k<3;k++){c.moveTo(sd*(9.6-k*.6)*sc,.6-fl*1.6);c.lineTo(sd*(10.8-k*.4)*sc,1.3-fl*1.4);}c.stroke();}
+  c.fillStyle='#7a3a22';c.beginPath();c.ellipse(.4,.6,2.6,1.2,0,0,TAU);c.fill();
+  c.fillStyle='#f4f2ea';c.beginPath();c.ellipse(-2.4,.6,1.6,.9,0,0,TAU);c.fill();c.beginPath();c.arc(2.9,-.2,1.05,0,TAU);c.fill();
+  c.fillStyle='#e8c040';c.beginPath();c.moveTo(3.8,-.3);c.lineTo(4.7,.2);c.lineTo(3.7,.3);c.fill();c.restore();}
+
+// Boyoma's riverbed: a rock ledge under the angler, a deep eddy pool scoured out behind it, a rock bar, the main channel,
+// then the rapids shelf where boulders break the surface and the water turns white.
+const CONGO_PTS=[[0,3],[.1,5],[.18,9],[.27,20],[.36,29],[.5,34],[.62,32],[.73,24],[.84,13],[.93,12],[1.02,19],[1.15,33],[1.3,42],[1.46,45],[1.58,36],[1.68,18],[1.77,8],[1.86,4.5],[2.05,4]];
+function congoBottom(x){const u=x/TW;const ft=profFt(u,CONGO_PTS)+1.1*Math.sin(u*31)+.7*Math.sin(u*67+1)+.5*Math.sin(u*119+2)*smooth(1.6,1.8,u);return Math.min(GROUND,ftToY(Math.max(2,ft)));}
+// Boulders breaking the surface in the rapids, fixed so nothing pops as the view pans.
+let congoRocks=[];
+function buildCongoRocks(){congoRocks=[];let z=919;const q=()=>(z=(z*9301+49297)%233280)/233280;
+  for(let u=1.72;u<2.12;u+=.035+q()*.035){const x=u*TW,b=bottomAt(x),dep=b-SURF;let r=10+q()*12,cy;
+    if(dep<r*1.5)cy=SURF-2-q()*3+r*.8;else{r=7+q()*8;cy=b-r*.3;}
+    congoRocks.push({x,r,cy,b,t:q()});}}
+function drawCongoRocks(c,dk,vx0,vx1){const K=(col,a=1)=>rgbStr(mx(col,'#080a0c',dk*.8),a),a=1-dk*.6;
+  for(const k of congoRocks){if(k.x<vx0-40||k.x>vx1+40)continue;const w=k.r,cy=k.cy,top=cy-w*.8,breaks=top<SURF+1;
+    // dark sandstone boulder, rounded by the current and lit from above; the bed covers its foot
+    const g=c.createRadialGradient(k.x-w*.4,cy-w*.45,w*.1,k.x,cy,w*1.4);g.addColorStop(0,K('#7a6450'));g.addColorStop(.55,K('#3e3128'));g.addColorStop(1,K('#1a1410'));c.fillStyle=g;
+    c.beginPath();c.moveTo(k.x-w*1.35,cy+w*.9);c.bezierCurveTo(k.x-w*1.45,cy-w*.2,k.x-w*.9,top,k.x-w*.1,top);c.bezierCurveTo(k.x+w*.8,top,k.x+w*1.4,cy-w*.25,k.x+w*1.3,cy+w*.9);c.closePath();c.fill();
+    c.strokeStyle=K('#1a1410',.5);c.lineWidth=.6;c.beginPath();c.moveTo(k.x-w*.5,top+w*.3);c.quadraticCurveTo(k.x,top+w*.4,k.x+w*.6,top+w*.55);c.stroke();
+    if(!breaks){c.fillStyle=K('#3e5a2a',.45);c.beginPath();c.ellipse(k.x-w*.1,top+w*.18,w*.6,w*.16,0,0,TAU);c.fill();continue;}
+    // above the water: a dry crown, a wet dark band, and the river piling up on the upstream face
+    c.fillStyle=K('#9a8670',.35);c.beginPath();c.ellipse(k.x-w*.25,top+1.2,w*.42,1.2,0,0,TAU);c.fill();
+    c.fillStyle=K('#1a1410',.45);c.fillRect(k.x-w*1.05,SURF-1.2,w*2.1,2.4);
+    c.fillStyle=`rgba(250,252,248,${.9*a})`;c.beginPath();c.ellipse(k.x+w*1.05,SURF-.6,w*.55,2,0,0,TAU);c.fill();
+    for(let i=0;i<10;i++){const ph=(G.t*1.6+i*.1+k.t)%1,x=k.x-w*.95-ph*w*2.6,y=SURF-1+Math.sin(ph*9+i)*.8;c.fillStyle=`rgba(250,252,248,${(.85-ph*.75)*a})`;c.beginPath();c.ellipse(x,y,1.6+ph*2.6,1+ph*.6,0,0,TAU);c.fill();}
+    // bubbles driven down behind the rock
+    for(let i=0;i<12;i++){const ph=(G.t*.7+i/12+k.t*3)%1,x=k.x-w*1.2-ph*w*2.4+Math.sin(i*2+G.t*3)*2,y=SURF+3+ph*(k.b-SURF)*.7*(.4+hs(i,k.t*9)*.6);c.fillStyle=`rgba(235,240,232,${(.55-ph*.5)*a})`;c.beginPath();c.arc(x,y,.6+hs(i,2)*1.2,0,TAU);c.fill();}}}
+// The angler's rocks: a rounded hump of dark sandstone at the water's edge, with a pair of Wagenia poles wedged into the cracks.
+function drawCongoShore(c,dk,y){const K=(col,a=1)=>rgbStr(mx(col,'#0a0c10',dk*.78),a);
+  c.fillStyle=`rgba(0,0,0,${.22*(1-dk*.5)})`;c.beginPath();c.ellipse(40,SURF+7,60,9,0,0,TAU);c.fill();
+  // a heap of rounded sandstone boulders, the angler on the biggest
+  const rock=(x0,x1,top,bot,tilt,seed)=>{const w=(x1-x0)/2,cx=(x0+x1)/2,p=()=>{c.beginPath();c.moveTo(x0,bot);c.bezierCurveTo(x0-w*.08,top+(bot-top)*.35+tilt,x0+w*.25,top+tilt*.5,cx-w*.1,top);c.bezierCurveTo(cx+w*.5,top-tilt*.3,x1+w*.05,top+(bot-top)*.3-tilt,x1,bot);c.closePath();};
+    const g=c.createRadialGradient(cx-w*.35,top+(bot-top)*.25,w*.08,cx,top+(bot-top)*.5,w*1.25);g.addColorStop(0,K('#8a705a'));g.addColorStop(.45,K('#5a4636'));g.addColorStop(1,K('#241a14'));c.fillStyle=g;p();c.fill();
+    c.save();p();c.clip();c.strokeStyle=K('#20160f',.45);c.lineWidth=.6;c.beginPath();for(let i=0;i<4;i++){const sx=x0+w*(.3+hs(seed,i)*1.4),sy=top+(bot-top)*(.12+hs(seed,i+4)*.3);c.moveTo(sx,sy);c.lineTo(sx+(hs(seed,i+8)-.5)*5,sy+3+hs(seed,i+9)*4);c.lineTo(sx+(hs(seed,i+12)-.5)*6,sy+7+hs(seed,i+13)*4);}c.stroke();
+      c.fillStyle=K('#c8b890',.18);for(let i=0;i<14;i++){c.beginPath();c.arc(x0+w*2*hs(seed*7+i,1),top+(bot-top)*.5*hs(seed*7+i,2)+1.5,.5+hs(seed*7+i,3)*1.1,0,TAU);c.fill();}
+      c.fillStyle=K('#b49a7a',.22);c.beginPath();c.ellipse(cx-w*.25,top+1.6,w*.55,1.8,0,0,TAU);c.fill();
+      c.fillStyle=K('#120c08',.45);c.fillRect(x0-5,SURF-2.5,x1-x0+10,3);c.fillStyle=K('#2e4a22',.3);c.fillRect(x0-5,SURF+.5,x1-x0+10,4);c.fillStyle=K('#0c0a08',.35);c.fillRect(x0-5,SURF+4.5,x1-x0+10,bot-SURF);c.restore();};
+  rock(-20,58,y-3.5,SURF+18,1.5,1);rock(44,72,SURF-7,SURF+12,-.5,2);rock(66,84,SURF-2.5,SURF+8,.5,3);
+  // two scaffold poles wedged in the cracks, lashed with vine, leaning out over the water with a basket trap hung off the end
+  c.strokeStyle=K('#7a5e3c');c.lineWidth=1.6;c.lineCap='round';c.beginPath();c.moveTo(50,SURF-5);c.lineTo(84,SURF-44);c.moveTo(56,SURF-3);c.lineTo(78,SURF-47);c.stroke();
+  c.strokeStyle=K('#4a6a30');c.lineWidth=.8;c.beginPath();for(let i=0;i<4;i++){c.moveTo(72.5+i*.7,SURF-33-i*.6);c.lineTo(77+i*.4,SURF-34.5-i*.6);}c.stroke();
+  c.strokeStyle=K('#5a4428');c.lineWidth=.9;c.beginPath();c.moveTo(66,SURF-26);c.lineTo(94,SURF-33);c.stroke();
+  const sw=Math.sin(G.t*.9)*.6;c.strokeStyle=K('#9a8452',.8);c.lineWidth=.5;c.beginPath();c.moveTo(92,SURF-32.5);c.lineTo(92+sw,SURF-13);c.stroke();
+  c.save();c.translate(92+sw,SURF-13);c.fillStyle=K('#a08a58');c.beginPath();c.moveTo(-2.8,0);c.lineTo(2.8,0);c.lineTo(.6,12);c.lineTo(-.6,12);c.closePath();c.fill();
+  c.strokeStyle=K('#6a5a36',.8);c.lineWidth=.35;c.beginPath();for(let r=0;r<4;r++){const yy=1.5+r*2.6;c.moveTo(-2.4+r*.55,yy);c.lineTo(2.4-r*.55,yy);}c.moveTo(-1.2,0);c.lineTo(-.2,12);c.moveTo(1.2,0);c.lineTo(.2,12);c.stroke();c.restore();
+  // white water swirling round the outer rock
+  const a=1-dk*.6;for(let i=0;i<7;i++){const ph=(G.t*1.3+i/7)%1;c.fillStyle=`rgba(250,252,248,${(.7-ph*.6)*a})`;c.beginPath();c.ellipse(66-ph*16,SURF-.2+Math.sin(ph*8)*.5,1.2+ph*2,.7,0,0,TAU);c.fill();}}
 // Lily pads in the bayou are water hyacinth instead: glossy, bulbous leaves standing up off the water with lavender flower spikes, plus a skin of duckweed.
 function drawHyacinth(c,dk,vx0,vx1,Zp){const lc=rgbStr(mix('#3f7a32','#10220e',dk*.75)),ll=rgbStr(mix('#6aa448','#16301a',dk*.75)),fl=rgbStr(mix('#b9a0e0','#3a3048',dk*.75)),fy=rgbStr(mix('#f2d24a','#4a3a10',dk*.75));
   for(const d of duck){if(d.x+d.w<vx0||d.x>vx1)continue;c.fillStyle=rgbStr(mix('#7aa83a','#1a2a10',dk*.75),.85);c.beginPath();c.moveTo(d.x,SURF+.4);for(let x=d.x;x<=d.x+d.w;x+=4)c.lineTo(x,SURF-.6-Math.sin((x-d.x)/d.w*Math.PI)*.8);c.lineTo(d.x+d.w,SURF+.8);c.closePath();c.fill();
@@ -2837,7 +3065,7 @@ function drawPierRail(c,dk,y){const K=col=>rgbStr(mix(col,'#16120c',dk*.75));c.f
 function dockTone(col,camp,dk,a){return rgbStr(mx(camp?mx(col,'#8a8578',.55):hexRgb(col),'#1a130c',dk*.75),a);}
 function drawDock(c,dk){
   const y=dockY(),wood=rgbStr(mix('#7a5634','#2a1e14',dk*.75)),dwood=rgbStr(mix('#4e3520','#150f0a',dk*.75));
-  const shore=LOC().shore;if(shore==='boulder'){drawShoreBoulder(c,dk,y);}else if(shore==='boat'||shore==='canoe'){drawBoat(c,dk,y,false);}else if(shore==='gravel'){drawGravelBar(c,dk,y);}else if(shore==='pier'){drawPier(c,dk,y);}else{
+  const shore=LOC().shore;if(shore==='boulder'){drawShoreBoulder(c,dk,y);}else if(shore==='boat'||shore==='canoe'){drawBoat(c,dk,y,false);}else if(shore==='gravel'){drawGravelBar(c,dk,y);}else if(shore==='pier'){drawPier(c,dk,y);}else if(shore==='congo'){drawCongoShore(c,dk,y);}else{
   {const sh=c.createLinearGradient(0,SURF,0,SURF+16);sh.addColorStop(0,`rgba(0,0,0,${.28*(1-dk*.5)})`);sh.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=sh;c.fillRect(-4,SURF,DOCKX+6,16);}
   // Weathered deck: boards that vary in tone, a stringer beam, a mooring post, a cleat, an old tire and a ladder.
   const camp=shore==='camp',K=col=>dockTone(col,camp,dk,1),Ka=(col,al)=>dockTone(col,camp,dk,al);
@@ -2911,7 +3139,7 @@ function drawBobber(c,x,y,type,k=1,tilt=0){c.save();c.translate(x,y+tilt*1.2);c.
 function rigIcon(id){const cv=document.createElement('canvas');cv.width=cv.height=80;const x=cv.getContext('2d');x.scale(5,5);
   if(GEAR.bobbers[id])drawBobber(x,8,8.5,id);else if(id==='swivel')drawSwivel(x,8,8,1.4);else drawSinker(x,8,8,id,1.4);return cv;}
 // How far above the bottom the bait rides on a bottom rig once the sinker is down.
-function rigLift(r,room){const ppf=pxPerFt();return Math.min(r.leader/12*ppf*(r.type==='carolina'?(S.lure==='minnow'?.6:.35):r.type==='dropshot'?1:.25),room);}
+function rigLift(r,room){const ppf=pxPerFt();return Math.min(r.leader/12*ppf*(r.type==='carolina'?(isLive()?.6:.35):r.type==='dropshot'?1:.25),room);}
 // While the rig is still sinking, the sinker is only that far below the bait; it settles onto the bottom when the rig does.
 function sinkerY(r,ly,bx){const b=bottomAt(bx)-3,bl=bottomAt(G.lure.x);return Math.min(b,ly+rigLift(r,Math.max(4,bl-SURF-6))+3);}
 function rigGeom(lx,ly){const r=rig(),ppf=pxPerFt(),L=G.lure,biting=L.fish&&L.fish.state==='bite';
@@ -3015,6 +3243,21 @@ function drawLure(c,id,x,y,s,col,ang=0){
       c.beginPath();c.moveTo(4.8,0);c.quadraticCurveTo(2,-1.8,-3,-1+w*.3);c.lineTo(-4.6,w);c.lineTo(-3,1+w*.3);c.quadraticCurveTo(2,1.8,4.8,0);c.fill();
       c.fillStyle='#8a9a96';c.beginPath();c.moveTo(-4.4,w);c.lineTo(-6.8,-1.6+w*1.4);c.lineTo(-6.2,w);c.lineTo(-6.8,1.6+w*1.4);c.closePath();c.fill();
       c.strokeStyle='rgba(40,50,48,.5)';c.lineWidth=.35;c.beginPath();c.moveTo(3,-.1);c.lineTo(-3.5,.1+w*.3);c.stroke();c.fillStyle='#111';c.beginPath();c.arc(3.6,-.4,.5,0,TAU);c.fill();break;}
+    case'livebait':{const sid=OWN_SRC||BK().ls,sp=sid&&SPMAP[sid];if(!sp){c.restore();drawLure(c,'minnow',x,y,s,col,ang);return;}
+      const o=OWN_SRC?null:ownLive(),Ld=OWN_SRC?13:clamp(6+(o?o.len:9)*.42,8,14);
+      c.save();c.translate(-Ld*.08,0);drawFish(c,sp,Ld,1,G.t*(mv?14:9),1,false);c.restore();
+      // Hooked through the lips: just the bend and point showing at the nose.
+      c.strokeStyle='#b9c0c6';c.lineWidth=.55;c.lineCap='round';const hx=Ld*.42;c.beginPath();c.moveTo(hx-.4,-.5);c.quadraticCurveTo(hx+1.3,-.7,hx+1.2,.6);c.quadraticCurveTo(hx+1,1.6,hx-.2,1.3);c.stroke();break;}
+    case'cutbait':{const sid=OWN_SRC||BK().cs,sp=sid&&SPMAP[sid],sk=sp?sp.col:'#7d8a8a',w=Math.sin(G.t*2.4)*.5;
+      // A strip of fillet: skin on one side, raw flesh on the other, hooked once through the thick end.
+      const edge=(d)=>{c.beginPath();c.moveTo(3.4,-1.3);c.bezierCurveTo(1,-1.6,-3,-1.2+w*.4,-6.2,-.4+w);c.lineTo(-6.2,.3+w);c.bezierCurveTo(-3,.9+w*.4,1,1.4,3.4,1.2);c.quadraticCurveTo(4.2,0,3.4,-1.3);};
+      edge();c.fillStyle='#d98a7c';c.fill();
+      c.save();edge();c.clip();c.fillStyle=sk;c.fillRect(-7,-2,12,1.5);c.fillStyle='rgba(235,240,240,.55)';c.fillRect(-7,-.6,12,.35);
+      c.strokeStyle='rgba(150,50,45,.35)';c.lineWidth=.25;for(let i=-5;i<3;i+=1.4){c.beginPath();c.moveTo(i,.1);c.quadraticCurveTo(i+.5,.6,i+.1,1.3);c.stroke();}c.restore();
+      c.strokeStyle='rgba(120,40,35,.5)';c.lineWidth=.3;edge();c.stroke();
+      lureHook(c,4.4,-.2);
+      if(!OWN_SRC&&G.lure.state==='water'){c.fillStyle='rgba(150,60,50,.18)';for(let i=0;i<3;i++){const ph=(G.t*.6+i/3)%1;c.beginPath();c.arc(-6-ph*6,-ph*3+Math.sin(G.t+i)*.6,.6+ph*1.4,0,TAU);c.fill();}}
+      break;}
     case'liver':{lureHook(c,.3,0);c.fillStyle=K;c.beginPath();c.moveTo(-1,-.6);c.bezierCurveTo(1.2,-1.6,1.4,2.4,-1.8,3.6);c.bezierCurveTo(-4.6,4.6,-7,2.4,-6,.6);c.bezierCurveTo(-5,-1.4,-2.6,-.2,-1,-.6);c.fill();
       c.fillStyle='rgba(255,180,170,.4)';c.beginPath();c.ellipse(-3,.6,1.6,.5,-.3,0,TAU);c.fill();c.strokeStyle=rgbStr(hexRgb(K),.6);c.lineWidth=.5;c.beginPath();c.moveTo(-4.5,3.8);c.quadraticCurveTo(-4.8,5.4,-4.2,6.4+Math.sin(G.t*3));c.stroke();break;}
     case'dough':{lureHook(c,.3,0);c.fillStyle=K;c.beginPath();c.arc(-4,1.6,2.8,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.4)';c.beginPath();c.arc(-4.9,.6,.9,0,TAU);c.fill();
@@ -3311,12 +3554,173 @@ function drawTurtle(c,sp,L,wig,sil){
   limb(X(.78),base+L*.01,.75+b*.6,L*.14,L*.075);
 }
 function hs(i,k){const v=Math.sin(i*12.9898+k*78.233)*43758.5453;return v-Math.floor(v);}
+// ---------------- Congo fish: a finer drawing for the Boyoma species ----------------
+// Each fish is a body outline traced through measured top and bottom points (fractions of length, nose at +0.5),
+// with its own fins, colors and markings. Drawn in layers: far fins, tail, back and belly fins, a shaded body with
+// scales and pattern, the head (gill cover, mouth, teeth, barbels, eye), then the near fins on top.
+const AF={
+  goliath:{top:[[.5,-.01],[.45,-.06],[.37,-.105],[.25,-.135],[.1,-.145],[-.05,-.135],[-.2,-.1],[-.3,-.062],[-.36,-.046]],
+    bot:[[.5,.035],[.45,.075],[.35,.108],[.2,.125],[.05,.123],[-.1,.1],[-.22,.075],[-.3,.052],[-.36,.042]],
+    back:'#465460',side:'#b4bec2',belly:'#eef0ea',fin:'#5e666c',finEdge:'#2a2e32',scales:'big',stripes:{n:5,a:.12},
+    tail:{type:'fork',len:.19,spread:.17,col:'#5a5e62',edge:'#22262a'},dorsal:[{x0:.07,x1:-.05,h:.13,col:'#5e666c'}],adipose:{x:-.24,len:.05,h:.035,col:'#18191a'},
+    anal:{x0:-.1,x1:-.25,h:.075},pelvic:{x:.02,len:.08},pect:{x:.3,y:.06,len:.12},gill:.3,eye:{x:.415,y:-.045,r:.021,iris:'#d8c070'},mouth:{x1:.33,y:.025,teeth:'goliath'}},
+  tigerfish:{top:[[.5,-.005],[.45,-.05],[.37,-.09],[.24,-.115],[.1,-.123],[-.05,-.113],[-.2,-.085],[-.3,-.055],[-.36,-.04]],
+    bot:[[.5,.03],[.45,.065],[.35,.093],[.2,.106],[.05,.104],[-.1,.087],[-.22,.065],[-.3,.046],[-.36,.037]],
+    back:'#4a5c64',side:'#c4ccc8',belly:'#f2f2ec',fin:'#c84a2a',finEdge:'#1c1c1c',scales:'big',stripes:{n:7,a:.62},
+    tail:{type:'fork',len:.19,spread:.15,col:'#d4462a',edge:'#141414'},dorsal:[{x0:.07,x1:-.04,h:.11,col:'#8a7a6a'}],adipose:{x:-.24,len:.05,h:.032,col:'#121212'},
+    anal:{x0:-.1,x1:-.24,h:.065,col:'#d0502c'},pelvic:{x:.02,len:.075,col:'#d0502c'},pect:{x:.3,y:.055,len:.11,col:'#c8603a'},gill:.3,eye:{x:.415,y:-.04,r:.02,iris:'#e0c060'},mouth:{x1:.34,y:.02,teeth:'tiger'}},
+  nileperch:{top:[[.5,.005],[.46,-.03],[.41,-.065],[.36,-.09],[.3,-.125],[.2,-.165],[.08,-.17],[-.06,-.15],[-.2,-.105],[-.31,-.064],[-.36,-.056]],
+    bot:[[.5,.035],[.45,.09],[.35,.13],[.2,.155],[.05,.155],[-.1,.125],[-.22,.085],[-.31,.06],[-.36,.056]],
+    back:'#536874',side:'#b8c4c4',belly:'#eceee8',fin:'#5e6c72',finEdge:'#363e44',scales:'fine',
+    tail:{type:'round',len:.15,col:'#5a6a70'},dorsal:[{x0:.21,x1:-.01,h:.14,spiny:true,col:'#5e6c72'},{x0:-.02,x1:-.24,h:.12,col:'#5e6c72'}],
+    anal:{x0:-.11,x1:-.25,h:.1},pelvic:{x:.15,len:.1},pect:{x:.29,y:.06,len:.12},gill:.27,preop:true,eye:{x:.415,y:-.045,r:.034,iris:'#f2c43a',ring:true},mouth:{x1:.36,y:.04,jut:true}},
+  vundu:{top:[[.5,.0],[.47,-.035],[.41,-.07],[.32,-.09],[.2,-.1],[.05,-.105],[-.12,-.1],[-.25,-.085],[-.33,-.07],[-.37,-.062]],
+    bot:[[.5,.035],[.46,.065],[.38,.09],[.25,.1],[.08,.1],[-.1,.09],[-.24,.075],[-.33,.062],[-.37,.058]],
+    back:'#3e4038',side:'#76786a',belly:'#d8d4c2',fin:'#4a4a40',finEdge:'#2a2a24',scales:'none',mottle:.35,
+    tail:{type:'round',len:.13,col:'#4a4a40'},dorsal:[{x0:.2,x1:-.06,h:.05,col:'#4a4a40'}],adipose:{x:-.08,len:.26,h:.05,col:'#45463c',long:true},
+    anal:{x0:.02,x1:-.33,h:.05},pelvic:{x:.03,len:.06},pect:{x:.34,y:.06,len:.1,spine:true},gill:.33,flathead:true,eye:{x:.43,y:-.045,r:.011,iris:'#8a7a50'},mouth:{x1:.43,y:.03,wide:true},barbels:true},
+  africanpike:{top:[[.5,.005],[.42,-.025],[.32,-.05],[.2,-.07],[.05,-.08],[-.1,-.075],[-.25,-.053],[-.36,-.035]],
+    bot:[[.5,.025],[.43,.045],[.3,.065],[.12,.08],[-.08,.074],[-.24,.05],[-.36,.035]],
+    back:'#5c5a32',side:'#bcaa72',belly:'#ece2c0',fin:'#a89058',finEdge:'#4a3e22',scales:'fine',spots:true,eyeLines:true,
+    tail:{type:'fork',len:.15,spread:.11,col:'#a89058',spots:true},dorsal:[{x0:.02,x1:-.1,h:.085,col:'#a89058',spots:true}],adipose:{x:-.26,len:.045,h:.025,col:'#7a6a40'},
+    anal:{x0:-.12,x1:-.24,h:.06},pelvic:{x:.02,len:.065},pect:{x:.32,y:.045,len:.09},gill:.32,eye:{x:.415,y:-.025,r:.022,iris:'#d8a83a'},mouth:{x1:.31,y:.012,teeth:'pike'}},
+  butterflyfish:{top:[[.5,-.04],[.44,-.058],[.34,-.064],[.15,-.066],[-.05,-.064],[-.2,-.056],[-.33,-.04]],
+    bot:[[.5,-.005],[.45,.045],[.36,.085],[.2,.108],[.03,.11],[-.14,.088],[-.26,.058],[-.33,.042]],
+    back:'#5c5a3e',side:'#9a9474',belly:'#e6e2d0',fin:'#7a7458',finEdge:'#3a3624',scales:'fine',mottle:true,
+    tail:{type:'fan',len:.24,col:'#8a8262'},dorsal:[{x0:-.13,x1:-.26,h:.09,col:'#7a7458'}],
+    anal:{x0:-.03,x1:-.3,h:.08},pelvic:{x:.12,len:.08,filament:.42},pect:{x:.3,y:-.01,len:.36,wing:true,col:'#9a9478'},gill:.31,eye:{x:.39,y:-.02,r:.04,iris:'#d8c070'},mouth:{x1:.44,y:-.04,up:true}},
+  distichodus:{top:[[.5,.02],[.47,-.02],[.42,-.07],[.34,-.125],[.22,-.17],[.08,-.185],[-.06,-.17],[-.2,-.115],[-.31,-.065],[-.36,-.056]],
+    bot:[[.5,.04],[.46,.07],[.36,.115],[.2,.145],[.04,.14],[-.12,.11],[-.25,.072],[-.36,.056]],
+    back:'#7a5a2a',side:'#e0a04c',belly:'#f4daa0',fin:'#d04a28',finEdge:'#6a1e10',scales:'fine',bars:{n:6,a:.72},
+    tail:{type:'fork',len:.16,spread:.15,col:'#d84a26',edge:'#7a2412'},dorsal:[{x0:.11,x1:-.09,h:.14,col:'#cc4a2a'}],adipose:{x:-.24,len:.045,h:.03,col:'#c04a2a'},
+    anal:{x0:-.11,x1:-.23,h:.08},pelvic:{x:.04,len:.08},pect:{x:.33,y:.07,len:.1},gill:.335,eye:{x:.43,y:-.02,r:.025,iris:'#d89a3a'},mouth:{x1:.48,y:.03,small:true}},
+  redbreast:{top:[[.5,.02],[.46,-.05],[.38,-.125],[.25,-.18],[.08,-.195],[-.1,-.17],[-.24,-.105],[-.33,-.066],[-.36,-.062]],
+    bot:[[.5,.05],[.45,.1],[.34,.15],[.18,.175],[0,.17],[-.16,.13],[-.28,.078],[-.36,.062]],
+    back:'#34503a',side:'#86966a',belly:'#e4a888',fin:'#5a6a4a',finEdge:'#c4402a',scales:'cichlid',bars:{n:6,a:.28},breast:'#d8504a',
+    tail:{type:'trunc',len:.12,col:'#5a6a4a',edge:'#c4502a',dots:true},dorsal:[{x0:.25,x1:-.04,h:.1,spiny:true,col:'#4e6040'},{x0:-.04,x1:-.31,h:.15,col:'#5a6a4a',spot:true,dots:true}],
+    anal:{x0:-.08,x1:-.29,h:.12,col:'#6a6a4a',dots:true},pelvic:{x:.17,len:.13},pect:{x:.29,y:.07,len:.12},gill:.3,eye:{x:.4,y:-.06,r:.033,iris:'#c86a3a'},mouth:{x1:.45,y:.04,lips:true}},
+  nembwe:{top:[[.5,.0],[.46,-.045],[.37,-.095],[.23,-.135],[.05,-.145],[-.12,-.128],[-.26,-.08],[-.35,-.055]],
+    bot:[[.5,.045],[.44,.085],[.32,.12],[.15,.138],[-.02,.13],[-.18,.1],[-.3,.06],[-.35,.055]],
+    back:'#3a5a44',side:'#8eaa72',belly:'#e8d888',fin:'#5a7454',finEdge:'#2a3a24',scales:'cichlid',spots:true,
+    tail:{type:'round',len:.15,col:'#5e7656'},dorsal:[{x0:.22,x1:-.08,h:.085,spiny:true,col:'#4a6648'},{x0:-.08,x1:-.31,h:.12,col:'#56724e'}],
+    anal:{x0:-.1,x1:-.29,h:.1,col:'#6a7a50',ocelli:true},pelvic:{x:.15,len:.11},pect:{x:.29,y:.065,len:.11},gill:.29,eye:{x:.41,y:-.05,r:.028,iris:'#c84a3a'},mouth:{x1:.33,y:.035,big:true}},
+  sprat:{top:[[.5,.0],[.43,-.04],[.3,-.072],[.1,-.09],[-.1,-.082],[-.27,-.05],[-.36,-.032]],
+    bot:[[.5,.02],[.43,.05],[.3,.085],[.1,.1],[-.1,.085],[-.27,.05],[-.36,.032]],
+    back:'#4a7c80',side:'#d8e2e2',belly:'#f6f8f4',fin:'#c8d0cc',finEdge:'#8a9a98',scales:'none',silver:true,
+    tail:{type:'fork',len:.17,spread:.14,col:'#b8c4c2'},dorsal:[{x0:.06,x1:-.06,h:.07,col:'#b8c4c2'}],anal:{x0:-.14,x1:-.3,h:.04},pelvic:{x:-.02,len:.05},pect:{x:.32,y:.06,len:.07},gill:.33,eye:{x:.43,y:-.02,r:.042,iris:'#e8e8e0'},mouth:{x1:.47,y:.015,small:true}}};
+// smooth curve through points (Catmull-Rom to Bezier)
+function afCurve(c,pts,first){for(let i=0;i<pts.length-1;i++){const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)];
+  if(i===0&&first)c.moveTo(p1[0],p1[1]);c.bezierCurveTo(p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6,p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6,p2[0],p2[1]);}}
+function afInterp(pts,x){if(x>=pts[0][0])return pts[0][1];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];if(x<=a[0]&&x>=b[0]){const u=(a[0]-x)/(a[0]-b[0]);return lerp(a[1],b[1],u*u*(3-2*u));}}return pts[pts.length-1][1];}
+function drawAfro(c,sp,L,wig,sil,silCol){const A=AF[sp.id],sc=v=>v*L,T=A.top.map(p=>[sc(p[0]),sc(p[1])]),B=A.bot.map(p=>[sc(p[0]),sc(p[1])]);
+  const top=x=>sc(afInterp(A.top,x/L)),bot=x=>sc(afInterp(A.bot,x/L)),fine=L>=22&&!sil,fl=Math.sin(wig*1.3),pedX=T[T.length-1][0];
+  const C=(col,a=1)=>sil?silCol:rgbStr(Array.isArray(col)?col:hexRgb(col),a);
+  const body=()=>{c.beginPath();afCurve(c,T,true);c.lineTo(B[B.length-1][0],B[B.length-1][1]);afCurve(c,[...B].reverse(),false);c.closePath();};
+  // a fin membrane between a base line and an outer edge, rays fanning across it
+  const finPath=(pts)=>{c.beginPath();c.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)c.lineTo(pts[i][0],pts[i][1]);c.closePath();};
+  const membrane=(base,edge,col,edgeCol,rays,spiny)=>{const pts=[...base,...[...edge].reverse()];
+    if(sil){c.fillStyle=silCol;finPath(pts);c.fill();return;}
+    const g=c.createLinearGradient(base[0][0],base[0][1],edge[Math.floor(edge.length/2)][0],edge[Math.floor(edge.length/2)][1]);g.addColorStop(0,C(col,.95));g.addColorStop(1,C(col,.62));c.fillStyle=g;finPath(pts);c.fill();
+    if(edgeCol){c.strokeStyle=C(edgeCol,.75);c.lineWidth=Math.max(.5,L*.008);c.beginPath();c.moveTo(edge[0][0],edge[0][1]);for(const p of edge)c.lineTo(p[0],p[1]);c.stroke();}
+    if(fine&&rays){c.strokeStyle=spiny?'rgba(30,30,24,.35)':'rgba(255,255,255,.2)';c.lineWidth=Math.max(.35,L*(spiny?.006:.0035));c.beginPath();const n=Math.min(base.length,edge.length);for(let i=0;i<n;i++){c.moveTo(base[i][0],base[i][1]);c.lineTo(edge[i][0],edge[i][1]);}c.stroke();}};
+  // a fin along the back (side -1) or belly (+1)
+  const longFin=(f,side)=>{const n=10,base=[],edge=[];for(let i=0;i<=n;i++){const u=i/n,x=sc(lerp(f.x0,f.x1,u)),b=side<0?top(x):bot(x);
+      let hh=sc(f.h)*(f.spiny?(.75+.25*Math.sin(u*Math.PI*.9+.3)):(side<0?Math.sin(Math.min(1,u*1.6+.15)*Math.PI*.55+.15)*(1-.35*u):(.5+.6*Math.sin(Math.min(1,(1-u)*1.4+.1)*Math.PI*.5))));
+      if(f.long)hh=sc(f.h)*(.4+.6*Math.sin(Math.min(1,u*1.2)*Math.PI*.5))*(u>.92?(1-u)/.08:1);
+      base.push([x,b+side*.5]);edge.push([x-sc(.012)*(side<0?1:.6),b+side*(hh+(f.spiny&&i%1===0?sc(.012)*(i%2?1:-.6):0))+fl*side*sc(.004)*u]);}
+    membrane(base,edge,f.col||A.fin,f.spiny?null:A.finEdge,true,f.spiny);
+    if(f.spiny&&!sil){c.strokeStyle=C(A.finEdge,.6);c.lineWidth=Math.max(.4,L*.005);c.beginPath();for(let i=0;i<=n;i++){c.moveTo(base[i][0],base[i][1]);c.lineTo(edge[i][0],edge[i][1]-side*sc(.01));}c.stroke();}
+    if(!sil&&(f.spots||f.dots)){c.fillStyle=f.dots?'rgba(240,210,120,.55)':'rgba(40,30,15,.55)';for(let i=0;i<12;i++){const u=hs(i,31),v=.25+hs(i,32)*.6,j=Math.floor(u*n);const p=base[j],q=edge[j];c.beginPath();c.arc(lerp(p[0],q[0],v),lerp(p[1],q[1],v),Math.max(.5,L*.008),0,TAU);c.fill();}}
+    if(!sil&&f.ocelli){for(let i=0;i<4;i++){const j=3+i*2,p=base[j],q=edge[j];const x=lerp(p[0],q[0],.55),y=lerp(p[1],q[1],.55);c.fillStyle='#f2d03a';c.beginPath();c.arc(x,y,Math.max(.8,L*.013),0,TAU);c.fill();c.strokeStyle='rgba(40,40,20,.6)';c.lineWidth=Math.max(.3,L*.003);c.stroke();}}
+    if(!sil&&f.spot){const j=Math.floor(n*.25),p=base[j],q=edge[j];c.fillStyle='rgba(20,20,14,.75)';c.beginPath();c.arc(lerp(p[0],q[0],.4),lerp(p[1],q[1],.4),Math.max(.7,L*.016),0,TAU);c.fill();}};
+  // tail: swings with the beat and foreshortens as it turns
+  const tail=()=>{const t=A.tail,tl=sc(t.len),sw=Math.sin(wig)*.14,sq=.82+.18*Math.cos(wig),py=(top(pedX)+bot(pedX))/2,ph=(bot(pedX)-top(pedX))/2;
+    c.save();c.translate(pedX+sc(.03),py);c.rotate(sw);c.scale(sq,1);const base=[[0,-ph],[0,ph]];let edge;
+    if(t.type==='fork'){const sp2=sc(t.spread);edge=[[-tl*.35,-ph*1.2],[-tl,-sp2],[-tl*.42,0],[-tl,sp2],[-tl*.35,ph*1.2]];}
+    else if(t.type==='round'){edge=[];for(let i=0;i<=8;i++){const a=-Math.PI/2+i*Math.PI/8;edge.push([-tl*Math.cos(a)*.95-sc(.01),Math.sin(a)*(ph+tl*.55)]);}}
+    else if(t.type==='trunc'){edge=[[-tl*.7,-ph*1.9],[-tl,-ph*1.6],[-tl*1.02,0],[-tl,ph*1.6],[-tl*.7,ph*1.9]];}
+    else{edge=[];for(let i=0;i<=10;i++){const a=-1+i*.2;edge.push([-tl*(.55+.45*Math.cos(a*1.3)),a*ph*2.1]);}}
+    const pts=[[0,-ph],...edge,[0,ph]];
+    if(sil){c.fillStyle=silCol;finPath(pts);c.fill();c.restore();return;}
+    const g=c.createLinearGradient(0,0,-tl,0);g.addColorStop(0,C(t.col,.95));g.addColorStop(1,C(t.col,.7));c.fillStyle=g;finPath(pts);c.fill();
+    if(t.edge){c.strokeStyle=C(t.edge,.9);c.lineWidth=Math.max(.5,L*.0065);c.beginPath();c.moveTo(edge[0][0],edge[0][1]);for(const p of edge)c.lineTo(p[0],p[1]);c.stroke();}
+    if(fine){c.strokeStyle='rgba(255,255,255,.18)';c.lineWidth=Math.max(.35,L*.0035);c.beginPath();for(let i=0;i<9;i++){const u=i/8,y0=lerp(-ph,ph,u)*.8;const e=edge[Math.round(u*(edge.length-1))];c.moveTo(0,y0);c.lineTo(e[0]*.96,e[1]*.96);}c.stroke();}
+    if(t.spots||t.dots){c.fillStyle=t.dots?'rgba(240,210,120,.5)':'rgba(40,30,15,.55)';for(let i=0;i<14;i++){c.beginPath();c.arc(-tl*(.15+hs(i,41)*.7),(hs(i,42)-.5)*ph*2.4*(.4+hs(i,41)*.7),Math.max(.5,L*.008),0,TAU);c.fill();}}
+    c.restore();};
+  const pect=(near)=>{const p=A.pect,x=sc(p.x),y=sc(p.y),ln=sc(p.len),col=p.col||A.fin;c.save();c.translate(x,y);
+    if(p.wing){// Pantodon's huge pectorals spread like wings, rayed and blotched
+      c.rotate(-.55+fl*.06+(near?0:-.12));const base=[[0,-ln*.04],[0,ln*.04]],edge=[];for(let i=0;i<=8;i++){const a=-.9+i*.24;edge.push([-Math.cos(a)*ln*(.75+.25*Math.sin(i*.9)),Math.sin(a)*ln*.55]);}
+      if(sil){c.fillStyle=silCol;finPath([base[0],...edge,base[1]]);c.fill();c.restore();return;}
+      c.fillStyle=C(col,near?.62:.4);finPath([base[0],...edge,base[1]]);c.fill();c.save();finPath([base[0],...edge,base[1]]);c.clip();if(fine){c.strokeStyle='rgba(40,36,20,.35)';c.lineWidth=Math.max(.35,L*.004);c.beginPath();for(const e of edge){c.moveTo(0,0);c.lineTo(e[0],e[1]);}c.stroke();
+        c.fillStyle='rgba(40,34,18,.4)';for(let i=0;i<14;i++){c.beginPath();c.ellipse(-ln*(.25+hs(i,51)*.6),(hs(i,52)-.6)*ln*.5,ln*.035,ln*.022,0,0,TAU);c.fill();}}c.restore();c.restore();return;}
+    c.rotate(.25+fl*.12+(near?0:-.2));const base=[[0,-ln*.08],[0,ln*.08]],edge=[[-ln*.6,-ln*.22],[-ln,-ln*.05],[-ln*.85,ln*.18],[-ln*.4,ln*.22]];
+    if(sil){c.fillStyle=silCol;finPath([base[0],...edge,base[1]]);c.fill();c.restore();return;}
+    c.fillStyle=C(col,near?.72:.45);finPath([base[0],...edge,base[1]]);c.fill();if(fine){c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=Math.max(.3,L*.003);c.beginPath();for(const e of edge){c.moveTo(0,0);c.lineTo(e[0]*.95,e[1]*.95);}c.stroke();}
+    if(p.spine&&!sil){c.strokeStyle=C('#2a2a22',.8);c.lineWidth=Math.max(.6,L*.008);c.beginPath();c.moveTo(0,-ln*.06);c.lineTo(-ln*.62,-ln*.24);c.stroke();}c.restore();};
+  const pelvic=()=>{const p=A.pelvic,x=sc(p.x),y=bot(x),ln=sc(p.len),col=p.col||A.fin;c.save();c.translate(x,y-sc(.005));c.rotate(.45+fl*.1);
+    const pts=[[sc(.01),0],[-ln*.3,ln*.35],[-ln,ln*.25],[-ln*.6,0]];if(sil){c.fillStyle=silCol;finPath(pts);c.fill();}else{c.fillStyle=C(col,.75);finPath(pts);c.fill();}
+    if(p.filament){c.strokeStyle=sil?silCol:C(col,.8);c.lineWidth=Math.max(.5,L*.006);c.beginPath();c.moveTo(-ln*.4,ln*.25);c.quadraticCurveTo(-sc(p.filament)*.5,sc(p.filament)*.35+fl*sc(.02),-sc(p.filament),sc(p.filament)*.2+fl*sc(.03));c.moveTo(-ln*.6,ln*.2);c.quadraticCurveTo(-sc(p.filament)*.45,sc(p.filament)*.28+fl*sc(.02),-sc(p.filament)*.85,sc(p.filament)*.12+fl*sc(.03));c.stroke();}c.restore();};
+  // ---- draw ----
+  pect(false);tail();
+  for(const f of A.dorsal)longFin(f,-1);
+  if(A.adipose){const a=A.adipose,x=sc(a.x),w=sc(a.len),b=top(x);if(a.long)longFin({x0:a.x,x1:a.x-a.len,h:a.h,col:a.col,long:true},-1);
+    else{c.fillStyle=C(a.col,.95);c.beginPath();c.moveTo(x,top(x)+.5);c.quadraticCurveTo(x-w*.2,b-sc(a.h)*1.1,x-w,top(x-w)-sc(a.h)*.55);c.quadraticCurveTo(x-w*.75,top(x-w*.75),x-w*1.05,top(x-w*1.05)+.5);c.closePath();c.fill();}}
+  longFin(A.anal,1);
+  // body
+  if(sil){c.fillStyle=silCol;body();c.fill();}
+  else{const yT=Math.min(...T.map(p=>p[1])),yB=Math.max(...B.map(p=>p[1]));const g=c.createLinearGradient(0,yT,0,yB);g.addColorStop(0,C(A.back));g.addColorStop(.38,C(mx(A.back,A.side,.75)));g.addColorStop(.6,C(A.side));g.addColorStop(1,C(A.belly));c.fillStyle=g;body();c.fill();
+    c.save();body();c.clip();
+    if(A.breast){const g2=c.createRadialGradient(sc(.25),sc(.1),0,sc(.25),sc(.1),sc(.2));g2.addColorStop(0,rgbStr(hexRgb(A.breast),.75));g2.addColorStop(1,rgbStr(hexRgb(A.breast),0));c.fillStyle=g2;c.fillRect(sc(0),sc(-.1),sc(.5),sc(.3));}
+    if(A.silver){const g3=c.createLinearGradient(0,sc(-.03),0,sc(.03));g3.addColorStop(0,'rgba(255,255,255,0)');g3.addColorStop(.5,'rgba(230,240,240,.55)');g3.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g3;c.fillRect(-L,sc(-.03),L*2,sc(.06));}
+    if(A.stripes){c.strokeStyle=`rgba(20,24,28,${A.stripes.a})`;c.lineWidth=Math.max(.5,L*.0085);for(let i=0;i<A.stripes.n;i++){const f=(i+1)/(A.stripes.n+1);c.beginPath();for(let x=sc(.3);x>pedX;x-=sc(.02)){const y=lerp(top(x),bot(x),f*.82+.02);x>=sc(.3)-1?c.moveTo(x,y):c.lineTo(x,y);}c.stroke();}}
+    if(A.bars){c.fillStyle=`rgba(30,18,8,${A.bars.a})`;const xs=[.24,.13,.02,-.09,-.19,-.28];for(let i=0;i<A.bars.n;i++){const xc=sc(xs[i]||(.24-i*.1)),w2=sc(i===0?.035:.045);c.beginPath();c.moveTo(xc+w2*.5,top(xc)-2);c.lineTo(xc-w2*.5,top(xc)-2);c.quadraticCurveTo(xc-w2*.7,0,xc-w2*.35,bot(xc)+2);c.lineTo(xc+w2*.35,bot(xc)+2);c.quadraticCurveTo(xc+w2*.7,0,xc+w2*.5,top(xc)-2);c.fill();}}
+    if(A.spots){c.fillStyle='rgba(30,26,12,.42)';for(let i=0;i<34;i++){const x=sc(.28-hs(i,61)*.62),f=hs(i,62);if(f>.8)continue;c.beginPath();c.ellipse(x,lerp(top(x),bot(x),.1+f*.75),Math.max(.6,L*.011),Math.max(.5,L*.008),0,0,TAU);c.fill();}}
+    if(A.mottle){c.fillStyle=`rgba(24,22,12,${.25*(A.mottle===true?1:A.mottle)})`;for(let i=0;i<22;i++){const x=sc(.3-hs(i,71)*.62),f=hs(i,72)*.7;c.beginPath();c.ellipse(x,lerp(top(x),bot(x),.08+f*.6),L*(.02+.025*hs(i,73)),L*(.012+.012*hs(i,74)),hs(i,75)*2,0,TAU);c.fill();}}
+    if(A.eyeLines){c.strokeStyle='rgba(40,30,12,.55)';c.lineWidth=Math.max(.5,L*.006);c.beginPath();const ex=sc(A.eye.x),ey=sc(A.eye.y);for(const [dx,dy] of [[-.08,.02],[-.07,.05],[-.05,.075]]){c.moveTo(ex-sc(.02),ey+sc(.012));c.quadraticCurveTo(ex+sc(dx*.5),ey+sc(dy*.7),ex+sc(dx),ey+sc(dy));}c.stroke();}
+    // scales: big diamond scales on the tigerfish, fine overlapping scales on most, none on catfish and the sprat
+    if(fine&&A.scales!=='none'){const st=Math.max(2,L*(A.scales==='big'?.045:A.scales==='cichlid'?.034:.026));c.strokeStyle=A.scales==='big'?'rgba(40,50,58,.24)':'rgba(30,30,24,.16)';c.lineWidth=Math.max(.35,L*.0035);c.beginPath();
+      const yT=Math.min(...T.map(p=>p[1])),yB=Math.max(...B.map(p=>p[1]));for(let r=0;r<Math.ceil((yB-yT)/st)+1;r++){const y=yT+r*st;for(let x=sc(A.gill-.04);x>pedX-st;x-=st){const xx=x-(r%2)*st*.5;c.moveTo(xx+st*.5,y);c.arc(xx,y,st*.5,0,Math.PI*.95,false);}}c.stroke();
+      if(A.scales==='big'){c.fillStyle='rgba(255,255,255,.07)';for(let r=0;r<Math.ceil((yB-yT)/st);r++)for(let x=sc(A.gill-.06);x>pedX;x-=st*2)c.fillRect(x-(r%2)*st,yT+r*st+st*.1,st*.6,st*.25);}}
+    // lateral line
+    if(fine){c.strokeStyle=A.scales==='none'?'rgba(230,230,210,.25)':'rgba(20,24,20,.28)';c.lineWidth=Math.max(.4,L*.004);c.beginPath();for(let x=sc(A.gill-.02);x>pedX;x-=sc(.02)){const y=lerp(top(x),bot(x),.36+.1*(1-(x-pedX)/(sc(A.gill)-pedX)));x>=sc(A.gill-.02)-.5?c.moveTo(x,y):c.lineTo(x,y);}c.stroke();}
+    // shading: dark rim for roundness, a soft light along the upper flank, darker belly underside
+    c.strokeStyle='rgba(0,0,0,.22)';c.lineWidth=L*.04;c.beginPath();afCurve(c,T,true);c.stroke();c.beginPath();afCurve(c,B,true);c.stroke();
+    let g4=c.createLinearGradient(0,top(sc(.05)),0,lerp(top(sc(.05)),bot(sc(.05)),.5));g4.addColorStop(0,'rgba(255,255,255,0)');g4.addColorStop(.45,'rgba(255,255,255,.16)');g4.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g4;c.fillRect(-L,top(sc(.05)),L*2,L);
+    g4=c.createLinearGradient(0,bot(sc(.05))*.4,0,bot(sc(.05)));g4.addColorStop(0,'rgba(0,0,0,0)');g4.addColorStop(1,'rgba(0,0,0,.2)');c.fillStyle=g4;c.fillRect(-L,bot(sc(.05))*.4,L*2,L);
+    // head: a touch darker and smoother, the gill cover edge and a pale shine on it
+    const gx=sc(A.gill);g4=c.createLinearGradient(gx,0,sc(.5),0);g4.addColorStop(0,'rgba(0,0,0,0)');g4.addColorStop(1,A.flathead?'rgba(0,0,0,.1)':'rgba(255,255,255,.06)');c.fillStyle=g4;c.fillRect(gx,-L,L,L*2);
+    c.restore();
+    c.strokeStyle='rgba(0,0,0,.35)';c.lineWidth=Math.max(.6,L*.009);c.beginPath();c.moveTo(gx+sc(.01),top(gx)+sc(.015));c.bezierCurveTo(gx-sc(.035),lerp(top(gx),bot(gx),.3),gx-sc(.035),lerp(top(gx),bot(gx),.75),gx+sc(.015),bot(gx)-sc(.01));c.stroke();
+    if(fine){c.strokeStyle='rgba(255,255,255,.2)';c.lineWidth=Math.max(.4,L*.005);c.beginPath();c.moveTo(gx+sc(.025),top(gx)+sc(.025));c.bezierCurveTo(gx-sc(.015),lerp(top(gx),bot(gx),.3),gx-sc(.015),lerp(top(gx),bot(gx),.7),gx+sc(.03),bot(gx)-sc(.02));c.stroke();}
+    if(A.preop&&fine){c.strokeStyle='rgba(30,30,30,.3)';c.lineWidth=Math.max(.4,L*.005);c.beginPath();c.moveTo(gx+sc(.045),top(gx+sc(.04))+sc(.05));c.quadraticCurveTo(gx+sc(.02),bot(gx)*.5,gx+sc(.06),bot(gx+sc(.05))-sc(.02));c.stroke();c.fillStyle='rgba(40,40,40,.4)';c.beginPath();c.moveTo(gx-sc(.02),sc(.0));c.lineTo(gx-sc(.06),sc(.01));c.lineTo(gx-sc(.02),sc(.02));c.fill();}}
+  // mouth, lips and teeth
+  {const m=A.mouth,mx1=sc(m.x1),my=sc(m.y),nx=sc(.5),ny=(top(nx-1)+bot(nx-1))/2;
+    if(m.up){c.strokeStyle=sil?silCol:'rgba(20,20,12,.6)';c.lineWidth=Math.max(.6,L*.012);c.beginPath();c.moveTo(nx,top(nx)+sc(.01));c.quadraticCurveTo(sc(.47),sc(.02),mx1,sc(.035));c.stroke();}
+    else{c.strokeStyle=sil?silCol:'rgba(15,15,12,.62)';c.lineWidth=Math.max(.6,L*(m.wide?.012:.01));c.beginPath();c.moveTo(nx-sc(.004),my);c.quadraticCurveTo((nx+mx1)/2,my+sc(m.jut?.012:.006),mx1,my+sc(m.big?.02:.012));c.stroke();
+      if(m.jut&&!sil){c.fillStyle=C(mx(A.side,A.belly,.4));c.beginPath();c.moveTo(nx+sc(.012),my+sc(.002));c.quadraticCurveTo(nx,my+sc(.035),sc(.42),my+sc(.04));c.lineTo(sc(.42),my+sc(.015));c.closePath();c.fill();}
+      if(m.lips&&!sil){c.fillStyle=C(mx(A.belly,'#c86a5a',.4),.9);c.beginPath();c.ellipse(nx-sc(.008),my+sc(.004),sc(.016),sc(.013),0,0,TAU);c.fill();}}
+    if(m.teeth&&!sil){const big=m.teeth==='goliath',n=m.teeth==='pike'?7:big?6:6,span=nx-sc(.025)-mx1;c.fillStyle=big?'#f2ead4':'#f6f2e4';c.strokeStyle='rgba(70,56,30,.55)';c.lineWidth=Math.max(.3,L*.002);
+      for(let i=0;i<n;i++){const u=i/(n-1),x=nx-sc(.025)-u*span,k=(1-u*.55)*(i===1?1.15:1),tw=sc(big?.019:.012)*k,th=sc(big?.05:m.teeth==='pike'?.014:.028)*k,yy=my+sc(.006)*u;
+        // upper teeth hang down outside the lips; lower teeth stand up between them
+        c.beginPath();c.moveTo(x-tw*.5,yy-sc(.004));c.quadraticCurveTo(x-tw*.15,yy+th*.6,x-tw*.05,yy+th);c.quadraticCurveTo(x+tw*.2,yy+th*.5,x+tw*.5,yy-sc(.004));c.closePath();c.fill();c.stroke();
+        if(i<n-1){const x2=x-span/(n-1)*.5,k2=k*.9;c.beginPath();c.moveTo(x2-tw*.45*k2,yy+sc(.009));c.quadraticCurveTo(x2-tw*.12,yy-th*.55*k2,x2-tw*.03,yy-th*.85*k2);c.quadraticCurveTo(x2+tw*.18,yy-th*.45*k2,x2+tw*.45*k2,yy+sc(.009));c.closePath();c.fill();c.stroke();}}}
+    if(A.barbels){c.strokeStyle=sil?silCol:C(mx(A.back,'#000000',.2),.9);c.lineCap='round';const bw=Math.max(.6,L*.007),sw=Math.sin(wig*.7)*sc(.015);
+      c.lineWidth=bw*1.3;c.beginPath();c.moveTo(nx-sc(.015),my-sc(.005));c.bezierCurveTo(nx+sc(.04),my+sc(.04),nx-sc(.08),my+sc(.07)+sw,nx-sc(.24),my+sc(.11)+sw);c.stroke();
+      c.lineWidth=bw;c.beginPath();c.moveTo(nx-sc(.03),top(nx-sc(.03))+sc(.01));c.quadraticCurveTo(nx+sc(.04),top(nx)-sc(.05),nx+sc(.06),top(nx)-sc(.02)+sw*.5);
+      c.moveTo(nx-sc(.02),my+sc(.02));c.quadraticCurveTo(nx+sc(.01),my+sc(.08),nx-sc(.06),my+sc(.11)+sw);c.moveTo(nx-sc(.04),my+sc(.025));c.quadraticCurveTo(nx-sc(.03),my+sc(.09),nx-sc(.11),my+sc(.12)+sw);c.stroke();}}
+  // eye
+  if(!sil){const e=A.eye,ex=sc(e.x),ey=sc(e.y),er=Math.max(.9,sc(e.r));c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.arc(ex+er*.1,ey+er*.15,er*1.18,0,TAU);c.fill();
+    const g=c.createRadialGradient(ex-er*.3,ey-er*.3,er*.1,ex,ey,er);g.addColorStop(0,rgbStr(mx(e.iris,'#ffffff',.35)));g.addColorStop(1,e.iris);c.fillStyle=g;c.beginPath();c.arc(ex,ey,er,0,TAU);c.fill();
+    if(e.ring){c.strokeStyle='#ffd23a';c.lineWidth=Math.max(.5,er*.25);c.beginPath();c.arc(ex,ey,er*.82,0,TAU);c.stroke();}
+    c.fillStyle='#070908';c.beginPath();c.arc(ex+er*.06,ey,er*(e.ring?.55:.6),0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.88)';c.beginPath();c.arc(ex+er*.28,ey-er*.3,Math.max(.3,er*.24),0,TAU);c.fill();}
+  pect(true);pelvic();}
 function drawFish(c,sp,L,face,wig,alpha,sil,art){
   c.save();c.globalAlpha=alpha;c.scale(face,1);
   const sc=typeof sil==='string'?sil:'#0b1714',col=sil?sc:sp.col,belly=sil?sc:sp.belly;
   if(sp.shape==='eel'){drawEel(c,sp,L,wig,alpha,sil,col,belly);c.restore();return;}
   if(sp.turtle){drawTurtle(c,sp,L,wig,sil);c.restore();return;}
   if(sp.shape==='flounder'){drawFlounder(c,sp,L,wig,sil,col,belly);c.restore();return;}
+  if(AF[sp.id]){drawAfro(c,sp,L,wig,sil,sc);c.restore();return;}
   const o=PROF[sp.shape]||PROF.perch,A=art||ART[sp.id]||{tail:'fork',dorsal:'soft',anal:'short'};
   if(sp.shape==='gar'){drawGar(c,sp,L,wig,sil,col,belly,A);c.restore();return;}
   const h=L*SHAPES[sp.shape].h,H=h/2,nx=L*.5,px=-L*.37,P=h*o.pd,pk=L*o.px,tsw=Math.sin(wig)*h*.2,fl=Math.sin(wig*1.3);
@@ -3877,7 +4281,7 @@ document.querySelectorAll('#restBtns button').forEach(b=>b.onclick=()=>{
   const h=+b.dataset.h;if(G.fight){G.fight.f.state='wander';endFight();}retrieve();
   {const m0=S.minutes;let t2=h*60;if(t2<=m0)t2+=1440;if((m0<300&&t2>=300)||t2>=1740)questDawn();if(t2>=1440)newDay();}
   S.minutes=h*60;if(Math.random()<.6){S.weather=rollWeather();S.wtimer=rand(160,340);}
-  repopulate();resume();SFX.ui();toast(`Rested until ${PNAME[period()]}`,`${wname()} · ${weatherSub()}`);save();
+  if(S.bait)syncOwnBait();repopulate();resume();SFX.ui();toast(`Rested until ${PNAME[period()]}`,`${wname()} · ${weatherSub()}`);save();
 });
 
 // Lure picker
@@ -3893,6 +4297,18 @@ function rodIcon(id){const u=SETUPS[id],c=document.createElement('canvas');c.wid
   else if(id==='heavy'){x.beginPath();x.ellipse(rx,ry-2,2.6,1.7,0,0,TAU);x.fill();}
   else{x.fillRect(rx-.4,ry,.9,2.4);x.beginPath();x.ellipse(rx,ry+3.6,u.spool>1000?2.8:2.1,1.6,0,0,TAU);x.fill();}
   return c;}
+let OWN_SRC=null;
+function bucketPanel(){const b=BK(),now=absMin(),w=document.createElement('div');w.className='bucket';
+  const h=document.createElement('div');h.className='bk-head';h.innerHTML='<b>Bait bucket</b><span></span>';h.querySelector('span').textContent=gearOn('bucket')?`${bucketCount()}/${BUCKET_MAX}`:'No bucket';w.append(h);
+  const row=(label,sub,btn,act)=>{const r=document.createElement('div');r.className='bk-row';const t=document.createElement('span');t.innerHTML='<b></b><small></small>';t.querySelector('b').textContent=label;t.querySelector('small').textContent=sub;r.append(t);
+    if(btn){const k=document.createElement('button');k.className='btn';k.textContent=btn;k.onclick=act;r.append(k);}w.append(r);};
+  const left=m=>{const hrs=Math.max(0,Math.ceil((BAIT_LIFE-(now-m))/60));return hrs<=1?'under an hour left':`about ${hrs} h left`;};
+  const cut=(sid,from)=>()=>{const n=cutOne(sid,from);if(!n)return;SFX.ui();toast(`Cut a ${SPMAP[sid].name.toLowerCase()}`,`${n} strip${n>1?'s':''} of cut bait · good for a day`);save();updateHUD(true);renderLurePick();};
+  for(const [sid,n] of Object.entries(groupBy(b.live)))row(`${n} live ${SPMAP[sid].name.toLowerCase()}`,'Alive for '+left(Math.min(...b.live.filter(o=>o.sp===sid).map(o=>o.t))),'Cut one',cut(sid,'live'));
+  for(const [sid,n] of Object.entries(groupBy(b.dead)))row(`${n} dead ${SPMAP[sid].name.toLowerCase()}`,'Dead, so cut it soon · '+left(Math.min(...b.dead.filter(o=>o.sp===sid).map(o=>o.t))),'Cut one',cut(sid,'dead'));
+  for(const [sid,n] of Object.entries(groupBy(b.cut,'n')))row(`${n} cut ${SPMAP[sid].name.toLowerCase()}`,'Fresh · '+left(Math.min(...b.cut.filter(o=>o.sp===sid).map(o=>o.t))));
+  if(w.children.length===1){const p=document.createElement('p');p.className='tb-cond';p.textContent=gearOn('bucket')?'Empty. Small fish you catch can go in from the catch card.':'Any fish can be cut into bait from the catch card. Buy a bait bucket to keep small fish alive.';w.append(p);}
+  return w;}
 function lureIcon(id,size=40,col){const c=document.createElement('canvas');c.width=c.height=size*2;const x=c.getContext('2d');x.scale(size*2/16,size*2/16);drawLure(x,id,8,8,1,col);return c;}
 // What a rod has on it, in a couple of words: the bait or lure, and the rig when it's bait.
 function setupSummary(id){const cur=id===S.setup,o=cur?{lure:S.lure,rig:S.rig}:(S.setups[id]||{}),lid=o.lure&&LURES[o.lure]?o.lure:defaultLureFor(id),lu=LURES[lid];
@@ -3905,7 +4321,7 @@ function renderLurePick(){
   {const own=[S.setup].concat(SETUP_ORDER.filter(id=>setupOK(id)&&id!==S.setup));const rack=document.createElement('div');rack.className='rack';
     for(const id of own){const u=SETUPS[id],cur=id===S.setup,card=document.createElement('div');card.className='rackrod'+(cur?' on':'');
       const top=document.createElement(cur?'div':'button');top.className='rr-top';if(!cur){top.setAttribute('aria-label','Switch to the '+u.name);top.onclick=()=>{if(G.lure.state!=='ready'){toast('Reel in first');return;}switchSetup(id);SFX.ui();renderLurePick();};}
-      const sm=setupSummary(id),nm=document.createElement('span');nm.className='rr-name';nm.innerHTML='<b></b><small></small>';nm.querySelector('b').textContent=u.name;nm.querySelector('small').textContent=u.line+(cur?' \u00b7 in hand':'');
+      const sm=setupSummary(id),nm=document.createElement('span');nm.className='rr-name';nm.innerHTML='<b></b><small></small>';nm.querySelector('b').textContent=u.name;nm.querySelector('small').textContent=lineLabel(id)+(cur?' \u00b7 in hand':'');
       const sum=document.createElement('span');sum.className='rr-sum';sum.append(lureIcon(sm.lid,26,sm.col));const st=document.createElement('span');st.textContent=sm.text;sum.append(st);
       top.append(rodIcon(id),nm,sum);card.append(top);
       if(cur){const body=document.createElement('div');body.className='rr-body';card.append(body);box=body;}
@@ -3913,7 +4329,7 @@ function renderLurePick(){
     list.append(rack);}
   // Bait and lures live on separate tabs so the box stays short; the tab follows what's on the line.
   if(!G.tbTab)G.tbTab=LURES[S.lure].bait?'bait':'lures';
-  const have=id=>{const ct=S.lures[id];return ct===-1||ct>0;},nB=ALL_ORDER.filter(id=>have(id)&&LURES[id].bait&&lureOK(id)).length,nL=ALL_ORDER.filter(id=>have(id)&&!LURES[id].bait&&lureOK(id)).length;
+  const have=id=>{const ct=S.lures[id];return ct===-1||ct>0;},nB=ALL_ORDER.filter(id=>have(id)&&LURES[id].bait&&lureOK(id)).length+(curSetup().fly?0:Object.keys(groupBy(BK().live)).length+Object.keys(groupBy(BK().cut)).length),nL=ALL_ORDER.filter(id=>have(id)&&!LURES[id].bait&&lureOK(id)).length;
   {const tabs=document.createElement('div');tabs.className='tabs tb-tabs';tabs.setAttribute('role','tablist');
     for(const [k,n,c] of (curSetup().fly?[['lures','Flies',ALL_ORDER.filter(id=>have(id)&&lureOK(id)).length]]:[['bait','Bait',nB],['rig','Rig',null],['lures','Lures',nL]])){const b=document.createElement('button');b.setAttribute('role','tab');b.setAttribute('aria-selected',G.tbTab===k);b.textContent=c==null?n:`${n} (${c})`;b.onclick=()=>{G.tbTab=k;SFX.ui();renderLurePick();};tabs.append(b);}
     box.append(tabs);}
@@ -3924,7 +4340,14 @@ function renderLurePick(){
     const b=document.createElement('button');b.className='tb-tile'+(usefulHere(id)?'':' off');b.setAttribute('aria-pressed',S.lure===id);b.setAttribute('aria-label',lu.name+(usefulHere(id)?'':', nothing here takes it'));
     const nm=document.createElement('span');nm.textContent=lu.short;const n=document.createElement('span');n.className='ct';n.textContent=ct===-1?'∞':'×'+ct;
     b.append(lureIcon(id,40,lureColor(id)),nm,n);b.onclick=()=>{S.lure=id;save();updateHUD(true);SFX.ui();renderLurePick();};grid.append(b);}
+  if(G.tbTab==='bait'&&!flyR){const b=BK(),sel={livebait:b.ls,cutbait:b.cs};
+    for(const [lid,arr,key,cnt] of [['livebait',b.live,'ls',null],['cutbait',b.cut,'cs','n']])for(const [sid,n] of Object.entries(groupBy(arr,cnt))){
+      const on=S.lure===lid&&sel[lid]===sid,t=document.createElement('button');t.className='tb-tile own';t.setAttribute('aria-pressed',on);
+      const nm2=(lid==='livebait'?'Live ':'Cut ')+SPMAP[sid].name.split(' ').pop(),nm=document.createElement('span');nm.textContent=nm2;t.setAttribute('aria-label',(lid==='livebait'?'Live ':'Cut ')+SPMAP[sid].name);
+      const c2=document.createElement('span');c2.className='ct';c2.textContent='×'+n;OWN_SRC=sid;const ic=lureIcon(lid,40,SPMAP[sid].col);OWN_SRC=null;t.append(ic,nm,c2);
+      t.onclick=()=>{b[key]=sid;syncOwnBait(true);S.lure=lid;save();updateHUD(true);SFX.ui();renderLurePick();};grid.append(t);}}
   if(G.tbTab!=='rig')box.append(grid);
+  if(G.tbTab==='bait'&&!flyR&&(gearOn('bucket')||bucketCount()||BK().cut.length))box.append(bucketPanel());
   const lu=LURES[S.lure],opts=document.createElement('div');opts.className='rig';
   if(G.tbTab==='rig'&&!lu.bait){const p0=document.createElement('p');p0.className='tb-cond';p0.textContent=`Rigs are for bait. Your ${lu.name} ties straight onto the line.`;opts.append(p0);box.append(opts);return;}
   if(G.tbTab!=='rig'&&!!lu.bait!==(G.tbTab==='bait')){const p0=document.createElement('p');p0.className='tb-cond';p0.textContent=`On your line now: ${lu.name}. Tap ${G.tbTab==='bait'?'a bait':'a lure'} above to switch.`;opts.append(p0);box.append(opts);return;}
@@ -4026,7 +4449,7 @@ function renderLog(){
   $('#logSum').innerHTML=`<div class="ang-name"><b>${esc(S.name||'Unnamed angler')}</b><button class="btn small" id="renameBtn" type="button">${S.name?'Rename':'Set name'}</button></div><div class="ang-top"><div class="ang-lv">Lv ${li.l}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${li.need?`${li.rem} / ${li.need} XP to level ${li.l+1}`:'Max level'}</span></div></div>
     <div class="ang-grid">${st('Cast reach',fDist(castReach()*curSetup().reach/10))}${st('Hook set (matched)',Math.round(Math.min(.97,.92*hookSkill())*100)+'%')}${st('Cast accuracy','\u00b1'+Math.round(lerp(18,3,skillT()))+'%')}${st('Species',n+' / '+SPECIES.length)}
     ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Respect',`${rankName()} \u00b7 ${S.respect||0}`)}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
-    <div class="ang-gear">${curSetup().name} (${TIERS[curTier()].name}) \u00b7 ${curSetup().line}</div>
+    <div class="ang-gear">${curSetup().name} (${TIERS[curTier()].name}) \u00b7 ${lineLabel(S.setup)}</div>
     <div class="ang-kit"><span class="label">Gear</span>${['finder','shades','lantern','leader','whistle'].map(id=>{const it=GEAR.gear[id];return`<div class="row"><div><b>${it.name}</b><p>${it.desc}</p></div>${S.owned[id]?`<button class="tog" role="switch" data-kit="${id}" aria-label="${it.name}" aria-checked="${gearOn(id)}"></button>`:`<span class="kit-shop"><span class="coin"></span>${it.price} in shop</span>`}</div>`;}).join('')}</div>`;
   $('#renameBtn').onclick=()=>askName(null);
   $('#logSum').querySelectorAll('[data-kit]').forEach(b=>b.onclick=()=>{const id=b.dataset.kit;S.settings[id]=!gearOn(id);save();SFX.ui();renderLog();renderSettings();});
@@ -4140,6 +4563,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v0.99','The Congo',['New place: Boyoma Falls on the Congo River. Rainforest on the far bank, rapids with Wagenia basket-trap scaffolds, a dugout working the current and an African fish eagle overhead','Ten Congo fish, drawn in more detail than ever: the goliath tigerfish (Mbenga!), African tigerfish, Nile perch, vundu, African pike, African butterflyfish, six-barred distichodus, redbreast tilapia, nembwe and the royal sprat','Each one behaves like the real fish: tigerfish packs in the open water, butterflyfish hanging at the surface, vundu on the bottom at night, Nile perch deep in the eddies','Big catfish and other bottom fish now lie along the slope of the bottom instead of floating above it','New Bait Bucket (gear shop): drop small fish you catch into it from the catch card and fish them as live bait. Predators have favorites, like tigerfish on sprat, Nile perch on tilapia and flatheads on bluegill, and a fish won’t take a bait too big to swallow','Any fish can be cut into cut bait from the catch card, or from the bucket. It sits still and bleeds scent for catfish, vundu and other scent feeders; oily fish work best','Live bait dies after about a day in the bucket, and dead baitfish and cut bait go bad a day after that, so fish it fresh','The tackle box and your angler stats now show the line on your rod after upgrades, matching the shop']],
   ['v0.98','Steam, rods and fish manners',['An old black steam locomotive now pulls the train, with a coal tender, smoke from the stack and turning drivers','The train blows a softer steam whistle: long, long, short, long, held as the engine crosses','A rod rack in the tackle box. Each rod remembers its own lure, size and color, and opens to what\u2019s on it','A plane towing a \u201cTight lines!\u201d banner flies over Pelican Point Pier','Turned sideways, the view now drops down so deep fish don\u2019t hide under the buttons','Highline Lake: forested ridges with rocky tops, a back row of firs along the shore and a ragged treeline','Flounder lie flat on the sand and swim flat, with both eyes up top','Fish stop and hover now and then; pike, pickerel, tiger muskie and gar lie in wait','Gar, bowfin, arapaima and tarpon come up for air less often, and fish swim more level','On bottom rigs the sinker goes down with the bait instead of starting on the bottom','Every angler plays by the same rules now, except Carter keeps his Amazon spot','Leaderboard: fixed catches not posting on iPhone, and it now tells you when a best goes up or why it hasn\u2019t','Fixed a freeze when a fish noticed your bait']],
   ['v0.97','Three new places',['Tupelo Bayou (level 12): a cypress swamp with Spanish moss, cypress knees, water hyacinth, a fish camp, an alligator cruising the duckweed, an egret and fireflies','Highline Lake (level 18): a cold, clear lake under snowy granite peaks, with a waterfall, a mountain goat and a steep drop into a deep basin','Pelican Point Pier (level 24): salt water on the Gulf, with a lighthouse, dolphins, pelicans, moon jellies and a lit pier at night','Twenty new fish, including spotted gar, warmouth, redear, flier, blue catfish, cutthroat, grayling, golden trout, lake trout, redfish, speckled trout, sheepshead, flounder, Spanish mackerel, pompano and the hardhead catfish','Three new legends: Old Ironjaw the alligator gar, Old Mackinaw the lake trout and the Silver King tarpon','New bait: Live Shrimp, for salt water','New Surf & Pier Rod (needs Local respect): the longest casts and twice the line, but it hides nibbles and tears soft mouths','New Pier Drop Net: big fish can fall off when you lift them up the pier without one','Tarpon run hard between jumps; gar and tarpon have bony mouths, so wait a beat before setting the hook','Flounder lie still on the sand, gar hang near the surface, and Gulf fish come and go with the seasons','Alligator snapping turtles live in the bayou','Leaderboards have a tab for each new place']],
   ['v0.96','Comings and goings',['Fish no longer fade in and out. They swim off into the murk, shrinking and taking on the water\u2019s color, and arrive the same way','Near an open edge, fish swim out the side instead','Fish that are off-hours settle in low near the bottom and hold nearly still, while night feeders like catfish, bullheads and eels roam','Eels are much more common, and up to two can be out at night','Account changes like refunds now show a card that stays until you tap Got it','Settings are grouped: Sound, Controls, Display and Progress','A volume slider for sound effects','Vibration removed','Quick tour and Dev notes moved to How to Play','Each rod remembers its own bait or lure, rig and hook. A rod you haven\u2019t used yet starts with tackle that suits it','Leaderboard ranks by weight, then length, shows weights and lengths one decimal finer, and marks real ties','Every location has its own leaderboard, so you can see who\u2019s fished where','Optional, anonymous play stats and error reports to help fix bugs. You choose the first time, can switch it in Settings, and can see exactly what\u2019s sent','Fish hooked or fought with dev tools on never reach the leaderboard, even if the tools are turned off before landing']],
@@ -4200,6 +4624,9 @@ function showCatch(){
   if(P.gut){const s=document.createElement('span');s.className='badge gut';s.textContent='Gut-hooked · 35% value';b.append(s);}
   const rel=Math.ceil(P.value*.5);
   $('#cSellAmt').textContent=`+${P.value} coins`;$('#cRelAmt').textContent=P.gut?'Won\u2019t survive':P.bed?`+${rel} · back to its nest`+(respectFor(P)?` · +${respectFor(P)} respect`:''):`+${rel} · luck up`+(respectFor(P)?` · +${respectFor(P)} respect`:'');$('#cRelease').disabled=!!P.gut;
+  {const canB=gearOn('bucket')&&baitSized(P.sp,P.len),full=bucketCount()>=BUCKET_MAX,canC=!P.sp.legend&&!P.sp.turtle;
+    $('#cBucket').hidden=!canB;$('#cBucket').disabled=full;$('#cBucketAmt').textContent=full?'Bucket is full':`Live bait · ${bucketCount()+1}/${BUCKET_MAX}`;
+    $('#cCut').hidden=!canC;$('#cCutAmt').textContent=`${cutStrips(P.weight)} strip${cutStrips(P.weight)>1?'s':''} · keeps a day`;$('#cKeep').hidden=!canB&&!canC;}
   const c=$('#catchCanvas'),x=c.getContext('2d');let t0=performance.now();
   const anim=()=>{if($('#catch').hidden)return;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,640,320);const t=(performance.now()-t0)/1000;
     x.save();x.translate(320,165+Math.sin(t*3)*4);x.rotate(Math.sin(t*2)*.05);const L=P.sp.shape==='eel'?520:P.sp.shape==='pike'?480:400;
@@ -4211,6 +4638,12 @@ function showCatch(){
 function finishCatch(sold){const P=G.pending;if(!P)return;const amt=sold?P.value:Math.ceil(P.value*.5);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));{const rp=respectFor(P);if(rp){const r0=rankIdx();S.respect=(S.respect||0)+rp;if(rankIdx()>r0)setTimeout(()=>{toast(`Respect earned: ${rankName()}`,rankUnlocks(rankIdx()));SFX.coin();vib([60,40,60]);},1700);}}gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
   G.pending=null;save();SFX.coin();resume();toast(sold?`+${amt} coins`:P.bed?'Back to its nest':'Released',sold?null:`+${amt} coins · luck now +${Math.round(S.luck*100)}%`+(respectFor(P)?` · +${respectFor(P)} respect`:''));
   const qd=(P.quest||[]).filter(h=>h.done);if(qd.length)setTimeout(()=>{toast('Quest complete!',qd.map(h=>`${qTitle(h.q)} · +${h.q.reward} coins`).join(' · '));SFX.coin();},1300);updateQuestBtn();}
+function keepCatch(kind){const P=G.pending;if(!P)return;const b=BK(),nm=P.sp.name;let sub;
+  if(kind==='live'){if(bucketCount()>=BUCKET_MAX)return;b.live.push({sp:P.sp.id,len:P.len,t:absMin()});b.ls=P.sp.id;syncOwnBait(true);sub=`${b.live.length} live in the bucket · pick it in the tackle box`;}
+  else{const n=cutStrips(P.weight);b.cut.push({sp:P.sp.id,n,t:absMin()});b.cs=P.sp.id;syncOwnBait(true);sub=`${n} strip${n>1?'s':''} of cut ${nm.toLowerCase()} · good for a day`;}
+  G.pending=null;save();SFX.ui();resume();toast(kind==='live'?'Into the bait bucket':'Cut into bait',sub);
+  const qd=(P.quest||[]).filter(h=>h.done);if(qd.length)setTimeout(()=>{toast('Quest complete!',qd.map(h=>`${qTitle(h.q)} · +${h.q.reward} coins`).join(' · '));SFX.coin();},1300);updateQuestBtn();}
+$('#cBucket').onclick=()=>keepCatch('live');$('#cCut').onclick=()=>keepCatch('cut');
 $('#cSell').onclick=()=>finishCatch(true);$('#cRelease').onclick=()=>finishCatch(false);
 
 // ---------------- TRAVEL ----------------
@@ -4230,7 +4663,7 @@ function locPreview(id){const out=document.createElement('canvas');out.width=800
     o.strokeStyle='#f2a93b';o.lineWidth=9;o.beginPath();o.arc(400,160,17,Math.PI,0);o.stroke();o.fillStyle='#2a1903';o.beginPath();o.arc(400,180,6,0,TAU);o.fill();o.fillRect(397,182,6,12);}
   return out;}
 function renderMap(){
-  {const Z=sea(),tip=Z.jungle?(Z.dry>.6?'Low water packs the fish together. Piranhas get bold.':Z.wet>.6?'The forest floods. Pacu and arowana feed on fruit and bugs at the surface.':'The water is on the move.'):['Fish move shallow. Pike, walleye and crappie bite first.','Fish go deep at midday. Dawn and dusk are best.','Fish feed hard before winter. Predators are on the prowl.','Warm-water fish slow down. Perch, pike and trout still bite.'][seasonIdx()];
+  {const Z=sea(),tip=Z.jungle?(LOC().congo?(Z.dry>.6?'Low water bares the rocks. Tigerfish pack into the rapids after the sprat.':Z.wet>.6?'High water. The river runs fast and brown, and the big fish hold in the eddies.':'The river is on the move.'):Z.dry>.6?'Low water packs the fish together. Piranhas get bold.':Z.wet>.6?'The forest floods. Pacu and arowana feed on fruit and bugs at the surface.':'The water is on the move.'):['Fish move shallow. Pike, walleye and crappie bite first.','Fish go deep at midday. Dawn and dusk are best.','Fish feed hard before winter. Predators are on the prowl.','Warm-water fish slow down. Perch, pike and trout still bite.'][seasonIdx()];
     $('#seasonLine').innerHTML=`<b>${seasonName()}</b><span>Day ${seasonDay()} of ${SEASON_DAYS}. ${tip}</span>`;}$('#restPanel').hidden=G.mode!=='play';const box=$('#mapList');box.innerHTML='';const lv=lvlInfo().l;
   for(const id of LOC_ORDER){const Lc=LOCS[id],ok=locOK(id),here=S.loc===id,d=document.createElement('div');d.className='loc'+(here?' here':'');
     const h=document.createElement('h3');h.textContent=Lc.name;const sm=document.createElement('small');sm.textContent=here?'You are here':ok?'Unlocked':'Locked';h.append(sm);
