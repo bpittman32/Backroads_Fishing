@@ -1092,7 +1092,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.02a';
+const VERSION='v1.02b';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1677,7 +1677,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   rocks=[];for(let x=DOCKX-30;x<WX+20;x+=r()*34+14){const big=r()<.18;rocks.push({x,d:6+r()*(big?40:90),rx:big?7+r()*9:2+r()*5,ry:0,a:r()*.6-.3,t:r()});rocks[rocks.length-1].ry=rocks[rocks.length-1].rx*(.55+r()*.3);}
   roots=[];for(let i=0;i<7;i++){const x=DOCKX-20+r()*130;roots.push({x,len:20+r()*40,dir:r()<.5?-1:1,ph:r()*6,w:.8+r()*1.4});}
   if(!GPAT)GPAT=makeGroundPat();
-  stones=[];for(let x=DOCKX;x<WX;x+=r()*40+20)stones.push({x,r:3+r()*7,s:r()});
+  stones=[];if(!LOC().cypress)for(let x=DOCKX;x<WX;x+=r()*40+20)stones.push({x,r:3+r()*7,s:r()});  // a swamp's mud bottom has no loose stones
   // Each place has its own skyline: rolling hills at the pond, steep wooded ridges on the creek, mountains behind the big lake, low country on the river, and flat jungle in the Amazon.
   // Skyline shapes: rolling hills, long creek-valley ridges with notches, jagged mountain peaks, flat river country with a few buttes, flat jungle.
   const KIND={pond:'roll',creek:'ridge',lake:'peaks',river:'mesa',amazon:'flat',bayou:'canopy',alpine:'alps',pier:'flat',congo:'flat'}[S.loc]||'roll';
@@ -3054,13 +3054,6 @@ function drawCongoShore(c,dk,y){const K=(col,a=1)=>rgbStr(mx(col,'#0a0c10',dk*.7
   // white water swirling round the outer rock
   const a=1-dk*.6;for(let i=0;i<7;i++){const ph=(G.t*1.3+i/7)%1;c.fillStyle=`rgba(250,252,248,${(.7-ph*.6)*a})`;c.beginPath();c.ellipse(66-ph*16,SURF-.2+Math.sin(ph*8)*.5,1.2+ph*2,.7,0,0,TAU);c.fill();}}
 // Lily pads in the bayou are water hyacinth instead: glossy, bulbous leaves standing up off the water with lavender flower spikes, plus a skin of duckweed.
-function drawHyacinth(c,dk,vx0,vx1,Zp){const lc=rgbStr(mix('#3f7a32','#10220e',dk*.75)),ll=rgbStr(mix('#6aa448','#16301a',dk*.75)),fl=rgbStr(mix('#b9a0e0','#3a3048',dk*.75)),fy=rgbStr(mix('#f2d24a','#4a3a10',dk*.75));
-  for(const d of duck){if(d.x+d.w<vx0||d.x>vx1)continue;c.fillStyle=rgbStr(mix('#7aa83a','#1a2a10',dk*.75),.85);c.beginPath();c.moveTo(d.x,SURF+.4);for(let x=d.x;x<=d.x+d.w;x+=4)c.lineTo(x,SURF-.6-Math.sin((x-d.x)/d.w*Math.PI)*.8);c.lineTo(d.x+d.w,SURF+.8);c.closePath();c.fill();
-    c.fillStyle=rgbStr(mix('#a8d060','#1a2a10',dk*.75),.7);for(let x=d.x+2;x<d.x+d.w;x+=3.2)c.fillRect(x,SURF-.3,.9,.6);}
-  if(Zp.pads<.03)return;for(const p of pads){const x=p.x+Math.sin(G.t*.4+p.a)*2;if(x<vx0||x>vx1)continue;const n=3+Math.floor(p.r/3),k=.5+.5*Zp.pads;
-    c.fillStyle=`rgba(0,0,0,${.18*(1-dk*.5)})`;c.beginPath();c.ellipse(x+1,SURF+1.5,p.r*1.1,p.r*.25,0,0,TAU);c.fill();
-    for(let i=0;i<n;i++){const lx=x+(i-(n-1)/2)*p.r*.42,hh=(4+((i*5)%4))*k,a=(i-(n-1)/2)*.25;c.fillStyle=i%2?lc:ll;c.beginPath();c.ellipse(lx+Math.sin(a)*hh*.6,SURF-1-Math.cos(a)*hh*.6,2.6*k+1,hh*.6,a,0,TAU);c.fill();c.fillStyle=lc;c.beginPath();c.ellipse(lx,SURF-1,1.4,1.6,a,0,TAU);c.fill();}
-    if(p.flower&&Zp.flowers>.3){const fx=x,fyy=SURF-9*k;c.strokeStyle=lc;c.lineWidth=.8;c.beginPath();c.moveTo(fx,SURF-3);c.lineTo(fx,fyy);c.stroke();c.fillStyle=fl;for(let i=0;i<5;i++){c.beginPath();c.ellipse(fx+(i%2?1.6:-1.6),fyy+i*1.4-1,1.5,1.1,0,0,TAU);c.fill();}c.fillStyle=fy;c.fillRect(fx-.4,fyy+1,.8,.8);}}}
 // Cypress knees: woody cones that grow up from the roots and stand out of the shallow water.
 function drawKnees(c,dk,vx0,vx1){const bark=rgbStr(mix('#6a5c48','#0a0806',dk*.8)),hi=rgbStr(mix('#8f826c','#100c08',dk*.8));
   for(const k of knees){if(k.x<vx0||k.x>vx1)continue;const b=bottomAt(k.x),top=SURF-k.h;c.fillStyle=bark;c.beginPath();c.moveTo(k.x-k.w*1.6,b+2);c.quadraticCurveTo(k.x-k.w*.9,(b+top)/2,k.x-k.w*.35,top+1);c.quadraticCurveTo(k.x,top-1,k.x+k.w*.4,top+1.2);c.quadraticCurveTo(k.x+k.w*.9,(b+top)/2,k.x+k.w*1.6,b+2);c.closePath();c.fill();
@@ -4233,7 +4226,7 @@ function bodySprite(D,Lp){
 const CACHE=new Map();
 function plate(D,Lp){const key=D.id+':'+Lp;let P=CACHE.get(key);if(P)return P;
   const S=bodySprite(D,Lp),F=D.fins(0),pts=[...D.TOP,...D.BOT];for(const k of [...D.backFins,...(D.frontFins.pre||[]),...(D.frontFins.post||[])])pts.push(...F[k].o);
-  const pad=.03,X0=Math.min(...pts.map(p=>p[0]))-pad,X1=Math.max(...pts.map(p=>p[0]),D.reach||.5)+pad,Y0=Math.min(...pts.map(p=>p[1]),D.reachY?D.reachY[0]:0)-pad,Y1=Math.max(...pts.map(p=>p[1]),D.reachY?D.reachY[1]:0)+pad;
+  const pad=.03+3/Lp,X0=Math.min(...pts.map(p=>p[0]))-pad,X1=Math.max(...pts.map(p=>p[0]),D.reach||.5)+pad,Y0=Math.min(...pts.map(p=>p[1]),D.reachY?D.reachY[0]:0)-pad,Y1=Math.max(...pts.map(p=>p[1]),D.reachY?D.reachY[1]:0)+pad;
   const W=Math.ceil(Lp*(X1-X0)),H=Math.ceil(Lp*(Y1-Y0)),ox=-X0*Lp,oy=-Y0*Lp;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;const c=cv.getContext('2d');c.setTransform(Lp,0,0,Lp,ox,oy);
   for(const k of D.backFins)drawFin(c,F[k],D.finStyle[k]);
@@ -5212,6 +5205,69 @@ R.S.shad=M.make({id:'shad',band:.45,scale:.011,scaleEdge:.9,headDark:[.24,.32],b
   back:['thread','dorsal','anal'],
   head:{dark:'30,40,50',eye:{x:.43,y:-.024,r:.02,iris:['#d8dde0','#98a2a8','#2a3238']},preop:0,nostril:[.47,-.02],
     mouth:{line:[[.486,.026],[.475,.03],[.462,.032]],lipCol:'rgba(180,186,190,.6)',jaw:false}}});
+
+// Pumpkinseed: the redear's shape, but orange-spotted olive-gold flanks, an orange belly, wavy blue-green lines on the cheek,
+// and a black ear flap tipped with a bright red-orange half-moon.
+R.S.pumpkinseed=M.make({id:'pumpkinseed',band:.44,scale:.0155,headDark:[.2,.3],bellyTint:[236,150,60,.45],
+  top:[[.492,-.010],[.47,-.045],[.432,-.09],[.37,-.138],[.29,-.175],[.20,-.196],[.10,-.202],[0,-.196],[-.10,-.175],[-.18,-.138],[-.24,-.094],[-.29,-.066],[-.32,-.056],[-.345,-.052]],
+  bot:[[.50,.008],[.482,.036],[.445,.08],[.385,.126],[.30,.164],[.20,.188],[.10,.195],[0,.188],[-.08,.166],[-.15,.13],[-.22,.09],[-.27,.066],[-.31,.056],[-.345,.052]],
+  grad:[[0,'#2a3420'],[.15,'#3e4c2c'],[.3,'#5a6a3c'],[.45,'#7e8a4e'],[.6,'#a8a058'],[.72,'#d0a050'],[.85,'#e08a3c'],[1,'#e89a50']],
+  gill:{x:.255,kt:4.5,kb:2.2},lateral:{x0:.25,x1:-.32,f:.24,col:'rgba(40,46,30,.25)'},edgeCol:'rgba(30,36,20,.55)',
+  tailFin:{type:'emarg',spread:.125,notch:.15},
+  finSpec:{spiny:D=>sp(D,{x0:.17,x1:-.03,H:[.05,.075,.088,.09,.088,.084,.08,.077,.075,.074],dip:.3,join:.06}),
+    soft:D=>so(D,{x0:-.03,x1:-.245,h0:.072,hm:.1,h1:.03,peak:.4,lean:.22,rays:12}),
+    anal:D=>so(D,{side:1,x0:-.05,x1:-.245,h0:.045,hm:.088,h1:.03,peak:.45,lean:.25,rays:11,spines:3}),
+    pect:D=>pc(D,{x:.25,y:.03,len:.23,w:.068,ang:.36}),pelvic:D=>pv(D,{x:.205,len:.095,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(96,100,66,.9)','rgba(110,110,74,.8)','rgba(60,66,40,.4)',{horiz:true}),soft:F('rgba(110,112,78,.62)','rgba(84,90,60,.9)','rgba(60,64,40,.4)'),
+    spiny:F('rgba(112,116,84,.55)','rgba(84,90,60,.9)','',{sw:.003,spineCol:'rgba(56,60,38,.9)'}),anal:F('rgba(150,140,90,.85)','rgba(120,112,74,.9)','rgba(80,74,46,.4)',{sw:.0026,spineCol:'rgba(90,84,56,.95)'}),
+    pect:F('rgba(214,200,140,.32)','rgba(196,180,120,.42)','rgba(160,136,80,.45)',{edge:.25}),pelvic:F('rgba(150,140,90,.7)','rgba(120,112,74,.9)','rgba(80,74,46,.4)',{sw:.0024,spineCol:'rgba(220,214,190,.9)'})},
+  back:['soft','spiny','anal'],
+  marks:(k,D)=>{M.bars(k,D,{seed:16,n:7,x0:.17,x1:-.30,w:.024,a:.16,col:'40,60,50',f0:.04,f1:.7});M.spots(k,D,{seed:13,n:90,x0:.2,x1:-.3,f0:.08,f1:.78,r:[.004,.0075],col:'rgba(214,120,40,.7)'});M.spots(k,D,{seed:14,n:40,x0:.2,x1:-.3,f0:.08,f1:.7,r:[.003,.006],col:'rgba(70,130,140,.4)'});M.worms(k,D,{seed:15,n:14,x0:.42,x1:.27,f0:.3,f1:.85,w:.005,len:.03,col:'rgba(70,170,190,.75)'});},
+  head:{dark:'40,42,26',eye:{x:.405,y:-.054,r:.027,iris:['#3a3418','#2a2410','#140f08'],pupil:.62},flap:[.226,-.03,.019],flapEdge:'rgba(236,60,36,.98)',
+    mouth:{line:[[.499,.005],[.484,.013],[.468,.020]],w:.0028,lipW:.0045,lipCol:'rgba(140,130,80,.6)',jawTop:'rgba(100,96,60,.35)'},nostril:[.455,-.066],preop:.07}});
+
+// Rainbow trout: silvery olive-green back, a broad pink-red band along the side and cheek, small black spots over the back,
+// sides, dorsal fin and tail; white-tipped lower fins.
+TR('trout',{grad:[[0,'#26342c'],[.15,'#3a4c40'],[.3,'#5e7064'],[.45,'#98a49a'],[.6,'#c8ccc4'],[.72,'#dcdcd6'],[.85,'#ececea'],[1,'#f4f4f2']],bellyTint:[246,244,240,.3],
+  marks:(k,D)=>{M.stripe(k,D,{x0:.44,x1:-.34,f:.5,w:.22,col:'rgba(214,92,110,.5)'});M.spots(k,D,{seed:291,n:120,x0:.24,x1:-.36,f0:0,f1:.62,r:[.0028,.0048],col:'rgba(18,20,18,.82)'});},
+  finStyle:{tail:F('rgba(110,120,100,.9)','rgba(130,136,116,.8)','rgba(50,56,40,.4)',{horiz:true}),dorsal:F('rgba(130,136,110,.6)','rgba(104,110,86,.9)','rgba(50,56,40,.45)'),adipose:F('rgba(90,100,80,.9)','rgba(90,100,80,.9)',''),
+    anal:F('rgba(200,180,170,.75)','rgba(180,160,150,.85)','rgba(110,90,80,.4)',{lead:['rgba(250,250,246,.95)','rgba(250,250,246,0)']}),pect:F('rgba(210,190,170,.45)','rgba(190,170,150,.55)','rgba(110,90,80,.4)'),
+    pelvic:F('rgba(210,180,170,.75)','rgba(190,160,150,.85)','rgba(110,90,80,.4)',{lead:['rgba(250,250,246,.95)','rgba(250,250,246,0)']})}});
+// Chain pickerel: a small pike; golden-green with a net of dark chain-like links over the flanks and a dark vertical
+// teardrop under the eye.
+PK('pickerel',{grad:[[0,'#202c16'],[.15,'#34421e'],[.3,'#566430'],[.45,'#7e8842'],[.6,'#a8a660'],[.72,'#c8c08a'],[.85,'#e4e0c6'],[1,'#eeece0']],bellyTint:[240,238,222,.3],
+  marks:(k,D)=>{M.worms(k,D,{seed:301,n:85,x0:.24,x1:-.35,f0:.1,f1:.7,w:.0036,len:.024,col:'rgba(22,26,14,.48)'});M.bars(k,D,{seed:302,n:1,x0:.385,x1:.384,w:.008,a:.75,col:'20,22,12',f0:.42,f1:.92,taper:.6,fade:.2});},
+  finStyle:{tail:F('rgba(110,110,70,.88)','rgba(130,128,80,.78)','rgba(50,50,30,.4)',{horiz:true}),dorsal:F('rgba(120,116,74,.65)','rgba(104,100,64,.9)','rgba(50,46,24,.45)'),anal:F('rgba(140,130,84,.75)','rgba(120,112,72,.88)','rgba(60,50,30,.4)'),
+    pect:F('rgba(180,170,120,.45)','rgba(160,150,100,.55)','rgba(90,80,50,.4)'),pelvic:F('rgba(170,160,110,.75)','rgba(150,140,90,.85)','rgba(90,80,50,.4)')}});
+// Bullheads: small, stout catfish with a squarish tail, a rounded anal fin and dark chin barbels.
+const BULL={top:[[.495,.004],[.488,-.024],[.47,-.046],[.43,-.064],[.37,-.084],[.3,-.1],[.22,-.112],[.14,-.118],[.05,-.116],[-.05,-.106],[-.14,-.09],[-.22,-.072],[-.28,-.06],[-.32,-.054],[-.355,-.05]],
+  bot:[[.5,.024],[.492,.048],[.47,.066],[.42,.08],[.36,.09],[.3,.096],[.2,.102],[.1,.104],[0,.098],[-.1,.086],[-.18,.072],[-.25,.06],[-.3,.054],[-.33,.051],[-.355,.05]]};
+const bullSpec=(D)=>({dorsal:D=>so(D,{x0:.15,x1:.08,h0:.075,hm:.085,h1:.03,peak:.2,lean:.35,rays:6,spines:1}),adipose:D=>ad(D,{x0:-.17,x1:-.24,h:.024}),
+  anal:D=>so(D,{side:1,x0:-.07,x1:-.26,h0:.05,hm:.062,h1:.03,peak:.55,lean:.25,rays:20}),pect:D=>pc(D,{x:.255,y:.066,len:.09,w:.038,ang:.3}),pelvic:D=>pv(D,{x:-.02,len:.065,ang:.6})});
+CF('brownbull',{top:BULL.top,bot:BULL.bot,tailFin:{type:'emarg',spread:.1,notch:.06},barb:{len:.8,chinCol:'rgba(40,34,26,.9)'},finSpec:bullSpec(),
+  grad:[[0,'#2a2214'],[.15,'#3e321c'],[.3,'#584626'],[.45,'#76603a'],[.6,'#98824e'],[.72,'#bca86e'],[.85,'#ddd0a6'],[1,'#ebe2c6']],bellyTint:[238,230,200,.3],finStyle:catFins('80,66,44','30,24,16'),
+  marks:(k,D)=>{M.spots(k,D,{seed:311,n:36,x0:.3,x1:-.34,f0:0,f1:.7,r:[.008,.02],ax:1.4,col:r=>`rgba(36,28,16,${.22+r*.25})`});}});
+CF('blackbull',{top:BULL.top,bot:BULL.bot,tailFin:{type:'emarg',spread:.1,notch:.06},barb:{len:.8,chinCol:'rgba(20,18,16,.9)'},finSpec:bullSpec(),
+  grad:[[0,'#16160e'],[.15,'#202016'],[.3,'#2e2e20'],[.45,'#3e3c2a'],[.6,'#5a5640'],[.72,'#8a8466'],[.85,'#cfc8a6'],[1,'#e2dcc2']],bellyTint:[230,224,196,.3],
+  finStyle:catFins('40,40,32','14,14,10'),
+  marks:(k,D)=>{M.bars(k,D,{seed:321,n:1,x0:-.33,x1:-.331,w:.01,a:.5,col:'200,196,170',f0:.05,f1:.95,taper:.3,fade:.2});}});
+// Bowfin: a long, round-bodied relic fish; mottled olive, a long low dorsal fin running from mid-back almost to the
+// rounded tail, a big mouth, short tube nostrils, and a black eyespot ringed in orange at the top of the tail base.
+R.S.bowfin=M.make({id:'bowfin',band:.45,scale:.011,scaleEdge:.9,headDark:[.22,.3],bellyTint:[232,228,196,.3],
+  top:[[.495,.004],[.485,-.016],[.46,-.034],[.42,-.05],[.36,-.064],[.28,-.074],[.19,-.078],[.1,-.078],[0,-.076],[-.1,-.072],[-.18,-.066],[-.25,-.06],[-.3,-.056],[-.33,-.054],[-.36,-.052]],
+  bot:[[.5,.016],[.49,.032],[.46,.048],[.41,.062],[.34,.074],[.25,.08],[.15,.082],[.05,.08],[-.05,.074],[-.13,.066],[-.2,.06],[-.26,.056],[-.3,.054],[-.33,.052],[-.36,.051]],
+  grad:[[0,'#262c18'],[.15,'#363e22'],[.3,'#4e5630'],[.45,'#6c7242'],[.6,'#90905a'],[.72,'#b4b082'],[.85,'#d6d2b0'],[1,'#e6e2cc']],
+  gill:{x:.27,kt:8,kb:4},lateral:null,edgeCol:'rgba(24,28,14,.55)',tailFin:{type:'round',spread:.1},
+  marks:(k,D)=>{M.spots(k,D,{seed:331,n:40,x0:.26,x1:-.34,f0:.05,f1:.8,r:[.01,.022],ax:1.5,col:r=>`rgba(30,36,18,${.18+r*.2})`});
+    M.spots(k,D,{seed:332,n:1,x0:-.33,x1:-.331,f0:.28,f1:.28,r:[.016,.016],halo:'rgba(232,150,50,.9)',col:'rgba(10,10,6,.95)'});},
+  finSpec:{dorsal:D=>so(D,{x0:.06,x1:-.32,h0:.04,hm:.05,h1:.04,peak:.5,lean:.15,rays:48}),anal:D=>so(D,{side:1,x0:-.19,x1:-.29,h0:.04,hm:.045,h1:.025,peak:.4,lean:.3,rays:10}),
+    pect:D=>pc(D,{x:.26,y:.05,len:.08,w:.04,ang:.25}),pelvic:D=>pv(D,{x:-.02,len:.065,ang:.6})},
+  finStyle:{tail:F('rgba(90,96,60,.9)','rgba(100,106,66,.82)','rgba(40,44,24,.4)',{horiz:true}),dorsal:F('rgba(90,100,60,.75)','rgba(80,96,56,.9)','rgba(40,44,24,.4)'),anal:F('rgba(110,116,76,.75)','rgba(100,106,66,.88)','rgba(40,44,24,.4)'),
+    pect:F('rgba(150,150,110,.5)','rgba(140,140,100,.62)','rgba(60,60,40,.4)'),pelvic:F('rgba(130,136,96,.7)','rgba(120,126,86,.85)','rgba(60,60,40,.4)')},
+  back:['dorsal','anal'],
+  head:{dark:'30,34,18',eye:{x:.43,y:-.026,r:.015,iris:['#c8b070','#887030','#2a2410']},preop:0,nostril:[.48,-.012],
+    mouth:{line:[[.5,.016],[.48,.022],[.45,.028],[.42,.032],[.395,.034]],maxilla:.011,maxCol:['#4a5230','#5a6238'],lipCol:'rgba(150,150,110,.6)',jawTop:'rgba(60,66,36,.3)'},
+    barbels:[{p:[[.485,-.008],[.49,-.018],[.488,-.024]],w:.004,col:'rgba(40,44,24,.9)'}]}});
 
 return R;})();
 
@@ -6264,7 +6320,8 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
 const NOTES=[
   ['v1.02','Water plants',['Each place now grows the plants that really live there: tape grass, coontail, milfoil and cabbage weed in the pond and lake, water crowfoot streaming in the creek, sago pondweed in the river, quillwort and stonewort in the high lake, hydrilla and fanwort in the bayou, turtle grass and shoal grass on the Gulf bottom','Shoreline plants: cattails at the pond, bulrush on the lake, water willow on the river, papyrus on the Congo','Water hyacinth and water lettuce float in the bayou and the Amazon, hyacinth drifts down the Congo, and sargassum floats past the pier','Pier pilings carry barnacles, sea lettuce and oysters, and the creek and Congo rocks grow their own moss and riverweed']],
   ['v1.02','Real rocks',['Rocks are the real stone of each place: rusty sandstone in the creek, silted river rock, pink granite at Big Rock Lake, broken pale granite at Highline, and barnacle-crusted limestone off the pier','They pick up the water\u2019s color and darken with depth, a brown algae film coats their tops, and sunlight ripples across the shallow ones on clear days','In current, silt rolls over each rock into the eddy behind it, sand settles in its lee, and a rock near the top lifts a gentle hump and slow boils on the surface','Rocks sit in the bank instead of hanging off steep slopes']],
-  ['v1.02','Field-guide fish',['Every fish except the Congo species and the flounder is redrawn as a realistic field-guide plate: overlapping scales that stop at the gill cover, real fin shapes with rays and spines, and each species\' own markings','Catfish are smooth-skinned with whiskers; gars wear hard diamond scales; carp, tarpon and arowana show their big scales','Mackerel have their finlets, tarpon and gizzard shad the long thread off the back of the dorsal, peacock bass, redfish and oscar the eyespot by the tail']],
+  ['v1.02','Field-guide fish',['Every fish except the Congo species, the flounder and the eel is redrawn as a realistic field-guide plate: overlapping scales that stop at the gill cover, real fin shapes with rays and spines, and each species\' own markings','Catfish are smooth-skinned with whiskers; gars wear hard diamond scales; carp, tarpon and arowana show their big scales','Mackerel have their finlets, tarpon and gizzard shad the long thread off the back of the dorsal, peacock bass, redfish and oscar the eyespot by the tail','Pumpkinseed, rainbow trout, chain pickerel, brown and black bullheads and bowfin at the pond get theirs too']],
+  ['v1.02','Cleanup',['The bayou\'s mud bottom no longer has loose stones on it']],
   ['v1.02','Fish on the bait',['Nibbles on the fall are just pecks: the bait keeps sinking and the fish follows it down','When a fish takes the bait, the line goes still for a moment as it inhales it, then it either swims off with it or sits on it','Until you set the hook you can reel the bait away from a fish you don\u2019t want, and it lets go. Once it\u2019s hooked, it\u2019s on','A fish nibbling a settled bait stays right on it as it drifts, instead of hanging back while it bites','Big fish tip their heads down to a bait on the bottom instead of hovering above it']],
   ['v1.01','Bait housekeeping',['All your cut bait shares one clock now: adding fresh bait resets it, so the batch keeps a day from the last bait you added','The tackle box shows your bait bucket and cooler as two short lines, with Cut one, Empty and Toss right there; tap Empty or Toss twice to confirm','The cast net is the same size at every spot instead of looking huge in shallow water and tiny at the pier','The falling net drapes over the fish inside it, ripples as it sinks, and the catch flaps in the bag on the way in','Game fish caught under a cast net dive for the gap under the lead line and often get out','The cast net result is shorter and stays up longer']],
   ['v1.00','Bait from the water',['New Cast Net (gear shop): pick it in the tackle box like a rod, then hold THROW and let go over a school of baitfish near the bank. It sinks to the bottom and you haul it in. Legal at Iron Ferry, Tupelo Bayou, Pelican Point and Boyoma','New baitfish: gizzard shad at Iron Ferry and Tupelo Bayou, and pinfish and striped mullet at Pelican Point. Shad and mullet never bite a hook, so they take a net; pinfish peck at shrimp around the pilings','Bait is kept legal now: only panfish and forage fish go in the bait bucket, and only non-game baitfish can be kept from a cast net. Trout, bass, crappie and other game fish go back','Baitfish too big to fish live get cut into cut bait','New Bait Cooler (gear shop): cut bait has to be kept cold. A zip bag holds about 8 strips; the cooler holds 30','Boyoma Falls: the middle hump is half as tall, and the rocks on the far bank sit in the bank instead of hanging in the water','Small stones on the bottom now lie along the slope everywhere','The play stats question fits on one screen, upright or sideways','Fish near the bottom no longer push their heads or tails into steep banks, and catfish like the vundu rest at the foot of a slope instead of against it','The fish eagle at Boyoma flies like one: it soars on spread, fingered wings with bursts of slow beats, stoops to the river with its feet thrown forward, and labours back up with heavy wingbeats, sometimes carrying a fish off to the trees']],
