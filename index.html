@@ -387,10 +387,11 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 .tb-tile[aria-pressed="true"]{border-color:var(--amber);background:rgba(242,169,59,.14)}
 .tb-tile canvas{width:34px;height:34px}
 .rackrod.off{opacity:.55}.rr-net{width:32px;height:32px;flex:none}
-.bucket{margin-top:10px;padding:8px 10px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid var(--line)}
-.bk-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}.bk-head span{font-size:12.5px;opacity:.75;font-weight:700}
-.bk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid var(--line)}.bk-row>span{display:flex;flex-direction:column;min-width:0}.bk-row b{font-size:14px}.bk-row small{font-size:12px;opacity:.7}
-.bk-row>span{flex:1 1 auto}.bk-row .btn{width:auto;padding:6px 12px;font-size:13px;min-height:0;flex:0 0 auto;white-space:nowrap}
+.bucket{margin-top:10px;padding:4px 12px;border-radius:12px;background:rgba(0,0,0,.3);border:1px solid var(--line)}
+.bk-row{display:flex;align-items:center;gap:8px;padding:6px 0}.bk-row+.bk-row{border-top:1px solid var(--line)}
+.bk-row .lab{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;opacity:.6;margin-right:2px}
+.bk-row .txt{flex:1 1 auto;min-width:0;font-size:13px;line-height:1.3;color:var(--lichen-dim)}.bk-row .txt b{color:var(--cream,#f2ead2)}.bk-row .txt small{display:block;font-size:12px;opacity:.85}
+.bk-row .btn{width:auto;flex:none;padding:5px 10px;font-size:12.5px;min-height:0;white-space:nowrap}
 .tb-tile .ct{font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--lichen-dim)}
 .tb-head b{display:block;font-size:16px}.tb-head span{font-size:13px;color:var(--lichen-dim);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tb-tabs button{flex:1}
@@ -818,7 +819,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.00a';
+const VERSION='v1.01a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1206,13 +1207,14 @@ function useOwnBait(){const b=BK(),nm=LURES[S.lure].name;
 function cutCap(){return gearOn('cooler')?30:8;}
 function cutTotal(){return BK().cut.reduce((a,o)=>a+o.n,0);}
 function cutRoom(){return Math.max(0,cutCap()-cutTotal());}
-function addCut(id,n){const k=Math.min(n,cutRoom());if(k>0){const b=BK();b.cut.push({sp:id,n:k,t:absMin()});b.cs=id;syncOwnBait(true);}return k;}
+// All the cut bait shares one clock, set by the most recent bait added: fresh bait on top keeps the batch going.
+function addCut(id,n){const k=Math.min(n,cutRoom());if(k>0){const b=BK(),now=absMin(),o=b.cut.find(o=>o.sp===id);if(o)o.n+=k;else b.cut.push({sp:id,n:k,t:now});for(const c of b.cut)c.t=now;b.cs=id;syncOwnBait(true);}return k;}
 function cutOne(id,from){const b=BK(),arr=b[from],i=arr.findIndex(o=>o.sp===id);if(i<0||!cutRoom())return 0;const o=arr.splice(i,1)[0];return addCut(id,cutStrips(fishKg(id,o.len)));}
 for(const [k,kind] of [['livebait','live'],['cutbait','cut']])Object.defineProperties(LURES[k],{
   name:{get(){const id=BK()[kind==='live'?'ls':'cs'];return(kind==='live'?'Live ':'Cut ')+(id?SPMAP[id].name:'Bait');}},
   short:{get(){const id=BK()[kind==='live'?'ls':'cs'];return id?(kind==='live'?'Live ':'Cut ')+SPMAP[id].name.split(' ').pop():(kind==='live'?'Live Bait':'Cut Bait');}},
   color:{get(){const id=BK()[kind==='live'?'ls':'cs'];return id?SPMAP[id].col:'#c9d3d8';}},
-  desc:{get(){return kind==='live'?'A baitfish from your bucket. It swims on its own, and predators pick the prey they know. Big baits only interest fish big enough to swallow them.':'Strips of fresh fish. Sits still and bleeds scent, so catfish and other scent feeders track it down. Oily fish work best. Goes bad a day after cutting.';}}});
+  desc:{get(){return kind==='live'?'A baitfish from your bucket. It swims on its own, and predators pick the prey they know. Big baits only interest fish big enough to swallow them.':'Strips of fresh fish. Sits still and bleeds scent, so catfish and other scent feeders track it down. Oily fish work best. The whole batch keeps a day from the last fresh bait you added.';}}});
 
 // ---------------- SAVE ----------------
 const KEY='mossback-pond-v1';
@@ -4062,7 +4064,7 @@ function update(dt){
       else{F.ph='back';F.from={x:t.x+F.len,y:t.y-4};F.len=Math.min(170,F.len+28);F.s=0;F.T=.45+F.len/450;}}
     if(G.mode!=='play'||G.lure.state!=='ready')G.fc=null;}
   updateLure(dt);updateNet(dt);
-  fishSocial(dt);for(const f of G.fish)updateFish(f,dt);penNet();
+  fishSocial(dt);for(const f of G.fish)updateFish(f,dt);penNet(dt);
   G.fish=G.fish.filter(f=>!f.dead);
   if(G.fight)updateFight(dt);
   G.hudT-=dt;if(G.hudT<=0){updateHUD();G.hudT=.2;}
@@ -4142,7 +4144,7 @@ function updateHint(){
   if($('#bActionLbl').textContent!==want||hk.hidden!==(L.state!=='water')||hk.dataset.fs!==fs){hk.dataset.fs=fs;refreshControls();}
 }
 let toastTimer=0;
-function toast(msg,sub){const t=$('#toast');t.innerHTML='';t.append(msg);if(sub){const s=document.createElement('small');s.textContent=sub;t.append(s);}t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),sub?2200:1500);}
+function toast(msg,sub,ms){const t=$('#toast');t.innerHTML='';t.append(msg);if(sub){const s=document.createElement('small');s.textContent=sub;t.append(s);}t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('on'),ms||(sub?2200:1500));}
 
 // ---------------- INPUT ----------------
 function actionDown(){
@@ -4446,17 +4448,22 @@ function rodIcon(id){const u=SETUPS[id],c=document.createElement('canvas');c.wid
   else{x.fillRect(rx-.4,ry,.9,2.4);x.beginPath();x.ellipse(rx,ry+3.6,u.spool>1000?2.8:2.1,1.6,0,0,TAU);x.fill();}
   return c;}
 let OWN_SRC=null;
-function bucketPanel(){const b=BK(),now=absMin(),w=document.createElement('div');w.className='bucket';
-  const h=document.createElement('div');h.className='bk-head';h.innerHTML='<b></b><span></span>';h.querySelector('b').textContent=gearOn('bucket')?'Bait bucket':'Your bait';h.querySelector('span').textContent=gearOn('bucket')?`${bucketCount()}/${BUCKET_MAX}`:'';w.append(h);
-  const row=(label,sub,btn,act)=>{const r=document.createElement('div');r.className='bk-row';const t=document.createElement('span');t.innerHTML='<b></b><small></small>';t.querySelector('b').textContent=label;t.querySelector('small').textContent=sub;r.append(t);
-    if(btn){const k=document.createElement('button');k.className='btn';k.textContent=btn;k.onclick=act;r.append(k);}w.append(r);};
-  const left=m=>{const hrs=Math.max(0,Math.ceil((BAIT_LIFE-(now-m))/60));return hrs<=1?'under an hour left':`about ${hrs} h left`;};
-  const cut=(sid,from)=>()=>{if(!cutRoom()){toast(gearOn('cooler')?'The cooler is full':'No room for more cut bait','Use some first'+(gearOn('cooler')?'':', or get a bait cooler'));return;}const n=cutOne(sid,from);if(!n)return;SFX.ui();toast(`Cut a ${SPMAP[sid].name.toLowerCase()}`,`${n} strip${n>1?'s':''} of cut bait · good for a day`);save();updateHUD(true);renderLurePick();};
-  for(const [sid,n] of Object.entries(groupBy(b.live)))row(`${n} live ${SPMAP[sid].name.toLowerCase()}`,'Alive for '+left(Math.min(...b.live.filter(o=>o.sp===sid).map(o=>o.t))),'Cut one',cut(sid,'live'));
-  for(const [sid,n] of Object.entries(groupBy(b.dead)))row(`${n} dead ${SPMAP[sid].name.toLowerCase()}`,'Dead, so cut it soon · '+left(Math.min(...b.dead.filter(o=>o.sp===sid).map(o=>o.t))),'Cut one',cut(sid,'dead'));
-  if(b.cut.length)row(gearOn('cooler')?'Bait cooler':'Zip bag of cut bait',`${cutTotal()} of ${cutCap()} strips`);
-  for(const [sid,n] of Object.entries(groupBy(b.cut,'n')))row(`${n} cut ${SPMAP[sid].name.toLowerCase()}`,'Fresh · '+left(Math.min(...b.cut.filter(o=>o.sp===sid).map(o=>o.t))));
-  if(w.children.length===1){const p=document.createElement('p');p.className='tb-cond';p.textContent=gearOn('bucket')?'Empty. Small fish you catch can go in from the catch card.':'Baitfish and rough fish like carp and drum can be cut into bait from the catch card. Game fish can\u2019t be used as bait. Buy a bait bucket to keep small baitfish alive.';w.append(p);}
+// Your own bait at a glance, one line per container: what's in it, how long it keeps, and what you can do with it.
+// The tiles above already show each bait by kind, so this doesn't list them again.
+function bucketPanel(){const b=BK(),now=absMin(),hasB=gearOn('bucket')||b.live.length||b.dead.length,hasC=gearOn('cooler')||b.cut.length;if(!hasB&&!hasC)return null;
+  const w=document.createElement('div');w.className='bucket';const hrs=m=>{const h=Math.max(0,Math.ceil((BAIT_LIFE-(now-m))/60));return h<=1?'<1 h':`${h} h`;};
+  const nm=id=>SPMAP[id].name.split(' ').pop().toLowerCase();
+  const twoTap=(label,go)=>function(){if(this.dataset.armed){go();return;}this.dataset.armed=1;this.textContent='Sure?';setTimeout(()=>{if(this.isConnected){delete this.dataset.armed;this.textContent=label;}},2500);};
+  const row=(lab,html,btns)=>{const r=document.createElement('div');r.className='bk-row';r.innerHTML=`<span class="txt"><span class="lab"></span> ${html}</span>`;r.querySelector('.lab').textContent=lab;
+    for(const [t,fn] of btns){const k=document.createElement('button');k.className='btn';k.textContent=t;k.onclick=fn;r.append(k);}w.append(r);};
+  const done=()=>{syncOwnBait(true);save();updateHUD(true);SFX.ui();renderLurePick();};
+  if(hasB){const parts=[...Object.entries(groupBy(b.live)).map(([id,n])=>`${n} ${nm(id)}`),...Object.entries(groupBy(b.dead)).map(([id,n])=>`${n} dead ${nm(id)}`)],any=b.live.length+b.dead.length;
+    const oldest=Math.min(...b.live.map(o=>o.t),...b.dead.map(o=>o.t));
+    row('Bucket',any?`<b>${any}/${BUCKET_MAX}</b> · ${hrs(oldest)}<small>${parts.join(', ')}</small>`:`<b>0/${BUCKET_MAX}</b> · empty`,any?[
+      ['Cut one',()=>{if(!cutRoom()){toast(gearOn('cooler')?'Cooler is full':'Bag is full','Use some first'+(gearOn('cooler')?'':', or get a bait cooler'));return;}
+        const from=b.dead.length?'dead':'live',id=from==='dead'?b.dead[0].sp:(b.live.some(o=>o.sp===b.ls)?b.ls:b.live[0].sp),n=cutOne(id,from);if(n)toast(`Cut a ${SPMAP[id].name.toLowerCase()}`,`${n} strip${n>1?'s':''} of cut bait`);done();}],
+      ['Empty',twoTap('Empty',()=>{b.live=[];b.dead=[];toast('Bucket emptied','Let them go');done();})]]:[]);}
+  if(hasC){const n=cutTotal();row(gearOn('cooler')?'Cooler':'Bag',n?`<b>${n}/${cutCap()}</b> strips · ${hrs(Math.min(...b.cut.map(o=>o.t)))}`:`<b>0/${cutCap()}</b> strips`,n?[['Toss',twoTap('Toss',()=>{b.cut=[];toast('Cut bait thrown out');done();})]]:[]);}
   return w;}
 function lureIcon(id,size=40,col){const c=document.createElement('canvas');c.width=c.height=size*2;const x=c.getContext('2d');x.scale(size*2/16,size*2/16);drawLure(x,id,8,8,1,col);return c;}
 // What a rod has on it, in a couple of words: the bait or lure, and the rig when it's bait.
@@ -4485,7 +4492,7 @@ function renderLurePick(){
       top.append(ic,nm,sum);card.append(top);
       if(ns){const body=document.createElement('div');body.className='rr-body';const p0=document.createElement('p');p0.className='tb-cond';
         p0.textContent='Hold THROW and let go over a school of baitfish near the bank. The net sinks to the bottom and you haul it in. Small baitfish go in the bucket, bigger ones are cut into bait, and game fish go back.';
-        body.append(p0,bucketPanel());card.append(body);}
+        body.append(p0);{const bp=bucketPanel();if(bp)body.append(bp);}card.append(body);}
       rack.append(card);}
     list.append(rack);}
   if(netSel())return;
@@ -4509,7 +4516,7 @@ function renderLurePick(){
       const c2=document.createElement('span');c2.className='ct';c2.textContent='×'+n;OWN_SRC=sid;const ic=lureIcon(lid,40,SPMAP[sid].col);OWN_SRC=null;t.append(ic,nm,c2);
       t.onclick=()=>{b[key]=sid;syncOwnBait(true);S.lure=lid;save();updateHUD(true);SFX.ui();renderLurePick();};grid.append(t);}}
   if(G.tbTab!=='rig')box.append(grid);
-  if(G.tbTab==='bait'&&!flyR&&(gearOn('bucket')||bucketCount()||BK().cut.length))box.append(bucketPanel());
+  if(G.tbTab==='bait'&&!flyR){const bp=bucketPanel();if(bp)box.append(bp);}
   const lu=LURES[S.lure],opts=document.createElement('div');opts.className='rig';
   if(G.tbTab==='rig'&&!lu.bait){const p0=document.createElement('p');p0.className='tb-cond';p0.textContent=`Rigs are for bait. Your ${lu.name} ties straight onto the line.`;opts.append(p0);box.append(opts);return;}
   if(G.tbTab!=='rig'&&!!lu.bait!==(G.tbTab==='bait')){const p0=document.createElement('p');p0.className='tb-cond';p0.textContent=`On your line now: ${lu.name}. Tap ${G.tbTab==='bait'?'a bait':'a lure'} above to switch.`;opts.append(p0);box.append(opts);return;}
@@ -4725,6 +4732,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.01','Bait housekeeping',['All your cut bait shares one clock now: adding fresh bait resets it, so the batch keeps a day from the last bait you added','The tackle box shows your bait bucket and cooler as two short lines, with Cut one, Empty and Toss right there; tap Empty or Toss twice to confirm','The cast net is the same size at every spot instead of looking huge in shallow water and tiny at the pier','The falling net drapes over the fish inside it, ripples as it sinks, and the catch flaps in the bag on the way in','Game fish caught under a cast net dive for the gap under the lead line and often get out','The cast net result is shorter and stays up longer']],
   ['v1.00','Bait from the water',['New Cast Net (gear shop): pick it in the tackle box like a rod, then hold THROW and let go over a school of baitfish near the bank. It sinks to the bottom and you haul it in. Legal at Iron Ferry, Tupelo Bayou, Pelican Point and Boyoma','New baitfish: gizzard shad at Iron Ferry and Tupelo Bayou, and pinfish and striped mullet at Pelican Point. Shad and mullet never bite a hook, so they take a net; pinfish peck at shrimp around the pilings','Bait is kept legal now: only panfish and forage fish go in the bait bucket, and only non-game baitfish can be kept from a cast net. Trout, bass, crappie and other game fish go back','Baitfish too big to fish live get cut into cut bait','New Bait Cooler (gear shop): cut bait has to be kept cold. A zip bag holds about 8 strips; the cooler holds 30','Boyoma Falls: the middle hump is half as tall, and the rocks on the far bank sit in the bank instead of hanging in the water','Small stones on the bottom now lie along the slope everywhere','The play stats question fits on one screen, upright or sideways','Fish near the bottom no longer push their heads or tails into steep banks, and catfish like the vundu rest at the foot of a slope instead of against it','The fish eagle at Boyoma flies like one: it soars on spread, fingered wings with bursts of slow beats, stoops to the river with its feet thrown forward, and labours back up with heavy wingbeats, sometimes carrying a fish off to the trees']],
   ['v0.99','The Congo',['New place: Boyoma Falls on the Congo River. Rainforest on the far bank, rapids with Wagenia basket-trap scaffolds, a dugout working the current and an African fish eagle overhead','Ten Congo fish, drawn in more detail than ever: the goliath tigerfish (Mbenga!), African tigerfish, Nile perch, vundu, African pike, African butterflyfish, six-barred distichodus, redbreast tilapia, nembwe and the royal sprat','Each one behaves like the real fish: tigerfish packs in the open water, butterflyfish hanging at the surface, vundu on the bottom at night, Nile perch deep in the eddies','Big catfish and other bottom fish now lie along the slope of the bottom instead of floating above it','New Bait Bucket (gear shop): drop small fish you catch into it from the catch card and fish them as live bait. Predators have favorites, like tigerfish on sprat, Nile perch on tilapia and flatheads on bluegill, and a fish won’t take a bait too big to swallow','Any fish can be cut into cut bait from the catch card, or from the bucket. It sits still and bleeds scent for catfish, vundu and other scent feeders; oily fish work best','Live bait dies after about a day in the bucket, and dead baitfish and cut bait go bad a day after that, so fish it fresh','The tackle box and your angler stats now show the line on your rod after upgrades, matching the shop']],
   ['v0.98','Steam, rods and fish manners',['An old black steam locomotive now pulls the train, with a coal tender, smoke from the stack and turning drivers','The train blows a softer steam whistle: long, long, short, long, held as the engine crosses','A rod rack in the tackle box. Each rod remembers its own lure, size and color, and opens to what\u2019s on it','A plane towing a \u201cTight lines!\u201d banner flies over Pelican Point Pier','Turned sideways, the view now drops down so deep fish don\u2019t hide under the buttons','Highline Lake: forested ridges with rocky tops, a back row of firs along the shore and a ragged treeline','Flounder lie flat on the sand and swim flat, with both eyes up top','Fish stop and hover now and then; pike, pickerel, tiger muskie and gar lie in wait','Gar, bowfin, arapaima and tarpon come up for air less often, and fish swim more level','On bottom rigs the sinker goes down with the bait instead of starting on the bottom','Every angler plays by the same rules now, except Carter keeps his Amazon spot','Leaderboard: fixed catches not posting on iPhone, and it now tells you when a best goes up or why it hasn\u2019t','Fixed a freeze when a fish noticed your bait']],
@@ -4807,7 +4815,9 @@ const NET_R_FT=4.5,NET_MAXDEP_FT=16,NET_SINK_FT=2.6;
 function netOK(){return gearOn('castnet')&&!!LOC().castnet;}
 // The net is picked in the tackle box like a rod; with it in hand, CAST becomes THROW.
 function netSel(){return!!S.netSel&&netOK();}
-function throwNet(p){const ppf=pxPerFt(),R=NET_R_FT*ppf,hx=44,hy=dockY()-30,reach=castReach()*.32,tx=clamp(DOCKX+R+8+p*reach,DOCKX+R+4,WX-R-10);
+function throwNet(p){// Each spot's water is drawn to its own depth scale, so a true-to-scale net looked huge in the shallow bayou and tiny at the
+  // pier. The net is drawn the same size everywhere instead, as it would look in about 16 feet of water.
+  const ppf=pxPerFt(),R=NET_R_FT*(GROUND-SURF)/(5*3.281),hx=44,hy=dockY()-30,reach=castReach()*.32,tx=clamp(DOCKX+R+8+p*reach,DOCKX+R+4,WX-R-10);
   G.net={ph:'fly',t:0,T:.55+p*.25,x0:hx,y0:hy,tx,R,w:R,cx:tx,lead:SURF,got:[],spin:rand(-1,1)};SFX.ui();refreshControls();}
 function netZone(N){const horn=Math.max(SURF,N.lead-N.R*1.05);return{horn,inside:(x,y)=>{if(y<horn-2||y>N.lead+3)return false;const u=(y-horn)/Math.max(1,N.lead-horn);return Math.abs(x-N.cx)<lerp(N.w*.12,N.w,u);}};}
 function updateNet(dt){
@@ -4816,7 +4826,7 @@ function updateNet(dt){
       // fish under the falling net bolt; the quick ones and the ones near the edge mostly get out
       const floor=Math.min(bottomAt(N.cx)-1,SURF+NET_MAXDEP_FT*ppf);N.pen=[];
       for(const f of G.fish){if(f.dead||f.sp.turtle||f.state==='fight'||G.lure.fish===f)continue;const dx=Math.abs(f.x-N.cx);if(dx>N.R*1.6||f.y>floor+4)continue;
-        const inside=dx<N.R&&!f.sp.legend&&f.len<=50,p=inside?clamp(.04+f.sp.speed/1000+Math.pow(dx/N.R,2)*.45,.04,.6):1;
+        const inside=dx<N.R&&!f.sp.legend&&f.len<=50;f.netEsc=!NET_OK.has(f.sp.id);f.escaped=false;const p=inside?clamp(.04+f.sp.speed/1000+Math.pow(dx/N.R,2)*.45,.04,.6):1;
         if(Math.random()<p){flee(f,6);f.tx=clamp(N.cx+Math.sign(f.x-N.cx||1)*(N.R*2+40),DOCKX+30,WX-10);}else N.pen.push(f);}}
     return;}
   if(N.ph==='sink'){const floor=Math.min(bottomAt(N.cx)-1,SURF+NET_MAXDEP_FT*ppf);N.lead=Math.min(floor,N.lead+NET_SINK_FT*ppf*dt*(1+Math.min(1,N.t)));
@@ -4832,8 +4842,14 @@ function updateNet(dt){
 // Fish the net fell around are held by the mesh: once the falling net reaches a fish it carries it down with it,
 // and the walls push it in, so it rides inside the bag rather than waiting to be scooped up at the end.
 // Runs after the fish move each frame, so nothing slips through the mesh between frames.
-function penNet(){const N=G.net;if(!N||N.ph!=='sink'||!N.pen||!N.pen.length)return;const Z=netZone(N),span=Math.max(1,N.lead-Z.horn);
-  for(const f of N.pen){if(f.dead||f.state==='fight')continue;const m=Math.max(2,f.L*.3),need=clamp((f.L*.55+m-N.w*.12)/(N.w*.88),.3,.85),ry=Z.horn+need*span; // high enough that the whole fish fits inside the narrowing top
+function penNet(dt){const N=G.net;if(!N||N.ph!=='sink'||!N.pen||!N.pen.length)return;const Z=netZone(N),span=Math.max(1,N.lead-Z.horn),ppf=pxPerFt();
+  // Game fish caught under it don't wait: they dive for the gap under the falling lead line. If they get under it before it
+  // reaches the bottom they're out; if the lead line touches down first, they're bagged (and let go at the end).
+  for(const f of N.pen){if(f.dead||!f.netEsc||f.state==='fight')continue;const m=Math.max(2,f.L*.3),side=Math.sign(f.x-N.cx)||1;
+    if(f.y>N.lead+m*.4){f.netEsc=false;f.escaped=true;f.state='flee';f.timer=2;f.cool=6;f.tx=clamp(N.cx+side*N.R*2.6,DOCKX+30,WX-10);f.ty=Math.min(f.y,bottomAt(f.tx)-6);continue;}
+    const dive=(3.4+f.sp.speed/55)*ppf;f.y=Math.min(f.y+dive*dt,bottomAt(f.x)-2);f.x+=side*dive*.35*dt;f.ty=f.y+20;f.vy=dive;f.pitch=.6;}
+  N.pen=N.pen.filter(f=>!f.escaped);
+  for(const f of N.pen){if(f.dead||f.state==='fight')continue;if(f.netEsc&&f.y>Z.horn){const hw=lerp(N.w*.12,N.w,clamp((f.y-Z.horn)/span,0,1))-Math.max(2,f.L*.3);f.x=clamp(f.x,N.cx-hw,N.cx+hw);continue;}const m=Math.max(2,f.L*.3),need=clamp((f.L*.55+m-N.w*.12)/(N.w*.88),.3,.85),ry=Z.horn+need*span; // high enough that the whole fish fits inside the narrowing top
     if(f.y>N.lead){const lim=N.R*.85-m;f.x=clamp(f.x,N.cx-lim,N.cx+lim);f.tx=clamp(f.tx??f.x,N.cx-lim,N.cx+lim);continue;} // the net hasn't come down to it yet
     let y=Math.max(f.y,ry);y=Math.min(y,N.lead-m*.4,bottomAt(f.x)-2);const hw=Math.max(m,lerp(N.w*.12,N.w,clamp((y-Z.horn)/span,0,1))-m),x=clamp(f.x,N.cx-hw,N.cx+hw);
     if(y>f.y+.01||x!==f.x){f.vx=(x-f.x)*4;f.vy=Math.max(0,y-f.y)*4;}
@@ -4846,11 +4862,11 @@ function finishNet(){const N=G.net;G.net=null;refreshControls();if(!N)return;con
     else if(LIVE_OK.has(sp.id)){const n=cutStrips(SHAPES[sp.shape].k*Math.pow(g.len,3)),k=addCut(sp.id,n);if(k){cut++;strips+=k;}else back++;if(k<n)noRoom=true;}
     else back++;}
   syncOwnBait(true);S.stats.caught+=N.got.length;if(N.got.length)gainXP(N.got.length);save();updateHUD(true);
-  if(!N.got.length){toast('Empty net','Throw it right over a school of baitfish near the bank');return;}
-  const what=Object.entries(names).map(([k,n])=>`${n} ${k.toLowerCase()}`).join(', ');
-  const bits=[];if(live)bits.push(`${live} into the bucket (${bucketCount()}/${BUCKET_MAX})`);if(cut)bits.push(`${cut} too big to fish live, cut into ${strips} strips`);if(noRoom)bits.push(gearOn('cooler')?'cooler full':'no room for more cut bait without a cooler');
-  if(back)bits.push(`${back} released`+(full?' (bucket full)':!gearOn('bucket')&&N.got.some(g=>LIVE_OK.has(g.sp.id))?' (no bait bucket)':' (only baitfish can be kept from a cast net)'));
-  SFX.coin();toast('Netted '+what,bits.join(' · '));}
+  if(!N.got.length){toast('Empty net','Throw it over a school of baitfish',4000);return;}
+  const kinds=Object.entries(names),title=kinds.length===1?`Netted ${kinds[0][1]} ${kinds[0][0].toLowerCase()}`:`Netted ${N.got.length} fish`;
+  const bits=[];if(live)bits.push(`${live} in the bucket`);if(cut)bits.push(`${strips} strips of cut bait`);if(back)bits.push(`${back} let go`);
+  const why=full?'Bucket full':noRoom?(gearOn('cooler')?'Cooler full':'Bag full'):back&&!gearOn('bucket')&&N.got.some(g=>LIVE_OK.has(g.sp.id))?'No bait bucket':'';if(why)bits.push(why);
+  SFX.coin();toast(title,bits.join(' \u00b7 '),5000);}
 // The folded net hanging from the hand, lead line gathered at the bottom; it swings back as you wind up.
 function drawNetInHand(c,dk,hx,hy){const a=1-dk*.5,sw=G.charging?-Math.min(1,G.power)*.9:Math.sin(G.t*1.4)*.05,len=22;
   c.save();c.translate(hx+2,hy+2);c.rotate(sw);c.fillStyle=`rgba(226,232,222,${.22*a})`;c.strokeStyle=`rgba(236,240,232,${.6*a})`;c.lineWidth=.5;
@@ -4868,9 +4884,14 @@ function drawNet(c,dk){const N=G.net;if(!N)return;const a=1-dk*.5,mesh=`rgba(226
   // hand line from the angler to the horn at the top of the net
   c.strokeStyle=`rgba(230,230,220,${.6*a})`;c.lineWidth=.6;c.beginPath();c.moveTo(hx,hy);c.quadraticCurveTo((hx+cx)/2,Math.max(hy,SURF-4)+6,cx,horn);c.stroke();
   // the caught fish, flapping inside the bag
-  for(const g of N.got){c.save();c.translate(cx+g.dx*w*.8,ly+Math.max(-N.R*.9,g.dy*N.R)*(w/N.R)-2);drawFish(c,g.sp,g.L,g.face,G.t*14+g.ph,1,false);c.restore();}
-  const bag=()=>{c.beginPath();c.moveTo(cx-w,ly);c.lineTo(cx-w*.12,horn);c.lineTo(cx+w*.12,horn);c.lineTo(cx+w,ly);
-    if(N.ph==='sink'){for(let x=cx+w;x>=cx-w;x-=3)c.lineTo(x,Math.min(ly,bottomAt(x)-1));}else c.quadraticCurveTo(cx,ly+w*.35,cx-w,ly);c.closePath();};
+  for(const g of N.got){const t=G.t,j=g.ph;c.save();c.translate(cx+g.dx*w*.8+Math.sin(t*17+j)*1.4,ly+Math.max(-N.R*.9,g.dy*N.R)*(w/N.R)-2+Math.cos(t*21+j*1.7)*1.1);
+    c.rotate(Math.sin(t*23+j)*.55+Math.sin(t*7+j)*.3);drawFish(c,g.sp,g.L,Math.sin(t*2.3+j*3)>.75?-g.face:g.face,t*42+j,1,false);c.restore();}
+  const inner=(N.ph==='sink'?(N.pen||[]).filter(f=>!f.dead):[]),t=G.t,span=Math.max(1,ly-horn);
+  const wall=(sd,y)=>{const u=clamp((y-horn)/span,0,1);let x=lerp(w*.12,w,u),b=0;for(const f of inner){if(f.y<horn||f.y>ly)continue;const d=Math.abs(f.y-y),reach=f.L*.45;if(d>reach)continue;
+      const edge=Math.abs(f.x-cx)+f.L*.45;b=Math.max(b,(edge-x+2)*(1-d/reach));}return cx+sd*(x+Math.max(0,Math.min(6,b))+Math.sin(y*.35+t*3+sd)*.5*u);};
+  const bag=()=>{c.beginPath();if(N.ph==='sink'){c.moveTo(wall(-1,ly),ly);for(let i=7;i>=0;i--){const y=lerp(horn,ly,i/8);c.lineTo(wall(-1,y),y);}c.lineTo(cx+w*.12,horn);for(let i=1;i<=8;i++){const y=lerp(horn,ly,i/8);c.lineTo(wall(1,y),y);}}
+    else{c.moveTo(cx-w,ly);c.lineTo(cx-w*.12,horn);c.lineTo(cx+w*.12,horn);c.lineTo(cx+w,ly);}
+    if(N.ph==='sink'){const r=wall(1,ly),l=wall(-1,ly);for(let x=r;x>=l;x-=3)c.lineTo(x,Math.min(ly+Math.sin(x*.18+t*4)*.7,bottomAt(x)-1));}else c.quadraticCurveTo(cx,ly+w*(.35+Math.min(.25,N.got.length*.03)),cx-w,ly);c.closePath();};
   if(N.ph!=='haul'){c.beginPath();c.moveTo(cx-N.R*1.5,SURF-60);for(let x=cx-N.R*1.5;x<=cx+N.R*1.5;x+=3)c.lineTo(x,bottomAt(x)+.5);c.lineTo(cx+N.R*1.5,SURF-60);c.closePath();c.save();c.clip();}
   c.fillStyle=`rgba(226,232,222,${.1*a})`;bag();c.fill();
   c.save();bag();c.clip();c.strokeStyle=mesh;c.lineWidth=.4;c.beginPath();for(let k=-N.R*3;k<N.R*3;k+=2.4){c.moveTo(cx+k,horn-2);c.lineTo(cx+k+(ly-horn)*.9+4,ly+N.R);c.moveTo(cx+k,horn-2);c.lineTo(cx+k-(ly-horn)*.9-4,ly+N.R);}c.stroke();c.restore();
