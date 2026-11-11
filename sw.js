@@ -1,7 +1,7 @@
 // Backroads Fishing offline support.
 // The game page is fetched fresh when online (so updates arrive on their own)
 // and served from the phone's copy when offline. Fonts and icons are kept once loaded.
-const CACHE = 'backroads-v44';
+const CACHE = 'backroads-v45';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

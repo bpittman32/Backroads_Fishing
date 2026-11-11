@@ -1092,7 +1092,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.02d';
+const VERSION='v1.03a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1675,6 +1675,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
     weeds.push({x,type,blades,c:r(),ph:r()*6});}
   pads=[];for(let i=0;i<12;i++){const x=DOCKX+60+r()*(WX-DOCKX-80);if(r()<.6)pads.push({x,r:7+r()*7,a:r()*6,flower:r()<.3});}
   rocks=[];for(let x=DOCKX-30;x<WX+20;x+=r()*34+14){const big=r()<.18;rocks.push({x,d:6+r()*(big?40:90),rx:big?7+r()*9:2+r()*5,ry:0,a:r()*.6-.3,t:r()});rocks[rocks.length-1].ry=rocks[rocks.length-1].rx*(.55+r()*.3);}
+  if(LOC().cypress)rocks=[];  // a swamp bottom is muck and peat: no stones in it (cleared after the draws, so the rest of the layout is unchanged)
   roots=[];for(let i=0;i<7;i++){const x=DOCKX-20+r()*130;roots.push({x,len:20+r()*40,dir:r()<.5?-1:1,ph:r()*6,w:.8+r()*1.4});}
   if(!GPAT)GPAT=makeGroundPat();
   stones=[];if(!LOC().cypress)for(let x=DOCKX;x<WX;x+=r()*40+20)stones.push({x,r:3+r()*7,s:r()});  // a swamp's mud bottom has no loose stones
@@ -1745,7 +1746,7 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   if(creek){if(Lc.rocky){reeds=Lc.current?[]:reeds;weeds=weeds.filter((w,i)=>i%2===0);for(const w of weeds)for(const bl of w.blades)bl.h*=.5;
     stones=[];for(let x=DOCKX;x<WX;x+=r()*16+7)stones.push({x,r:3+r()*6,s:r()});}
     cboulders=[];for(const u of Lc.boulders||[]){const x=(S.loc==='creek'&&u>CK0?CK0+(u-CK0)*ckStretch():u)*TW,rr=(10+r()*12)*(Lc.congo?.7+hs(u*31,5)*.55:1),b=bottomAt(x);cboulders.push({x,r:rr,y:b-rr*(Lc.congo?.32:.55),t:r()});}
-    for(const u of Lc.sunken||[]){const x=u*TW;cboulders.push({x,r:52,y:bottomAt(x)-8,t:r(),log:true});}
+    for(const u of Lc.sunken||[]){const x=u*TW;const k={x,r:52,y:bottomAt(x)-8,t:r(),log:true};settleLog(k);cboulders.push(k);}
     if(ROCKKIND[S.loc]&&ROCKKIND[S.loc].shape)for(const k of cboulders){if(k.log)continue;let y=k.y;for(let f=-.8;f<=.81;f+=.1)y=Math.max(y,bottomAt(k.x+f*k.r*1.2)-k.r*.8*Math.sqrt(1-f*f)+1.5);k.y=Math.min(y,k.y+k.r*.6);}
     holds=cboulders.map(k=>({x:k.x-k.r-10,y:k.y}));for(const u of Lc.holds||[])holds.push({x:u*TW,y:bottomAt(u*TW)-20});if(Lc.stumps)for(const k of cboulders){k.y=bottomAt(k.x);}}
   else{cboulders=[];holds=[];}
@@ -3451,120 +3452,143 @@ function drawUndercut(c,dk){const x0=WX-70,top=SURF-12;const soil=rgbStr(mix('#5
   c.strokeStyle=rgbStr(mix('#3a2a1a','#0a0705',dk*.8));c.lineWidth=1;c.lineCap='round';for(let i=0;i<7;i++){const rx=x0+8+i*8,len=8+((i*13)%12);c.beginPath();c.moveTo(rx,SURF+5);c.quadraticCurveTo(rx+2+Math.sin(G.t*.8+i)*1.5,SURF+5+len*.6,rx-1,SURF+5+len);c.stroke();}}
 // A long-dead tree lying on the bottom. The trunk follows the shape of the bottom and sinks into the silt, rising only
 // where the root ball holds the deep end up; bark furrows, knots, a snapped-off top, limbs, moss and slime.
-function drawLog(c,dk,k){const D=v=>dk*.8,wood=rgbStr(mix('#6e5435','#100b06',D())),hi=rgbStr(mix('#8f7350','#140e08',D())),dark=rgbStr(mix('#3a2b1a','#070503',D())),
-  moss=rgbStr(mix('#6e8a44','#0c140a',D()),.85),silt=rgbStr(mix('#55432e','#0e0a05',D()));
-  const x0=k.x-k.r,x1=k.x+k.r,N=18,th=u=>6+u*3,lift=u=>0;
-  const P=[];for(let i=0;i<=N;i++){const u=i/N,x=lerp(x0,x1,u),b=bottomAt(x);P.push({u,x,y:b-th(u)*.42-lift(u),t:th(u)});}
-  // root plate: a fan of thick, tapering roots with a clod of old dirt caught in them
-  // trunk body with top-lit shading
+// Sunken trees. Each place's log is drawn for the water it lies in:
+//   alpine (Highline): long-drowned in cold, clear water - grey weathered wood split along the grain, scraps of bark,
+//     a dusting of silt and short algae fuzz, limbs snapped off to splintered tips.
+//   bayou (Tupelo): a waterlogged cypress in warm, murky swamp water - dark wood under a brown coat of silt and slime,
+//     long strings of bark, longer algae trailing off it, a hollow heart, limbs softened and rounded by rot.
+//   congo (Boyoma Falls): a heavy hardwood trunk in fast, muddy water - reddish-brown wood scoured smooth, deep
+//     checks, almost nothing growing, silt packed in on the downstream end, limbs broken short by the current.
+// A trunk is rigid: it lies straight, resting on the high spots of the bottom (pressed a little into soft silt) and
+// bridging the dips, never bending to follow the ground.
+const LOG_STYLE={
+  alpine:{grad:['#9a8c74','#76674f','#3c3122'],limb:['#7c6e58','#6e6250'],limbN:[4,3],limbLen:1,stub:.28,rot:false,
+    bark:{n:7,du:[.07,.12],h:[.16,.2],col:'#45372a',base:.6},cracks:4,dust:['#a8987a',.35],coat:null,
+    algae:{n:70,len:[1,2.6],col:'#6e7a3c',sway:.5},end:{col:'#8a7c64',hollow:0},packed:false},
+  bayou:{grad:['#5e4c3a','#3e3124','#1e1710'],limb:['#4e4032','#463a2e'],limbN:[3,2],limbLen:.8,stub:.4,rot:true,
+    bark:{n:12,du:[.12,.18],h:[.1,.12],col:'#3a2a1e',base:.4},cracks:2,dust:null,coat:['#5a4e30',.5],
+    algae:{n:60,len:[2.5,4.5],col:'#6a6a2e',sway:1.6},end:{col:'#4a3a2a',hollow:.5},packed:false},
+  congo:{grad:['#7a5a40','#56402c','#2a1e14'],limb:['#5e4632','#54402e'],limbN:[2,2],limbLen:.65,stub:.45,rot:false,
+    bark:{n:2,du:[.05,.08],h:[.14,.12],col:'#3a2818',base:.5},cracks:6,dust:['#8a6a48',.25],coat:null,
+    algae:{n:14,len:[.6,1],col:'#5a5a34',sway:.3},end:{col:'#6a4c34',hollow:0},packed:true}};
+function logRest(k,x0,x1,N,th){
+  // the lowest straight line the trunk can lie on without passing into the bottom; it has to touch down on both sides of
+  // its balance point (a little toward the heavy base end), or it would tip
+  const X=[],C=[];for(let i=0;i<=N;i++){const u=i/N,x=lerp(x0,x1,u);X.push(x);C.push(bottomAt(x)-th(u)*.42+th(u)*.25);}
+  const xm=lerp(x0,x1,.55);let best=null,bs=-Infinity;
+  for(let i=0;i<=N;i++)for(let j=i+1;j<=N;j++){if(X[i]>xm||X[j]<xm)continue;const m=(C[j]-C[i])/(X[j]-X[i]);let ok=true,sum=0;
+    for(let q=0;q<=N;q++){const y=C[i]+m*(X[q]-X[i]);if(y>C[q]+.01){ok=false;break;}sum+=y;}
+    if(ok&&sum>bs){bs=sum;best={y0:C[i]+m*(x0-X[i]),m};}}
+  return best||{y0:C[0],m:(C[N]-C[0])/(x1-x0)};}
+// a trunk lying across a steep bank would not stay there: it slides downhill until it comes to rest on gentler ground
+function settleLog(k){const N=18,th=u=>6+u*3;
+  for(let it=0;it<60;it++){k.rest=logRest(k,k.x-k.r,k.x+k.r,N,th);let gap=0;for(let i=0;i<=N;i++){const u=i/N,x=lerp(k.x-k.r,k.x+k.r,u);gap=Math.max(gap,bottomAt(x)-(k.rest.y0+k.rest.m*(x-k.x+k.r)+th(u)));}
+      if(Math.abs(k.rest.m)<=.22&&gap<th(.5)*1.1)break;
+      const nx=clamp(k.x+(Math.sign(k.rest.m)||1)*5,DOCKX+k.r,WX-k.r);if(nx===k.x)break;k.x=nx;}
+    k.y=bottomAt(k.x)-8;}
+function drawLog(c,dk,k){const D=()=>dk*.8,ST=LOG_STYLE[S.loc]||LOG_STYLE.alpine,
+    hi=rgbStr(mix('#8f7350','#140e08',D())),dark=rgbStr(mix('#3a2b1a','#070503',D())),silt=rgbStr(mix('#55432e','#0e0a05',D()));
+  const N=18,th=u=>6+u*3;
+  if(!k.rest)settleLog(k);
+  const x0=k.x-k.r,x1=k.x+k.r;
+  const P=[];for(let i=0;i<=N;i++){const u=i/N,x=lerp(x0,x1,u);P.push({u,x,y:k.rest.y0+k.rest.m*(x-x0),t:th(u)});}
   const body=()=>{c.beginPath();c.moveTo(P[0].x+1,P[0].y-P[0].t*.8);for(const q of P)c.lineTo(q.x,q.y-q.t);
     for(let i=N;i>=0;i--){const q=P[i];c.lineTo(q.x,q.y+q.t);}
     c.lineTo(P[0].x-1.5,P[0].y+P[0].t*.3);c.lineTo(P[0].x+2,P[0].y);c.lineTo(P[0].x-1,P[0].y-P[0].t*.4);c.closePath();}; // jagged snapped end
-  // broken limbs: each log grows its own set from a seed tied to its position (same every visit). Limbs taper from a thick
-  // base, kink where they once forked, end in snapped, splintered tips; some are only short stubs broken off near the trunk.
-  // They lean toward the crown (the thin end) and are drawn first, so their bases disappear behind the trunk.
-  const natural=!!LOC().alpine;  // Highline's sunken tree has the natural limbs; the other places keep their simple ones for now
-  if(natural&&!k.limbs){const rr=seeded(Math.round(k.x*13)+7),L=[];const n=4+Math.floor(rr()*3);
-    for(let i=0;i<n;i++){const u=.1+.8*(i+.15+rr()*.7)/n,stub=rr()<.28,len=stub?3+rr()*5:(13+rr()*20)*(1.1-u*.35),w0=stub?2+rr()*1.2:1.8+rr()*1.8*(1.1-u*.4);
+  // broken limbs: each log grows its own set from a seed tied to its position (same every visit). They taper, kink
+  // where they once forked, and lean toward the crown (the thin end); some are only stubs. Drawn first, so their bases
+  // disappear behind the trunk.
+  if(!k.limbs){const rr=seeded(Math.round(k.x*13)+7),L=[];const n=ST.limbN[0]+Math.floor(rr()*ST.limbN[1]);
+    for(let i=0;i<n;i++){const u=.1+.8*(i+.15+rr()*.7)/n,stub=rr()<ST.stub,len=(stub?3+rr()*5:(13+rr()*20)*(1.1-u*.35))*(stub?1:ST.limbLen),w0=stub?2+rr()*1.2:1.8+rr()*1.8*(1.1-u*.4);
       let a=-1.55-(.25+rr()*.75)*(rr()<.8?1:-.6),x=0,y=0;const pts=[[0,0]],segs=stub?1:3+Math.floor(rr()*2);
       for(let sI=0;sI<segs;sI++){a+=(rr()-.5)*.55;x+=Math.cos(a)*len/segs;y+=Math.sin(a)*len/segs;pts.push([x,y]);}
       const twigs=[];if(!stub)for(let t=1;t<segs;t++)if(rr()<.45){const ta=a+(rr()<.5?-1:1)*(.5+rr()*.5),tl=len*(.25+rr()*.3),p0=pts[t];
         const tp=[[p0[0],p0[1]]];let tx=p0[0],ty=p0[1],aa=ta;for(let q=0;q<2;q++){aa+=(rr()-.5)*.5;tx+=Math.cos(aa)*tl/2;ty+=Math.sin(aa)*tl/2;tp.push([tx,ty]);}
         twigs.push({pts:tp,w0:w0*(.35+.15*(1-t/segs)),w1:w0*.12});}
-      L.push({u,pts,w0,w1:stub?w0*.75:w0*(.18+rr()*.12),twigs,shade:rr()});}
+      L.push({u,pts,w0,w1:stub?w0*.75:w0*(.18+rr()*.12)*(ST.rot?1.8:1),twigs,shade:rr()});}
     k.limbs=L;}
   const limb=(ox,oy,pts,w0,w1,col)=>{const n=pts.length,Lf=[],Rt=[];
     for(let i=0;i<n;i++){const a=pts[Math.min(i+1,n-1)],b=pts[Math.max(i-1,0)],dx=a[0]-b[0],dy=a[1]-b[1],d=Math.hypot(dx,dy)||1,nx=-dy/d,ny=dx/d,w=lerp(w0,w1,i/(n-1))/2;
       Lf.push([ox+pts[i][0]+nx*w,oy+pts[i][1]+ny*w]);Rt.push([ox+pts[i][0]-nx*w,oy+pts[i][1]-ny*w]);}
     const t=pts[n-1],tb=pts[n-2],ta=Math.atan2(t[1]-tb[1],t[0]-tb[0]);
     c.fillStyle=col;c.beginPath();c.moveTo(Lf[0][0],Lf[0][1]);for(const p of Lf)c.lineTo(p[0],p[1]);
-    // splintered tip: a long sliver on one side, a short one on the other
-    c.lineTo(ox+t[0]+Math.cos(ta)*w1*1.6+Math.cos(ta+1.57)*w1*.25,oy+t[1]+Math.sin(ta)*w1*1.6+Math.sin(ta+1.57)*w1*.25);
-    c.lineTo(ox+t[0]+Math.cos(ta)*w1*.2,oy+t[1]+Math.sin(ta)*w1*.2);
-    c.lineTo(ox+t[0]+Math.cos(ta)*w1*.8-Math.cos(ta+1.57)*w1*.3,oy+t[1]+Math.sin(ta)*w1*.8-Math.sin(ta+1.57)*w1*.3);
+    if(ST.rot)c.arc(ox+t[0],oy+t[1],w1/2,ta-1.57,ta+1.57);  // rot rounds the broken ends off
+    else{// splintered tip: a long sliver on one side, a short one on the other
+      c.lineTo(ox+t[0]+Math.cos(ta)*w1*1.6+Math.cos(ta+1.57)*w1*.25,oy+t[1]+Math.sin(ta)*w1*1.6+Math.sin(ta+1.57)*w1*.25);
+      c.lineTo(ox+t[0]+Math.cos(ta)*w1*.2,oy+t[1]+Math.sin(ta)*w1*.2);
+      c.lineTo(ox+t[0]+Math.cos(ta)*w1*.8-Math.cos(ta+1.57)*w1*.3,oy+t[1]+Math.sin(ta)*w1*.8-Math.sin(ta+1.57)*w1*.3);}
     for(let i=n-1;i>=0;i--)c.lineTo(Rt[i][0],Rt[i][1]);c.closePath();c.fill();
     // light falls on the upper edge, the lower edge stays in shadow
     const up=Lf.reduce((s2,p)=>s2+p[1],0)<Rt.reduce((s2,p)=>s2+p[1],0)?Lf:Rt,dn=up===Lf?Rt:Lf;
-    c.lineWidth=Math.max(.4,w0*.22);c.strokeStyle=hi;c.beginPath();up.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke();
+    c.lineWidth=Math.max(.4,w0*.22);c.strokeStyle=hi;c.globalAlpha=ST.rot?.5:1;c.beginPath();up.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke();c.globalAlpha=1;
     c.strokeStyle=dark;c.beginPath();dn.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.stroke();};
-  if(natural)for(const lb of k.limbs){const q=P[Math.round(lb.u*N)],bx=q.x,by=q.y-q.t*.5,col=rgbStr(mix(lb.shade<.5?'#7c6e58':'#6e6250','#0f0b06',D()));
+  for(const lb of k.limbs){const q=P[Math.round(lb.u*N)],bx=q.x,by=q.y-q.t*.5,col=rgbStr(mix(ST.limb[lb.shade<.5?0:1],'#0f0b06',D()));
     for(const tw of lb.twigs)limb(bx,by,tw.pts,tw.w0,tw.w1,col);limb(bx,by,lb.pts,lb.w0,lb.w1,col);
-    // a dark socket where the limb broke away from the trunk on short stubs
     if(lb.pts.length===2){const t=lb.pts[1];c.fillStyle=dark;c.beginPath();c.ellipse(bx+t[0],by+t[1],lb.w1*.45,lb.w1*.3,0,0,TAU);c.fill();}}
+  // trunk
   const gy=lerp(P[0].y,P[N].y,.5),g=c.createLinearGradient(0,gy-12,0,gy+12);
-  if(natural){g.addColorStop(0,rgbStr(mix('#9a8c74','#14100a',D())));g.addColorStop(.4,rgbStr(mix('#76674f','#100c07',D())));g.addColorStop(1,rgbStr(mix('#3c3122','#070503',D())));}
-  else{g.addColorStop(0,hi);g.addColorStop(.45,wood);g.addColorStop(1,dark);}
+  g.addColorStop(0,rgbStr(mix(ST.grad[0],'#14100a',D())));g.addColorStop(.4,rgbStr(mix(ST.grad[1],'#100c07',D())));g.addColorStop(1,rgbStr(mix(ST.grad[2],'#070503',D())));
   c.fillStyle=g;body();c.fill();
   c.save();body();c.clip();
-  if(!natural){
-  c.strokeStyle=dark;c.lineWidth=.7;for(const f of[-.6,-.25,.15,.5]){c.beginPath();P.forEach((q,i)=>{const y=q.y+f*q.t+Math.sin(i*1.7+f*5)*.6;i?c.lineTo(q.x,y):c.moveTo(q.x,y);});c.stroke();}
-  for(const [u,r] of[[.33,2.2],[.58,2.8],[.8,2]]){const q=P[Math.round(u*N)];c.fillStyle=dark;c.beginPath();c.ellipse(q.x,q.y-q.t*.15,r*1.4,r,0,0,TAU);c.fill();c.strokeStyle=hi;c.lineWidth=.5;c.beginPath();c.ellipse(q.x,q.y-q.t*.15,r*.7,r*.45,0,0,TAU);c.stroke();}
-  }else{
-    // A long-drowned tree in cold water: most of the bark has sloughed away, leaving smooth grey wood with long
-    // splits running with the grain. Rough remnants of bark cling near the base and along the underside. Branch scars
-    // are oval and stretched along the trunk. Silt settles as a pale dusting on the upper surface.
-    if(!k.wood){const rr=seeded(Math.round(k.x*7)+3),W={grain:[],cracks:[],bark:[],scars:[]};
-      for(let i=0;i<26;i++){const u0=rr()*.9,len=.12+rr()*.45;W.grain.push({u0,u1:Math.min(1,u0+len),f:-.85+rr()*1.7,wob:rr()*6});}
-      for(let i=0;i<4;i++){const u0=.05+rr()*.6;W.cracks.push({u0,u1:Math.min(.97,u0+.15+rr()*.35),f:-.5+rr()*.9,wob:rr()*6,w:.5+rr()*.6});}
-      for(let i=0;i<7;i++){const u=rr()<.6?.72+rr()*.27:rr()*.7;W.bark.push({u,du:.07+rr()*.12,f:rr()<.6?.4+rr()*.4:-.6+rr()*.4,h:.16+rr()*.2,seed:rr()*99});}
-      for(const lb of (k.limbs||[]))W.scars.push({u:lb.u,f:-.55,r:lb.w0*.55});
-      for(let i=0;i<2;i++)W.scars.push({u:.15+rr()*.75,f:-.1+rr()*.5,r:.9+rr()*1.1});
-      k.wood=W;}
-    const W=k.wood,at=(u,f)=>{const fi=u*N,i0=Math.min(N-1,Math.floor(fi)),t=fi-i0,a=P[i0],b=P[i0+1];return[lerp(a.x,b.x,t),lerp(a.y,b.y,t)+f*lerp(a.t,b.t,t)];};
-    // fine grain
-    c.lineWidth=.35;c.strokeStyle=rgbStr(mix('#4a3d2b','#080604',D()),.55);
-    for(const gL of W.grain){c.beginPath();for(let u=gL.u0,i=0;u<=gL.u1;u+=.02,i++){const [x,y]=at(u,gL.f);const yy=y+Math.sin(u*40+gL.wob)*.25;i?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();}
-    // splits with the grain: a dark gap with a lit lip above it
-    for(const cr of W.cracks){c.lineWidth=cr.w;c.strokeStyle=rgbStr(mix('#241b10','#050302',D()),.9);c.beginPath();
-      for(let u=cr.u0,i=0;u<=cr.u1;u+=.015,i++){const [x,y]=at(u,cr.f);const yy=y+Math.sin(u*28+cr.wob)*.35;i?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();
-      c.lineWidth=.35;c.strokeStyle=rgbStr(mix('#a89a80','#14100a',D()),.6);c.beginPath();
-      for(let u=cr.u0+.01,i=0;u<=cr.u1-.01;u+=.015,i++){const [x,y]=at(u,cr.f);const yy=y+Math.sin(u*28+cr.wob)*.35-cr.w*.7;i?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();}
-    // patches of old bark: darker, rougher, broken into blocks
-    for(const bk of W.bark){const rr=seeded(Math.round(bk.seed*1000)),steps=12,env=i=>Math.pow(Math.sin(Math.PI*i/steps),.6);
-      c.fillStyle=rgbStr(mix('#45372a','#070503',D()),.9);c.beginPath();
-      for(let i=0;i<=steps;i++){const [x,y]=at(bk.u+bk.du*i/steps,bk.f-bk.h*env(i)*(.6+.4*rr()));i?c.lineTo(x,y):c.moveTo(x,y);}
-      for(let i=steps;i>=0;i--){const [x,y]=at(bk.u+bk.du*i/steps,bk.f+bk.h*env(i)*(.6+.4*rr()));c.lineTo(x,y);}c.closePath();c.fill();
-      // scaly bark: short furrows running with the trunk, a lit edge on each scale
-      for(let j=0;j<5;j++){const ff=bk.f+(j/4-.5)*bk.h*1.1,u0=bk.u+bk.du*(.15+rr()*.3),u1=u0+bk.du*(.2+rr()*.35),[x0,y0]=at(u0,ff),[x1,y1]=at(Math.min(u1,bk.u+bk.du*.9),ff);
-        c.strokeStyle=rgbStr(mix('#211810','#040302',D()),.85);c.lineWidth=.45;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();
-        c.strokeStyle=rgbStr(mix('#6a5a44','#0c0906',D()),.55);c.lineWidth=.3;c.beginPath();c.moveTo(x0,y0-.5);c.lineTo(x1,y1-.5);c.stroke();}}
-    // branch scars, stretched along the trunk, the wood swirling around them
-    for(const sc of W.scars){const [x,y]=at(sc.u,sc.f);c.strokeStyle=rgbStr(mix('#4a3d2b','#080604',D()),.35);c.lineWidth=.4;
-      c.beginPath();c.moveTo(x-sc.r*3.2,y+sc.r*.3);c.quadraticCurveTo(x,y-sc.r*1.6,x+sc.r*3.2,y+sc.r*.3);c.stroke();
-      c.fillStyle=rgbStr(mix('#2e2416','#060402',D()),.9);c.beginPath();c.ellipse(x,y,sc.r*1.3,sc.r*.6,0,0,TAU);c.fill();
-      c.fillStyle=rgbStr(mix('#8a7a60','#120e08',D()),.8);c.beginPath();c.ellipse(x-sc.r*.2,y-sc.r*.15,sc.r*.5,sc.r*.22,0,0,TAU);c.fill();}
-    // silt dusting the upper surface
-    c.fillStyle=rgbStr(mix('#a8987a','#14100a',D()),.35);c.beginPath();for(let i=0;i<=N;i++){const q=P[i];c.lineTo(q.x,q.y-q.t);}
-    for(let i=N;i>=0;i--){const q=P[i];c.lineTo(q.x,q.y-q.t*(.45+.18*Math.sin(i*1.9+k.x)));}c.closePath();c.fill();
-  }
+  if(!k.wood){const rr=seeded(Math.round(k.x*7)+3),W={grain:[],cracks:[],bark:[],scars:[]},B=ST.bark;
+    for(let i=0;i<26;i++){const u0=rr()*.9,len=.12+rr()*.45;W.grain.push({u0,u1:Math.min(1,u0+len),f:-.85+rr()*1.7,wob:rr()*6});}
+    for(let i=0;i<ST.cracks;i++){const u0=.05+rr()*.6;W.cracks.push({u0,u1:Math.min(.97,u0+.15+rr()*.35),f:-.5+rr()*.9,wob:rr()*6,w:.5+rr()*.6});}
+    for(let i=0;i<B.n;i++){const u=rr()<B.base?.72+rr()*.27:rr()*.7;W.bark.push({u,du:B.du[0]+rr()*B.du[1],f:rr()<.6?.4+rr()*.4:-.6+rr()*.4,h:B.h[0]+rr()*B.h[1],seed:rr()*99});}
+    for(const lb of k.limbs)W.scars.push({u:lb.u,f:-.55,r:lb.w0*.55});
+    for(let i=0;i<2;i++)W.scars.push({u:.15+rr()*.75,f:-.1+rr()*.5,r:.9+rr()*1.1});
+    k.wood=W;}
+  const W=k.wood,at=(u,f)=>{const fi=u*N,i0=Math.min(N-1,Math.floor(fi)),t=fi-i0,a=P[i0],b=P[i0+1];return[lerp(a.x,b.x,t),lerp(a.y,b.y,t)+f*lerp(a.t,b.t,t)];};
+  // fine grain
+  c.lineWidth=.35;c.strokeStyle=rgbStr(mix('#4a3d2b','#080604',D()),.55);
+  for(const gL of W.grain){c.beginPath();for(let u=gL.u0,i=0;u<=gL.u1;u+=.02,i++){const [x,y]=at(u,gL.f);const yy=y+Math.sin(u*40+gL.wob)*.25;i?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();}
+  // splits with the grain: a dark gap with a lit lip above it
+  for(const cr of W.cracks){c.lineWidth=cr.w;c.strokeStyle=rgbStr(mix('#241b10','#050302',D()),.9);c.beginPath();
+    for(let u=cr.u0,i=0;u<=cr.u1;u+=.015,i++){const [x,y]=at(u,cr.f);const yy=y+Math.sin(u*28+cr.wob)*.35;i?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();
+    c.lineWidth=.35;c.strokeStyle=rgbStr(mix('#a89a80','#14100a',D()),.6);c.beginPath();
+    for(let u=cr.u0+.01,i=0;u<=cr.u1-.01;u+=.015,i++){const [x,y]=at(u,cr.f);const yy=y+Math.sin(u*28+cr.wob)*.35-cr.w*.7;i?c.lineTo(x,yy):c.moveTo(x,yy);}c.stroke();}
+  // what is left of the bark
+  for(const bk of W.bark){const rr=seeded(Math.round(bk.seed*1000)),steps=12,env=i=>Math.pow(Math.sin(Math.PI*i/steps),.6);
+    c.fillStyle=rgbStr(mix(ST.bark.col,'#070503',D()),.9);c.beginPath();
+    for(let i=0;i<=steps;i++){const [x,y]=at(bk.u+bk.du*i/steps,bk.f-bk.h*env(i)*(.6+.4*rr()));i?c.lineTo(x,y):c.moveTo(x,y);}
+    for(let i=steps;i>=0;i--){const [x,y]=at(bk.u+bk.du*i/steps,bk.f+bk.h*env(i)*(.6+.4*rr()));c.lineTo(x,y);}c.closePath();c.fill();
+    for(let j=0;j<5;j++){const ff=bk.f+(j/4-.5)*bk.h*1.1,u0=bk.u+bk.du*(.15+rr()*.3),u1=u0+bk.du*(.2+rr()*.35),[x0,y0]=at(u0,ff),[x1,y1]=at(Math.min(u1,bk.u+bk.du*.9),ff);
+      c.strokeStyle=rgbStr(mix('#211810','#040302',D()),.85);c.lineWidth=.45;c.beginPath();c.moveTo(x0,y0);c.lineTo(x1,y1);c.stroke();
+      c.strokeStyle=rgbStr(mix('#6a5a44','#0c0906',D()),.55);c.lineWidth=.3;c.beginPath();c.moveTo(x0,y0-.5);c.lineTo(x1,y1-.5);c.stroke();}}
+  // branch scars, stretched along the trunk, the wood swirling around them
+  for(const sc of W.scars){const [x,y]=at(sc.u,sc.f);c.strokeStyle=rgbStr(mix('#4a3d2b','#080604',D()),.35);c.lineWidth=.4;
+    c.beginPath();c.moveTo(x-sc.r*3.2,y+sc.r*.3);c.quadraticCurveTo(x,y-sc.r*1.6,x+sc.r*3.2,y+sc.r*.3);c.stroke();
+    c.fillStyle=rgbStr(mix('#2e2416','#060402',D()),.9);c.beginPath();c.ellipse(x,y,sc.r*1.3,sc.r*.6,0,0,TAU);c.fill();
+    c.fillStyle=rgbStr(mix('#8a7a60','#120e08',D()),.8);c.beginPath();c.ellipse(x-sc.r*.2,y-sc.r*.15,sc.r*.5,sc.r*.22,0,0,TAU);c.fill();}
+  // silt dusting the upper surface (clear water), or a thick coat of silt and slime over the upper half (swamp)
+  const topBand=(col,a,depth,wav)=>{c.fillStyle=rgbStr(mix(col,'#14100a',D()),a);c.beginPath();for(let i=0;i<=N;i++){const q=P[i];c.lineTo(q.x,q.y-q.t-1);}
+    for(let u=1;u>=0;u-=.01){const [x,y]=at(u,-(depth+wav*Math.sin(u*34+k.x)*Math.sin(u*13+1)));c.lineTo(x,y);}c.closePath();c.fill();};
+  if(ST.dust)topBand(ST.dust[0],ST.dust[1],.45,.18);
+  if(ST.coat)topBand(ST.coat[0],ST.coat[1],-.1,.3);
+  // fast water polishes the exposed wood: faint long highlights
+  if(ST.packed){c.strokeStyle=rgbStr(mix('#b08a66','#14100a',D()),.35);c.lineWidth=.5;for(const f of[-.7,-.45]){c.beginPath();for(let u=.05,i=0;u<.95;u+=.03,i++){const [x,y]=at(u,f);i?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();}}
   c.restore();
-  // the thick end: weathered end grain with growth rings
-  if(natural){// the sawn-off look is wrong for a tree that fell: the base end is weathered grey, rings uneven, split by radial checks
-    const q=P[N],rx=q.t*.42,ry=q.t*.98;c.fillStyle=rgbStr(mix('#8a7c64','#14100a',D()));c.beginPath();c.ellipse(q.x,q.y,rx,ry,0,0,TAU);c.fill();
+  // the base end: a weathered break with uneven rings and radial checks (hollow at the heart in an old cypress)
+  {const q=P[N],rx=q.t*.42,ry=q.t*.98,E=ST.end;c.fillStyle=rgbStr(mix(E.col,'#14100a',D()));c.beginPath();c.ellipse(q.x,q.y,rx,ry,0,0,TAU);c.fill();
     c.strokeStyle=rgbStr(mix('#5a4c38','#0a0805',D()),.75);c.lineWidth=.4;
-    for(const r of[.82,.6,.4,.22]){c.beginPath();for(let a=0;a<=TAU+.01;a+=.35){const w=1+.07*Math.sin(a*3+r*9);c.lineTo(q.x+Math.cos(a)*rx*r*w,q.y+Math.sin(a)*ry*r*w);}c.stroke();}
-    c.strokeStyle=rgbStr(mix('#241b10','#050302',D()),.9);c.lineWidth=.6;for(const a of[-1.2,.4,2.3]){c.beginPath();c.moveTo(q.x+Math.cos(a)*rx*.1,q.y+Math.sin(a)*ry*.1);c.lineTo(q.x+Math.cos(a)*rx*.95,q.y+Math.sin(a)*ry*.95);c.stroke();}
+    for(const r of[.82,.6,.4,.22]){if(r<E.hollow)continue;c.beginPath();for(let a=0;a<=TAU+.01;a+=.35){const w=1+.07*Math.sin(a*3+r*9);c.lineTo(q.x+Math.cos(a)*rx*r*w,q.y+Math.sin(a)*ry*r*w);}c.stroke();}
+    if(E.hollow){c.fillStyle=rgbStr(mix('#120c06','#030201',D()),.95);c.beginPath();for(let a=0;a<=TAU+.01;a+=.4){const w=1+.15*Math.sin(a*4+k.x);c.lineTo(q.x+Math.cos(a)*rx*E.hollow*w,q.y+Math.sin(a)*ry*E.hollow*w);}c.fill();}
+    else{c.strokeStyle=rgbStr(mix('#241b10','#050302',D()),.9);c.lineWidth=.6;for(const a of[-1.2,.4,2.3]){c.beginPath();c.moveTo(q.x+Math.cos(a)*rx*.1,q.y+Math.sin(a)*ry*.1);c.lineTo(q.x+Math.cos(a)*rx*.95,q.y+Math.sin(a)*ry*.95);c.stroke();}}
     c.strokeStyle=rgbStr(mix('#3e3022','#070503',D()),.95);c.lineWidth=.9;c.beginPath();c.ellipse(q.x,q.y,rx,ry,0,-1.9,1.2);c.stroke();}
-  else {const q=P[N];c.fillStyle=rgbStr(mix('#7d6242','#120d07',D()));c.beginPath();c.ellipse(q.x,q.y,q.t*.42,q.t*.98,0,0,TAU);c.fill();
-    c.strokeStyle=dark;c.lineWidth=.6;for(const r of[.7,.42,.18]){c.beginPath();c.ellipse(q.x,q.y,q.t*.42*r,q.t*.98*r,0,0,TAU);c.stroke();}
-    c.beginPath();c.moveTo(q.x,q.y-q.t*.9);c.lineTo(q.x+q.t*.1,q.y-q.t*.2);c.stroke();}
-  if(!natural){
-  c.strokeStyle=wood;for(const [u,len,ang,w] of[[.22,20,-2,2.4],[.47,30,-1.4,3.1],[.69,17,-.85,2.2],[.86,14,-1.15,2]]){const q=P[Math.round(u*N)],bx=q.x,by=q.y-q.t*.85;
-    c.lineWidth=w;c.beginPath();c.moveTo(bx,by);c.lineTo(bx+Math.cos(ang)*len,by+Math.sin(ang)*len);c.stroke();
-    c.lineWidth=w*.55;c.beginPath();c.moveTo(bx+Math.cos(ang)*len*.6,by+Math.sin(ang)*len*.6);c.lineTo(bx+Math.cos(ang-.7)*len*.95,by+Math.sin(ang-.7)*len*.95);c.stroke();}
-  }
-  // a fine fuzz of algae grows in patches on the lit upper surface; in cold, clean water it stays short
-  if(natural){const sway=Math.sin(G.t*1.1+k.x)*.5;c.lineWidth=.45;c.strokeStyle=rgbStr(mix('#6e7a3c','#0c1006',D()),.8);
-    for(let i=0;i<70;i++){const u=.04+((i*.6180339)%1)*.9,patch=Math.sin(u*23+k.x)*Math.sin(u*9+1.3);if(patch<.05)continue;
-      const fi=u*N,i0=Math.min(N-1,Math.floor(fi)),t=fi-i0,x=lerp(P[i0].x,P[i0+1].x,t),y=lerp(P[i0].y-P[i0].t,P[i0+1].y-P[i0+1].t,t)+.6,h=1+patch*2.6;
-      c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+sway*.5,y-h*.6,x+sway+(i%3-1)*.4,y-h);c.stroke();}}
-  else{
-  c.strokeStyle=moss;c.lineWidth=2.2;c.beginPath();P.slice(1,N-1).forEach((q,i)=>{i?c.lineTo(q.x,q.y-q.t+1):c.moveTo(q.x,q.y-q.t+1);});c.stroke();
-  c.lineWidth=.8;for(let i=1;i<N-1;i+=2){const q=P[i],sw=Math.sin(G.t*1.2+i)*1.6;c.beginPath();c.moveTo(q.x,q.y-q.t);c.quadraticCurveTo(q.x+sw,q.y-q.t-4,q.x+sw*1.5,q.y-q.t-7-(i%3)*2);c.stroke();}
-  }
-  // silt piled along the buried side
-  c.fillStyle=silt;c.beginPath();c.moveTo(P[0].x-5,bottomAt(P[0].x-5)+1);for(const q of P)c.lineTo(q.x,Math.max(q.y+q.t*.62,bottomAt(q.x)-2.5));c.lineTo(P[N].x+6,bottomAt(P[N].x+6)+1);
-  for(let i=N;i>=0;i--)c.lineTo(P[i].x,bottomAt(P[i].x)+2);c.closePath();c.fill();}
+  // algae on the lit upper surface: short fuzz in cold clean water, long trailing strands in a warm swamp, next to none in fast water
+  {const A=ST.algae,sway=Math.sin(G.t*1.1+k.x)*A.sway;c.lineWidth=.45;c.strokeStyle=rgbStr(mix(A.col,'#0c1006',D()),.8);
+    for(let i=0;i<A.n;i++){const u=.04+((i*.6180339)%1)*.9,patch=Math.sin(u*23+k.x)*Math.sin(u*9+1.3);if(patch<.05)continue;
+      const fi=u*N,i0=Math.min(N-1,Math.floor(fi)),t=fi-i0,x=lerp(P[i0].x,P[i0+1].x,t),y=lerp(P[i0].y-P[i0].t,P[i0+1].y-P[i0+1].t,t)+.6,h=A.len[0]+patch*A.len[1];
+      const sw=sway*(1+(i%4)*.25)+(LOC().current?Math.sign(LOC().current)*h*.3:0);
+      if(h<3){c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+sw*.5,y-h*.6,x+sw+(i%3-1)*.4,y-h);c.stroke();continue;}
+      // long filaments float up in loose, wavering threads
+      c.globalAlpha=.6;c.beginPath();c.moveTo(x,y);for(let s2=1;s2<=6;s2++){const f=s2/6;c.lineTo(x+sw*f*f*1.4+Math.sin(f*4+i+G.t*.8)*.35,y-h*f);}c.stroke();c.globalAlpha=1;}}
+  // silt along the buried side; where the trunk bridges a dip the gap underneath stays open
+  c.fillStyle=silt;c.beginPath();c.moveTo(P[0].x-5,bottomAt(P[0].x-5)+1);
+  for(const q of P){const b=bottomAt(q.x),lb=q.y+q.t*.62,gap=b-lb,w=clamp((gap-2)/4,0,1);c.lineTo(q.x,lerp(Math.max(lb,b-2.5),b-1,w));}
+  c.lineTo(P[N].x+6,bottomAt(P[N].x+6)+1);for(let i=N;i>=0;i--)c.lineTo(P[i].x,bottomAt(P[i].x)+2);c.closePath();c.fill();
+  // in fast water silt packs in against the downstream end
+  if(ST.packed){const dn=(LOC().current||1)>=0?N:0,q=P[dn],s=dn?1:-1,top=q.y-q.t*.25,far=q.x+s*14,b=Math.max(bottomAt(far),top+2);if(bottomAt(far)>top+2){c.fillStyle=silt;c.beginPath();c.moveTo(q.x-s*3,top);
+    c.quadraticCurveTo(q.x+s*6,top+1,far,b+1);c.lineTo(far,bottomAt(far)+3);c.lineTo(q.x-s*2,bottomAt(q.x)+3);c.closePath();c.fill();}}}
 // Drowned flooded-forest trees, reduced to broken trunks: each is built from a seed tied to its position, so they all differ
 // (height, lean, thickness, wood colour, jagged top, hollow, cracks, knots, moss) but stay the same every visit.
 function drawStump(c,dk,k){const R=seeded(Math.round(k.x*7.3)+11),rr=(a,b)=>a+(b-a)*R();
@@ -6435,11 +6459,13 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.03','Sunken trees',['Sunken trees lie straight, resting on the high spots of the bottom instead of bending over it, and one that landed on a steep bank slides down to gentler ground','Tupelo Bayou\'s are dark, waterlogged cypress under a coat of silt and slime, with strings of old bark, wavering algae, a hollow heart and limbs rounded off by rot','Boyoma Falls\' is heavy hardwood scoured smooth by the current, deeply checked, almost bare of growth, with silt packed against its downstream end','The bayou\'s muck bottom no longer has stones in it']],
+  ['v1.03','Life at Highline',['Highline Lake\'s clear water now grows low patches of quillwort and stonewort across the shallow shelf and the rock ledges, with a few short stands of fineleaf pondweed in the shallows','Nothing tall, and the steep granite faces stay bare; out on the floor of the deep basin there are only scattered stonewort meadows, thicker around the sunken tree where silt has caught','The sunken tree looks long-drowned: grey, weathered wood split along the grain, scraps of old bark, branch scars, a dusting of silt and short algae fuzz on top, and broken limbs that taper to splintered ends']],
+  ['v1.03','Pond fish',['Pumpkinseed, rainbow trout, chain pickerel, brown and black bullheads and bowfin at the pond get the field-guide look too']],
+  ['v1.03','Cleanup',['The bayou\'s mud bottom no longer has loose stones on it','Creek rocks carry one kind of water moss, streaming downstream off the top, instead of two','The chain pickerel is redone to match the real fish: golden-yellow sides netted with dark chain links, a dark olive back, a dark bar straight down from the eye, and plain fins']],
   ['v1.02','Water plants',['Each place now grows the plants that really live there: tape grass, coontail, milfoil and cabbage weed in the pond and lake, water crowfoot streaming in the creek, sago pondweed in the river, quillwort and stonewort in the high lake, hydrilla and fanwort in the bayou, turtle grass and shoal grass on the Gulf bottom','Shoreline plants: cattails at the pond, bulrush on the lake, water willow on the river, papyrus on the Congo','Water hyacinth and water lettuce float in the bayou and the Amazon, hyacinth drifts down the Congo, and sargassum floats past the pier','Pier pilings carry barnacles, sea lettuce and oysters, and the creek and Congo rocks grow their own moss and riverweed']],
   ['v1.02','Real rocks',['Rocks are the real stone of each place: rusty sandstone in the creek, silted river rock, pink granite at Big Rock Lake, broken pale granite at Highline, and barnacle-crusted limestone off the pier','They pick up the water\u2019s color and darken with depth, a brown algae film coats their tops, and sunlight ripples across the shallow ones on clear days','In current, silt rolls over each rock into the eddy behind it, sand settles in its lee, and a rock near the top lifts a gentle hump and slow boils on the surface','Rocks sit in the bank instead of hanging off steep slopes']],
-  ['v1.02','Field-guide fish',['Every fish except the Congo species, the flounder and the eel is redrawn as a realistic field-guide plate: overlapping scales that stop at the gill cover, real fin shapes with rays and spines, and each species\' own markings','Catfish are smooth-skinned with whiskers; gars wear hard diamond scales; carp, tarpon and arowana show their big scales','Mackerel have their finlets, tarpon and gizzard shad the long thread off the back of the dorsal, peacock bass, redfish and oscar the eyespot by the tail','Pumpkinseed, rainbow trout, chain pickerel, brown and black bullheads and bowfin at the pond get theirs too']],
-  ['v1.02','Life at Highline',['Highline Lake\'s clear water now grows low patches of quillwort and stonewort across the shallow shelf and the rock ledges, with a few short stands of fineleaf pondweed in the shallows','Nothing tall, and the steep granite faces stay bare; out on the floor of the deep basin there are only scattered stonewort meadows, thicker around the sunken tree where silt has caught','The sunken tree looks long-drowned: grey, weathered wood split along the grain, scraps of old bark, branch scars, a dusting of silt and short algae fuzz on top, and broken limbs that taper to splintered ends']],
-  ['v1.02','Cleanup',['The bayou\'s mud bottom no longer has loose stones on it','Creek rocks carry one kind of water moss, streaming downstream off the top, instead of two','The chain pickerel is redone to match the real fish: golden-yellow sides netted with dark chain links, a dark olive back, a dark bar straight down from the eye, and plain fins']],
+  ['v1.02','Field-guide fish',['Every fish except the Congo species, the flounder and the eel is redrawn as a realistic field-guide plate: overlapping scales that stop at the gill cover, real fin shapes with rays and spines, and each species\' own markings','Catfish are smooth-skinned with whiskers; gars wear hard diamond scales; carp, tarpon and arowana show their big scales','Mackerel have their finlets, tarpon and gizzard shad the long thread off the back of the dorsal, peacock bass, redfish and oscar the eyespot by the tail']],
   ['v1.02','Fish on the bait',['Nibbles on the fall are just pecks: the bait keeps sinking and the fish follows it down','When a fish takes the bait, the line goes still for a moment as it inhales it, then it either swims off with it or sits on it','Until you set the hook you can reel the bait away from a fish you don\u2019t want, and it lets go. Once it\u2019s hooked, it\u2019s on','A fish nibbling a settled bait stays right on it as it drifts, instead of hanging back while it bites','Big fish tip their heads down to a bait on the bottom instead of hovering above it']],
   ['v1.01','Bait housekeeping',['All your cut bait shares one clock now: adding fresh bait resets it, so the batch keeps a day from the last bait you added','The tackle box shows your bait bucket and cooler as two short lines, with Cut one, Empty and Toss right there; tap Empty or Toss twice to confirm','The cast net is the same size at every spot instead of looking huge in shallow water and tiny at the pier','The falling net drapes over the fish inside it, ripples as it sinks, and the catch flaps in the bag on the way in','Game fish caught under a cast net dive for the gap under the lead line and often get out','The cast net result is shorter and stays up longer']],
   ['v1.00','Bait from the water',['New Cast Net (gear shop): pick it in the tackle box like a rod, then hold THROW and let go over a school of baitfish near the bank. It sinks to the bottom and you haul it in. Legal at Iron Ferry, Tupelo Bayou, Pelican Point and Boyoma','New baitfish: gizzard shad at Iron Ferry and Tupelo Bayou, and pinfish and striped mullet at Pelican Point. Shad and mullet never bite a hook, so they take a net; pinfish peck at shrimp around the pilings','Bait is kept legal now: only panfish and forage fish go in the bait bucket, and only non-game baitfish can be kept from a cast net. Trout, bass, crappie and other game fish go back','Baitfish too big to fish live get cut into cut bait','New Bait Cooler (gear shop): cut bait has to be kept cold. A zip bag holds about 8 strips; the cooler holds 30','Boyoma Falls: the middle hump is half as tall, and the rocks on the far bank sit in the bank instead of hanging in the water','Small stones on the bottom now lie along the slope everywhere','The play stats question fits on one screen, upright or sideways','Fish near the bottom no longer push their heads or tails into steep banks, and catfish like the vundu rest at the foot of a slope instead of against it','The fish eagle at Boyoma flies like one: it soars on spread, fingered wings with bursts of slow beats, stoops to the river with its feet thrown forward, and labours back up with heavy wingbeats, sometimes carrying a fish off to the trees']],
