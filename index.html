@@ -1092,7 +1092,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.02b';
+const VERSION='v1.02c';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -3314,7 +3314,7 @@ function drawBoulder(c,dk,k){const Lb=LOC(),R=k.r,h=i=>hs(k.t*97+k.x*.013,i),wx=
 // ---- Rocks, by place ----
 // What each place's stone is, how the water has worn it, and what grows on it.
 //  creek  : Appalachian sandstone and shale, rounded by the stream, rusty with iron; a brown diatom film on top, green
-//           filament algae streaming off the shallow rocks in summer, and fountain moss on the faces that meet the current.
+//           filament algae streaming off the shallow rocks in summer (the water moss on top comes from the plants code).
 //  river  : rounded river rock under a coat of silt; the muddy water keeps the algae thin and the light low.
 //  lake   : glacier-rounded pink-gray granite (quartz, feldspar, black mica), a thin olive film where the light reaches.
 //  alpine : pale Wind River granite and gneiss broken off the talus, still angular, nearly bare in cold, clear water.
@@ -3375,8 +3375,6 @@ function drawRock(c0,dk,k){const kd=rockKind(),R=k.r,h=i=>hs(k.t*131+k.x*.017,i)
   // a skin of silt settles on top in muddy water
   if(kd.silt){c.fillStyle=K('#b9a578',kd.silt*.7,-.1);c.beginPath();c.moveTo(-W*1.3,-R*.55);for(let i=0;i<=8;i++){const x=-W*1.3+i*W*2.6/8;c.lineTo(x,-R*(.55+.2*h(190+i)));}c.lineTo(W*1.3,-R*1.5);c.lineTo(-W*1.3,-R*1.5);c.closePath();c.fill();
     c.fillStyle=K('#cdbf9c',kd.silt*.35);for(let i=0;i<Math.round(R*2);i++)c.fillRect((h(200+i)-.5)*2*W,-R*(.62+h(210+i)*.4),.8,.5);}
-  // fountain moss grips the face that takes the current, its tips combed downstream
-  if(kd.moss&&cur>2&&h(220)<.75){const mc=K(kd.moss,.9),n=4+Math.floor(h(221)*4);c.fillStyle=mc;for(let i=0;i<n;i++){const a=-.15-h(230+i)*1.15,px=Math.cos(a)*W*.92,py=Math.sin(a)*R*.95;c.beginPath();c.ellipse(px,py,R*(.1+h(240+i)*.1),R*(.07+h(250+i)*.06),a,0,TAU);c.fill();}}
   // salt water: barnacles and oysters crust the rubble
   if(kd.crust){const n=Math.round(R*R*.2);for(let i=0;i<n;i++){const x=(h(300+i)-.5)*2*W,y=-R*(h(500+i)*1.15-.2),s=.35+h(700+i)*.55;if(h(900+i)<.82){c.fillStyle=K('#d6d0c0',.8);c.beginPath();c.arc(x,y,s,0,TAU);c.fill();if(s>.6){c.fillStyle=K('#55504a',.6);c.fillRect(x-.25,y-.25,.5,.5);}}
       else{c.fillStyle=K(h(960+i)<.5?'#7e7668':'#8a8272',.9);c.beginPath();c.moveTo(x-s*2.4,y);c.quadraticCurveTo(x-s,y-s*1.8,x+s*2,y-s*.6);c.quadraticCurveTo(x+s*1.2,y+s*1.2,x-s*2.4,y);c.fill();}}}
@@ -5233,12 +5231,34 @@ TR('trout',{grad:[[0,'#26342c'],[.15,'#3a4c40'],[.3,'#5e7064'],[.45,'#98a49a'],[
   finStyle:{tail:F('rgba(110,120,100,.9)','rgba(130,136,116,.8)','rgba(50,56,40,.4)',{horiz:true}),dorsal:F('rgba(130,136,110,.6)','rgba(104,110,86,.9)','rgba(50,56,40,.45)'),adipose:F('rgba(90,100,80,.9)','rgba(90,100,80,.9)',''),
     anal:F('rgba(200,180,170,.75)','rgba(180,160,150,.85)','rgba(110,90,80,.4)',{lead:['rgba(250,250,246,.95)','rgba(250,250,246,0)']}),pect:F('rgba(210,190,170,.45)','rgba(190,170,150,.55)','rgba(110,90,80,.4)'),
     pelvic:F('rgba(210,180,170,.75)','rgba(190,160,150,.85)','rgba(110,90,80,.4)',{lead:['rgba(250,250,246,.95)','rgba(250,250,246,0)']})}});
-// Chain pickerel: a small pike; golden-green with a net of dark chain-like links over the flanks and a dark vertical
-// teardrop under the eye.
-PK('pickerel',{grad:[[0,'#202c16'],[.15,'#34421e'],[.3,'#566430'],[.45,'#7e8842'],[.6,'#a8a660'],[.72,'#c8c08a'],[.85,'#e4e0c6'],[1,'#eeece0']],bellyTint:[240,238,222,.3],
-  marks:(k,D)=>{M.worms(k,D,{seed:301,n:85,x0:.24,x1:-.35,f0:.1,f1:.7,w:.0036,len:.024,col:'rgba(22,26,14,.48)'});M.bars(k,D,{seed:302,n:1,x0:.385,x1:.384,w:.008,a:.75,col:'20,22,12',f0:.42,f1:.92,taper:.6,fade:.2});},
-  finStyle:{tail:F('rgba(110,110,70,.88)','rgba(130,128,80,.78)','rgba(50,50,30,.4)',{horiz:true}),dorsal:F('rgba(120,116,74,.65)','rgba(104,100,64,.9)','rgba(50,46,24,.45)'),anal:F('rgba(140,130,84,.75)','rgba(120,112,72,.88)','rgba(60,50,30,.4)'),
-    pect:F('rgba(180,170,120,.45)','rgba(160,150,100,.55)','rgba(90,80,50,.4)'),pelvic:F('rgba(170,160,110,.75)','rgba(150,140,90,.85)','rgba(90,80,50,.4)')}});
+// Chain pickerel: a small pike with a longer snout. Dark olive-brown back; bright golden-yellow sides covered by a net of
+// dark chain-like links that enclose light, horizontally stretched cells; white belly; a dark bar dropping straight down
+// from the eye almost to the bottom of the head; yellow eye. Fins unmarked: olive-amber dorsal and tail (tail base
+// marbled darker, tips dusky), the pectoral, pelvic and anal fins faintly reddish.
+const chainLinks=(k,D,o)=>{const r=rng(o.seed),fBot=o.fBot||.8;
+  // 1) the dark net: fill the upper four-fifths of each body slice
+  k.fillStyle=o.net;for(let x=-.37;x<.27;x+=.004){const t=D.topAt(x)-.01,b=lerp(D.topAt(x),D.botAt(x),fBot);k.fillRect(x,t,.0045,b-t);}
+  // the dark of the back runs forward over the top of the head; the cheek below stays golden
+  for(let x=.27;x<.5;x+=.004){const t=D.topAt(x)-.01,b=lerp(D.topAt(x),D.botAt(x),.42-(x-.27)*.6);k.globalAlpha=.85;k.fillRect(x,t,.0045,b-t);}k.globalAlpha=1;
+  // the bottom edge of the net breaks up into the pale belly
+  k.save();k.globalCompositeOperation='destination-out';k.fillStyle='rgba(0,0,0,1)';
+  for(let x=-.37;x<.27;x+=.012){const y=lerp(D.topAt(x),D.botAt(x),fBot+(r()-.5)*.08);k.beginPath();k.ellipse(x,y+.006,.009,.006,0,0,TAU);k.fill();}
+  // 2) cut the light cells out of the net in staggered rows, so dark lines are left between them like links
+  const rows=o.rows||7;for(let ri=0;ri<rows;ri++){const f=lerp(.1,fBot-.02,ri/(rows-1)),cut=ri===0?.45:ri===1?.75:1;
+    let x=.255-(ri&1)*.022-r()*.01;while(x>-.36){const t=D.topAt(x),b=D.botAt(x),dep=b-t,len=dep*(.42+r()*.22)*o.long,h=dep/rows*(.62+r()*.16);
+      const y=lerp(t,b,f)+(r()-.5)*dep*.04,tilt=(r()-.5)*.25;k.fillStyle=`rgba(0,0,0,${cut*(.9+r()*.1)})`;k.beginPath();k.ellipse(x-len*.5,y,len*.5,h*.5,tilt,0,TAU);k.fill();
+      x-=len+dep*(.05+r()*.03);}}
+  k.restore();};
+PK('pickerel',{scale:.0065,top:[[.5,-.003],[.47,-.01],[.43,-.018],[.38,-.028],[.32,-.042],[.25,-.054],[.15,-.062],[.05,-.064],[-.05,-.062],[-.13,-.057],[-.2,-.05],[-.26,-.042],[-.31,-.035],[-.355,-.031]],
+  bot:[[.5,.005],[.47,.012],[.42,.02],[.36,.03],[.28,.043],[.2,.052],[.1,.058],[0,.06],[-.08,.057],[-.15,.05],[-.22,.043],[-.27,.037],[-.31,.033],[-.355,.031]],
+  grad:[[0,'#262a12'],[.12,'#3c3e18'],[.25,'#6a6424'],[.4,'#b09a34'],[.55,'#d2b848'],[.68,'#e0cc72'],[.8,'#ece2b8'],[1,'#f4f0e0']],bellyTint:[246,242,226,.3],
+  marks:(k,D)=>{chainLinks(k,D,{seed:301,net:'rgba(34,36,14,.9)',rows:7,long:1});},
+  tailFin:{type:'fork',spread:.085,notch:.36},
+  finStyle:{tail:F('rgba(70,70,34,.92)','rgba(118,110,58,.8)','rgba(40,40,20,.4)',{horiz:true}),dorsal:F('rgba(120,112,58,.6)','rgba(104,96,50,.88)','rgba(50,46,22,.45)'),
+    anal:F('rgba(176,120,80,.62)','rgba(160,104,70,.82)','rgba(80,50,30,.4)'),pect:F('rgba(200,140,100,.42)','rgba(184,124,86,.52)','rgba(100,60,40,.4)'),pelvic:F('rgba(190,124,84,.66)','rgba(170,108,72,.84)','rgba(90,56,34,.4)')},
+  head:{dark:'34,36,14',eye:{x:.39,y:-.02,r:.0145,iris:['#e8c840','#b08a1c','#3a2a08']},preop:.055,nostril:[.44,-.016],
+    mouth:{line:[[.5,.001],[.47,.006],[.44,.01],[.41,.013],[.385,.015],[.37,.016]],lipCol:'rgba(190,180,130,.55)',jawTop:'rgba(90,90,50,.35)'},
+    extra:c=>{c.fillStyle='rgba(20,20,10,.82)';c.beginPath();c.moveTo(.398,-.009);c.quadraticCurveTo(.395,.008,.388,.024);c.lineTo(.377,.024);c.quadraticCurveTo(.382,.008,.38,-.009);c.closePath();c.fill();}}});
 // Bullheads: small, stout catfish with a squarish tail, a rounded anal fin and dark chin barbels.
 const BULL={top:[[.495,.004],[.488,-.024],[.47,-.046],[.43,-.064],[.37,-.084],[.3,-.1],[.22,-.112],[.14,-.118],[.05,-.116],[-.05,-.106],[-.14,-.09],[-.22,-.072],[-.28,-.06],[-.32,-.054],[-.355,-.05]],
   bot:[[.5,.024],[.492,.048],[.47,.066],[.42,.08],[.36,.09],[.3,.096],[.2,.102],[.1,.104],[0,.098],[-.1,.086],[-.18,.072],[-.25,.06],[-.3,.054],[-.33,.051],[-.355,.05]]};
@@ -5991,7 +6011,8 @@ function startGame(){
     `You have ${S.respect} respect (${rankName()}), counted from the fish you\u2019ve already released.`,
     setupOK('fly')?'You keep your Fly Rod.':`The Fly Rod now unlocks at Local respect (${rankNeed('Local')}), along with new outfits as you rank up.`,
     'Luck now fades a little each day, so keep releasing fish to hold it up.']);save();}
-  if(!S.mothFix){S.mothFix=1;const n=S.lures.fly>0?S.lures.fly:0;if(n&&!setupOK('fly')){const amt=n*LURES.fly.price;delete S.lures.fly;S.coins+=amt;if(S.lure==='fly')S.lure=fallbackLure();queueNotice('Moth Flies refunded',[`Flies now need the Fly Rod, so the ${n} Moth Fl${n>1?'ies':'y'} in your tackle box ${n>1?'were':'was'} taken out.`,`You got the full price back: +${amt} coins.`,'Moth Flies are still in the shop for when you have a Fly Rod.']);}save();}
+  if(S.notices)S.notices=S.notices.filter(n=>n.title!=='Moth Flies refunded');
+  if(!S.mothFix){S.mothFix=1;const n=S.lures.fly>0?S.lures.fly:0;if(n&&!setupOK('fly')){const amt=n*LURES.fly.price;delete S.lures.fly;S.coins+=amt;if(S.lure==='fly')S.lure=fallbackLure();}save();}
   if(S.nickLog){for(const k in S.log)if(S.log[k].n<=1&&!(S.landed&&S.landed[k]))delete S.log[k];delete S.nickLog;save();}
   if(!S.landed&&!S.nickLog){S.landed={};for(const k in S.log)if(S.log[k].best>0)S.landed[k]=S.log[k].best;}
   if(!S.landedL){S.landedL={};for(const k in S.landed){const sp=SPMAP[k];if(!sp)continue;const loc=(S.bestLoc||{})[k]||(sp.locs||['pond'])[0];S.landedL[k+'|'+loc]=S.landed[k];}save();}
@@ -6321,7 +6342,7 @@ const NOTES=[
   ['v1.02','Water plants',['Each place now grows the plants that really live there: tape grass, coontail, milfoil and cabbage weed in the pond and lake, water crowfoot streaming in the creek, sago pondweed in the river, quillwort and stonewort in the high lake, hydrilla and fanwort in the bayou, turtle grass and shoal grass on the Gulf bottom','Shoreline plants: cattails at the pond, bulrush on the lake, water willow on the river, papyrus on the Congo','Water hyacinth and water lettuce float in the bayou and the Amazon, hyacinth drifts down the Congo, and sargassum floats past the pier','Pier pilings carry barnacles, sea lettuce and oysters, and the creek and Congo rocks grow their own moss and riverweed']],
   ['v1.02','Real rocks',['Rocks are the real stone of each place: rusty sandstone in the creek, silted river rock, pink granite at Big Rock Lake, broken pale granite at Highline, and barnacle-crusted limestone off the pier','They pick up the water\u2019s color and darken with depth, a brown algae film coats their tops, and sunlight ripples across the shallow ones on clear days','In current, silt rolls over each rock into the eddy behind it, sand settles in its lee, and a rock near the top lifts a gentle hump and slow boils on the surface','Rocks sit in the bank instead of hanging off steep slopes']],
   ['v1.02','Field-guide fish',['Every fish except the Congo species, the flounder and the eel is redrawn as a realistic field-guide plate: overlapping scales that stop at the gill cover, real fin shapes with rays and spines, and each species\' own markings','Catfish are smooth-skinned with whiskers; gars wear hard diamond scales; carp, tarpon and arowana show their big scales','Mackerel have their finlets, tarpon and gizzard shad the long thread off the back of the dorsal, peacock bass, redfish and oscar the eyespot by the tail','Pumpkinseed, rainbow trout, chain pickerel, brown and black bullheads and bowfin at the pond get theirs too']],
-  ['v1.02','Cleanup',['The bayou\'s mud bottom no longer has loose stones on it']],
+  ['v1.02','Cleanup',['The bayou\'s mud bottom no longer has loose stones on it','Creek rocks carry one kind of water moss, streaming downstream off the top, instead of two','The chain pickerel is redone to match the real fish: golden-yellow sides netted with dark chain links, a dark olive back, a dark bar straight down from the eye, and plain fins']],
   ['v1.02','Fish on the bait',['Nibbles on the fall are just pecks: the bait keeps sinking and the fish follows it down','When a fish takes the bait, the line goes still for a moment as it inhales it, then it either swims off with it or sits on it','Until you set the hook you can reel the bait away from a fish you don\u2019t want, and it lets go. Once it\u2019s hooked, it\u2019s on','A fish nibbling a settled bait stays right on it as it drifts, instead of hanging back while it bites','Big fish tip their heads down to a bait on the bottom instead of hovering above it']],
   ['v1.01','Bait housekeeping',['All your cut bait shares one clock now: adding fresh bait resets it, so the batch keeps a day from the last bait you added','The tackle box shows your bait bucket and cooler as two short lines, with Cut one, Empty and Toss right there; tap Empty or Toss twice to confirm','The cast net is the same size at every spot instead of looking huge in shallow water and tiny at the pier','The falling net drapes over the fish inside it, ripples as it sinks, and the catch flaps in the bag on the way in','Game fish caught under a cast net dive for the gap under the lead line and often get out','The cast net result is shorter and stays up longer']],
   ['v1.00','Bait from the water',['New Cast Net (gear shop): pick it in the tackle box like a rod, then hold THROW and let go over a school of baitfish near the bank. It sinks to the bottom and you haul it in. Legal at Iron Ferry, Tupelo Bayou, Pelican Point and Boyoma','New baitfish: gizzard shad at Iron Ferry and Tupelo Bayou, and pinfish and striped mullet at Pelican Point. Shad and mullet never bite a hook, so they take a net; pinfish peck at shrimp around the pilings','Bait is kept legal now: only panfish and forage fish go in the bait bucket, and only non-game baitfish can be kept from a cast net. Trout, bass, crappie and other game fish go back','Baitfish too big to fish live get cut into cut bait','New Bait Cooler (gear shop): cut bait has to be kept cold. A zip bag holds about 8 strips; the cooler holds 30','Boyoma Falls: the middle hump is half as tall, and the rocks on the far bank sit in the bank instead of hanging in the water','Small stones on the bottom now lie along the slope everywhere','The play stats question fits on one screen, upright or sideways','Fish near the bottom no longer push their heads or tails into steep banks, and catfish like the vundu rest at the foot of a slope instead of against it','The fish eagle at Boyoma flies like one: it soars on spread, fingered wings with bursts of slow beats, stoops to the river with its feet thrown forward, and labours back up with heavy wingbeats, sometimes carrying a fish off to the trees']],
