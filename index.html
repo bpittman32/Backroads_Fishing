@@ -632,6 +632,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
     <h3 class="set-h">Display</h3>
     <div class="panel">
       <div class="row"><div><b>Metric units</b><p>Show centimeters, kilograms and meters instead of inches, pounds, ounces and feet.</p></div><button class="tog" role="switch" id="sUnits" aria-label="Metric units"></button></div>
+      <div class="row"><div><b>Battery saver</b><p>Draws the scene a little softer and at most 30 times a second, even during a fight. Uses noticeably less battery.</p></div><button class="tog" role="switch" id="sBatt" aria-label="Battery saver"></button></div>
       <div class="row"><div><b>Angler chatter</b><p>Your angler says something now and then.</p></div><button class="tog" role="switch" id="sChat" aria-label="Angler chatter"></button></div>
       <div class="row"><div><b>Fish Finder labels</b><p>Names and depths over fish you've caught before. Needs the Fish Finder from the shop.</p></div><button class="tog" role="switch" id="sFinder" aria-label="Fish Finder labels"></button></div>
     </div>
@@ -690,7 +691,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
       <p>Send a little anonymous information to the developer, to find bugs and see which spots and devices people play on.</p>
       <ul class="st-list">
         <li><b>Error reports</b> when something breaks: version, error message, kind of device.</li>
-        <li><b>A short summary</b> when you put the game away: minutes played, spots, fish caught, level, device and screen size.</li>
+        <li><b>A short summary</b> when you put the game away: minutes played, spots, casts, fish hooked, caught and lost, quests finished, level, device and screen size.</li>
         <li><b>Your angler card</b>: name, level, respect, species caught, spots fished.</li>
       </ul>
     </div>
@@ -1093,7 +1094,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.04a';
+const VERSION='v1.05a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1556,6 +1557,21 @@ function makeGroundPat(){
     wrap(px,py,(X,Y)=>{x.fillStyle=`rgb(${tone},${tone*.93},${tone*.8})`;x.beginPath();x.ellipse(X,Y,a,b,0,0,TAU);x.fill();x.fillStyle='rgba(255,250,235,.35)';x.beginPath();x.ellipse(X-a*.3,Y-b*.35,a*.45,b*.35,0,0,TAU);x.fill();x.fillStyle='rgba(20,14,8,.35)';x.beginPath();x.ellipse(X+a*.15,Y+b*.55,a*.8,b*.3,0,0,TAU);x.fill();});}
   const pat=ctx.createPattern(cv2,'repeat');try{pat.setTransform(new DOMMatrix().scale(1/K));}catch(e){}return pat;
 }
+// The ground (the bank and bottom with its texture, buried rocks, roots, silt line and stones) doesn't move, but it is
+// big: filling it took several full layers of pixels every frame. It is drawn once into a picture a little wider and
+// taller than the screen and that picture is reused, until the camera moves past its edge or the light, weather,
+// season or place changes.
+const GC={cv:null,key:'',x0:0,x1:0,y0:0,y1:0};
+function drawGroundCached(c,cam,dk){
+  const camY=G.camY||0,key=[S.loc,W,H,SC,DPR,S.weather,S.yday,Math.round(dk*250),!!GPAT,stones.length,rocks.length,roots.length].join('|');
+  if(!GC.cv||GC.key!==key||cam-8<GC.x0||cam+W+8>GC.x1||H+camY+14>GC.y1){
+    const M=Math.round(W*.35),x0=Math.floor((cam-M)/4)*4-8,x1=cam+W+M,y0=SURF-14,y1=H+camY+14+Math.round(H*.4),k=SC*DPR;
+    if(!GC.cv)GC.cv=document.createElement('canvas');const pw=Math.ceil((x1-x0)*k),ph=Math.ceil((y1-y0)*k);
+    if(GC.cv.width!==pw||GC.cv.height!==ph){GC.cv.width=pw;GC.cv.height=ph;}
+    const o=GC.cv.getContext('2d');o.setTransform(1,0,0,1,0,0);o.clearRect(0,0,pw,ph);o.setTransform(k,0,0,k,-x0*k,-y0*k);
+    const sW=W,sY=G.camY;W=x1-x0-16;G.camY=y1-H-14;try{drawGround(o,x0+8,dk,x0-60,x1+60);}finally{W=sW;G.camY=sY;}
+    Object.assign(GC,{key,x0,x1,y0,y1});}
+  c.drawImage(GC.cv,GC.x0,GC.y0,GC.x1-GC.x0,GC.y1-GC.y0);}
 function drawGround(c,cam,dk,vx0,vx1){
   const x0=Math.floor(cam/4)*4-8,x1=cam+W+8;
   const path=()=>{c.beginPath();c.moveTo(x0,H+(G.camY||0)+12);for(let x=x0;x<=x1;x+=4)c.lineTo(x,bottomAt(x));c.lineTo(x1,H+(G.camY||0)+12);c.closePath();};
@@ -1662,7 +1678,8 @@ function amazonBottom(x){const u=x/TW;let p=.3+.4*smooth(.1,.6,u)+.12*Math.sin(u
 function currentAt(x,y){const Lc=LOC();if(!Lc.current)return 0;const b=bottomAt(x),dep=clamp((b-SURF)/(GROUND-SURF),.05,1),df=clamp((y-SURF)/Math.max(10,b-SURF),0,1);
   let v=Lc.current*(1.5-dep)*(1-.55*df);for(const k of cboulders){const d=x-k.x;if(d<0&&d>-k.r*3.2&&y>k.y-k.r*1.6)v*=.25;}return -v;}
 function resize(){ // the world is 2 lake-widths (TW) on every screen, so everything drawn can be reached by the best rod
-  DPR=Math.min(2,window.devicePixelRatio||1);CW=innerWidth;CH=innerHeight;
+  // Battery saver draws at 1.5 pixels per point instead of 2: about 44% fewer pixels to fill every frame
+  DPR=Math.min(typeof S!=='undefined'&&S&&S.settings&&S.settings.batt?1.5:2,window.devicePixelRatio||1);CW=innerWidth;CH=innerHeight;
   // Tablets: scale the buttons, menus and cards with the screen (phones stay at 1). The canvas scales on its own via SC.
   const land0=CW>CH*1.15;UI=clamp(land0?CH/560:CW/500,1,1.7);document.documentElement.classList.toggle('short',land0&&CH/UI<620);document.documentElement.style.setProperty('--ui',UI.toFixed(3));
   cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);cv.style.width=CW+'px';cv.style.height=CH+'px';
@@ -1935,7 +1952,7 @@ function tickClock(dt){
   if(period()!==before)updateNests();
   // Hatches: some dawns and dusks, bugs come off the water and fish rise all over. Not in winter or the jungle.
   if(period()!==before){G.hatch=null;if((period()==='dawn'||period()==='dusk')&&seasonIdx()!==3&&!LOC().jungle&&!LOC().salt&&SPECIES.some(sp=>sp.rises&&(sp.locs||['pond']).includes(S.loc))&&Math.random()<.45){const k=['Caddis','Mayfly','Midge'][Math.floor(Math.random()*3)];G.hatch={kind:k,left:rand(35,70)};setTimeout(()=>toast(k+' hatch!','Fish are rising to bugs on top'),2600);}}
-  if(G.mode==='play'&&!G.paused&&document.visibilityState!=='hidden'){const m=Math.min(dt,.5)/60;G.sess.min+=m;G.sess.locs[S.loc]=(G.sess.locs[S.loc]||0)+m;}
+  if(G.mode==='play'&&!G.paused&&document.visibilityState!=='hidden'){const m=Math.min(dt,.5)/60;if(G.sess.lv0==null)G.sess.lv0=lvlInfo().l;G.sess.min+=m;G.sess.locs[S.loc]=(G.sess.locs[S.loc]||0)+m;}
   if(G.hatch){G.hatch.left-=dt*MIN_PER_SEC;if(G.hatch.left<=0)G.hatch=null;}
   if(bridge&&!G.train){for(const [tm,dir] of [[7*60+40,-1],[17*60+20,1]])if(m0<tm&&S.minutes>=tm)startTrain(dir);}
   updateTrain(dt);
@@ -2012,7 +2029,7 @@ function cast(){spookAtBoat();
   G.schoolHint=null;G.dry=(G.dry||0)+1;if(G.dry>=5&&G.dry%3===2)chatter('drought',.7);
   const L=G.lure,t=tip(),p=G.power;
   L.rockLuck=rand(.4,1.6);L.onRock=null;
-  L.state='flying';L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
+  L.state='flying';G.sess.casts++;L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
   if(curSetup().fly){L.fd=.7+p*.5;L.bl=G.fcLen?G.fcLen*.6:30+p*90;}
   SFX.cast();
 }
@@ -2286,7 +2303,7 @@ function updateFish(f,dt){
 
 // ---------------- FIGHT ----------------
 // A fish hooked with dev tools on, or while they're on at any point in the fight, never counts for the leaderboard, even if they're turned off before it lands.
-function startFight(f,gut){if(S.dev||f.devMade)f.devT=true;setTimeout(updateDragUI,0);{const tl=document.querySelector('#tilt .tilt-label');if(tl)tl.hidden=(S.stats.caught||0)>=3;}
+function startFight(f,gut){G.sess.hooked++;if(S.dev||f.devMade)f.devT=true;setTimeout(updateDragUI,0);{const tl=document.querySelector('#tilt .tilt-label');if(tl)tl.hidden=(S.stats.caught||0)>=3;}
   for(const o of G.fish)if(o!==f&&o.state==='follow'){flee(o,3);}
   f.state='fight';f.mouthHold=false;G.lure.state='hooked';SFX.hook();vib(70);
   const [a,b]=bandRange(f.sp,f.x);
@@ -2411,9 +2428,9 @@ function heftOf(f){const R=fishLb(f)/(lineTest()*2.5)*(mods().fightPull<1?.75:1)
 function snap(why,title){chatter('snap',.7);
   const F=G.fight,f=F.f;SFX.snap();vib(120);S.stats.snapped++;
   const adv=why||((F.heftR||0)>2.5?`Way too much fish for ${lineTest()} lb line`:(F.heftR||0)>1.2?`Heavy fish for ${lineTest()} lb line, let it run`:'');
-  const sub=breakOff('snap');f.state='wander';flee(f,12);endFight();toast(title||(why?'Line twist! It snapped':'Line snapped!'),adv?adv+'. '+sub:sub);save();updateHUD(true);
+  const sub=breakOff('snap');f.state='wander';flee(f,12);G.sess.lost++;endFight();toast(title||(why?'Line twist! It snapped':'Line snapped!'),adv?adv+'. '+sub:sub);save();updateHUD(true);
 }
-function lostFish(msg,sub){chatter('lost',.55);if(S.lure!=='worm'&&isBait())useBait();const f=G.fight.f;f.state='wander';flee(f,10);SFX.lose();endFight();toast(msg,sub);}
+function lostFish(msg,sub){G.sess.lost++;chatter('lost',.55);if(S.lure!=='worm'&&isBait())useBait();const f=G.fight.f;f.state='wander';flee(f,10);SFX.lose();endFight();toast(msg,sub);}
 function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const qHits=questCatch(G.fight.f.sp,G.fight.f.len);{const F0=G.fight,f0=F0.f,big0=medalFor(f0.sp.id,f0.len)>=1||f0.sp.legend;chatter(big0?'big':'catch',big0?.85:.3);}
   useBait();
   const F=G.fight,f=F.f,sp=f.sp;
@@ -2547,7 +2564,7 @@ function render(){
   // ground
   if(LOC().shore==='dock'||LOC().shore==='camp')drawPilings(c,dk);if(LOC().shore==='pier')drawPierPilings(c,dk);
   if(congoRocks.length)drawCongoRocks(c,dk,vx0,vx1);
-  drawGround(c,cam,dk,vx0,vx1);
+  drawGroundCached(c,cam,dk);
   drawRockWater(c,dk,vx0,vx1);
   drawBeds(c,dk,vx0,vx1);
   if(LOC().riffles)drawRiffles(c,dk,vx0,vx1,48);if(LOC().flow)drawRiffles(c,dk,vx0,vx1,9999);if(LOC().undercut)drawUndercut(c,dk);
@@ -2664,6 +2681,18 @@ function drawClouds(c,cam,dk,rain,fog,h){
     c.fillStyle=rgbStr(col,a);for(const p of cl.puffs){c.beginPath();c.ellipse(x+p.dx,y+p.dy,p.r,p.r*.72,0,0,TAU);c.fill();}
     c.fillStyle=rgbStr(col.map(v=>Math.min(255,v+25)),a*.6);for(const p of cl.puffs){c.beginPath();c.ellipse(x+p.dx-p.r*.25,y+p.dy-p.r*.3,p.r*.5,p.r*.3,0,0,TAU);c.fill();}}
 }
+// The hills, far forest, bridge and treeline barely change from frame to frame, so each is drawn once into its own
+// picture (a strip wider than the screen) and reused. A picture is redrawn when the light, weather, season or screen
+// changes, when the view has panned past its spare width, and every few seconds anyway. The parts that move (smoke,
+// the waterfall, the goat and egret, a passing train, falling leaves, swaying reeds) are still drawn every frame.
+const BKL={};
+function bkKey(dk,h){return [S.loc,W,H,SC,DPR,S.weather,S.yday,Math.round(dk*250),Math.round(h*10),stones.length].join('|');}
+function bkLayer(c,id,key,sh,y0,draw){const k=SC*DPR,M=Math.round(W*.35),now=performance.now();let L=BKL[id];
+  if(!L||L.key!==key||Math.abs(sh-L.sh)>M-4||now-L.t>4000){L=BKL[id]||(BKL[id]={cv:document.createElement('canvas')});
+    const x0=Math.round(sh)-M,w=W+2*M,y1=SURF+4,cw=Math.ceil(w*k),ch=Math.ceil((y1-y0)*k),cv=L.cv;
+    if(cv.width!==cw||cv.height!==ch){cv.width=cw;cv.height=ch;}const o=cv.getContext('2d');o.setTransform(1,0,0,1,0,0);o.clearRect(0,0,cw,ch);o.setTransform(k,0,0,k,-x0*k,-y0*k);draw(o);
+    Object.assign(L,{key,sh,x0,y0,y1,w,t:now});}
+  c.drawImage(L.cv,L.x0,L.y0,L.w,L.y1-L.y0);}
 function drawBackdrop(c,cam,dk,fog,rain,h){
   const wm=warmth(h);
   // far ridge
@@ -2683,23 +2712,29 @@ function drawBackdrop(c,cam,dk,fog,rain,h){
   // mid hill with far forest
   c.save();c.translate(-cam*.3,0);
   const bare=Z.jungle||LOC().alpine?0:1-Z.leaf,hc=mx(mx(mx(SKC[0],'#7a705a',bare*.45),'#dfe6ea',Z.snow*.55),'#0d1a22',dk*.85),hc2=mx(mx(mx(SKC[1],'#5a5040',bare*.4),'#c8d2d8',Z.snow*.45),'#08121a',dk*.85);
+  const ftc=rgbStr(mix('#2b5444','#0a1620',dk*.85),fog?.5:.95),ftd=rgbStr(mx(leafCol('#2b5444',.3,0),'#6e6258',bare*.85).map((v,i)=>lerp(v,[10,22,32][i],dk*.85)),fog?.5:.95);
+  const bk=bkKey(dk,h);
+  bkLayer(c,'hill',bk,cam*.3,-40,c=>{
   g=c.createLinearGradient(0,SURF-90,0,SURF);g.addColorStop(0,rgbStr(hc,fog?.5:1));g.addColorStop(1,rgbStr(hc2,fog?.6:1));
   c.fillStyle=g;c.beginPath();c.moveTo(-20,SURF);for(const p of hills)c.lineTo(p[0]*.75+0,p[1]);c.lineTo(hills[hills.length-1][0]*.75,SURF);c.fill();
-  const ftc=rgbStr(mix('#2b5444','#0a1620',dk*.85),fog?.5:.95),ftd=rgbStr(mx(leafCol('#2b5444',.3,0),'#6e6258',bare*.85).map((v,i)=>lerp(v,[10,22,32][i],dk*.85)),fog?.5:.95);c.fillStyle=ftc;
   if(LOC().alpine)drawTalus(c,dk,fog,Z);
-  for(const m of farMarks)drawFarMark(c,m,dk,fog,Z);
+  for(const m of farMarks)drawFarMark(c,m,dk,fog,Z,1);});
+  for(const m of farMarks)drawFarMark(c,m,dk,fog,Z,2);
   const cyp=LOC().cypress;
+  bkLayer(c,'far',bk,cam*.3,-40,c=>{c.fillStyle=ftc;
   for(const t of farTrees){const b=SURF-5;if(bridge&&Math.abs(t.x-(bridge.x+bridge.span/2))<bridge.span*.55)continue;c.fillStyle=t.con?ftc:ftd;
     if(cyp){const hh=t.h*(1.2+hs(t.x,1)*.9),lf=Math.max(.15,Z.leaf),fc=rgbStr(mx(mx(mx(leafCol('#3e5a34',hs(t.x,2),0),'#8aa0a0',.25),'#6a6658',1-lf),'#0a1620',dk*.85),fog?.5:.95);c.fillStyle=fc;c.fillRect(t.x-.45,b-hh,.9,hh);c.fillRect(t.x-1.2,b-2,2.4,2);
       for(const [dy,dx,w2] of [[0,0,1.3],[.16,-.9,.8],[.22,.8,.7]]){c.beginPath();c.ellipse(t.x+dx*t.w,b-hh*(1-dy),t.w*w2,1.5,0,0,TAU);c.fill();}
       c.fillStyle=rgbStr(mx(mx('#9aa49a','#a9c0c8',.3),'#0a1620',dk*.85),fog?.3:.6);c.fillRect(t.x-t.w*.8,b-hh*.8,.7,3);c.fillRect(t.x+t.w*.6,b-hh*.75,.7,2.5);continue;}if(t.spire){const hh=t.h,w=t.w;c.fillStyle=ftc;c.beginPath();c.moveTo(t.x-w,b);c.lineTo(t.x-w*.45,b-hh*.4);c.lineTo(t.x-w*.75,b-hh*.38);c.lineTo(t.x-w*.3,b-hh*.72);c.lineTo(t.x-w*.5,b-hh*.7);c.lineTo(t.x,b-hh);c.lineTo(t.x+w*.5,b-hh*.7);c.lineTo(t.x+w*.3,b-hh*.72);c.lineTo(t.x+w*.75,b-hh*.38);c.lineTo(t.x+w*.45,b-hh*.4);c.lineTo(t.x+w,b);c.fill();continue;}if(t.con){c.beginPath();c.moveTo(t.x-t.w,b);c.lineTo(t.x,b-t.h);c.lineTo(t.x+t.w,b);c.fill();}else{c.beginPath();c.ellipse(t.x,b-t.h*.55,t.w*1.1,t.h*.55,0,0,TAU);c.fill();}}
+  });
   c.restore();
-  if(bridge){drawChannel(c,cam,dk,fog,0);c.save();c.translate(-cam*.3,0);drawBridge(c,dk,fog);c.restore();}
+  if(bridge){drawChannel(c,cam,dk,fog,0);c.save();c.translate(-cam*.3,0);if(G.train)drawBridge(c,dk,fog);else bkLayer(c,'bridge',bk,cam*.3,SURF-70,c=>drawBridge(c,dk,fog));c.restore();}
   // near treeline
   c.save();c.translate(-cam*.5,0);
   const con=mix('#1d4430','#071219',dk*.85),conD=mix('#143223','#050d12',dk*.85),dec=mix('#2f5c33','#0a1716',dk*.85),decL=mix('#4a7a40','#10201a',dk*.85),trunk=mix('#3b2a1c','#0b0806',dk*.85);
   const fa=fog?.7:1;
   const jg=LOC().jungle;
+  bkLayer(c,'trees',bk,cam*.5,-40,c=>{
   for(const t of bigTrees)drawBigTree(c,t,dk,fa);
   if(LOC().cypress)drawCypressLayer(c,dk,fa,Z);
   for(const t of trees){const b=SURF-4;
@@ -2722,6 +2757,8 @@ function drawBackdrop(c,cam,dk,fog,rain,h){
         for(const sg of [-1,1]){c.beginPath();c.ellipse(t.x+sg*w*.82,yb-.8,Math.max(1.4,w*.2),1,0,0,TAU);c.fill();}}}
       else if(!Z.jungle&&Z.leaf<.3){const cy=b-6-t.h*.5;c.strokeStyle=`rgba(242,246,250,${.85*sa})`;c.lineWidth=.8;c.lineCap='round';c.beginPath();
         for(const [dx,dy] of [[-.6,-.2],[.55,-.1],[-.3,-.55],[.35,-.5],[0,-.75]]){const x0=t.x,y0=cy+t.h*.15,x1=t.x+dx*t.w,y1=cy+dy*t.h;c.moveTo(lerp(x0,x1,.35),lerp(y0,y1,.35)-.7);c.lineTo(x1,y1-.7);}c.stroke();}}}
+  });
+  if(jg||(!Z.jungle&&Z.leaf<.97&&trees.some(t=>!t.con&&t.cyp===undefined))||(Z.snow>.02&&!Z.jungle&&Z.leaf<.3))c.lineCap='round';
   if(Z.leafDrop>.02){for(let i=0;i<22;i++){const tt=(G.t*.12+i*.137)%1,x=((i*61.3+Math.sin(G.t*.8+i)*12)%(WX*.5+W))+tt*14,y=SURF-70+tt*68;c.save();c.translate(x,y);c.rotate(G.t*2+i);c.fillStyle=rgbStr(mx(FALLC[i%FALLC.length],'#0a0806',dk*.8),Z.leafDrop*fa);c.beginPath();c.ellipse(0,0,1.8,.9,0,0,TAU);c.fill();c.restore();}}
   for(const m of nearMarks)drawFarMark(c,m,dk,fog,Z);
   drawReeds(c,dk);
@@ -3085,31 +3122,32 @@ function drawBigTree(c,t,dk,fa){
   for(const [dx,dy,rr] of t.blobs){c.fillStyle=rgbStr(dec,fa);c.beginPath();c.arc(cx+dx*t.w*1.5,cy+dy*t.w*.9,rr*t.w*.92,0,TAU);c.fill();}
   c.fillStyle=rgbStr(decL,fa*.7);for(const [dx,dy,rr] of t.blobs.slice(0,3)){c.beginPath();c.arc(cx+dx*t.w*1.5-rr*t.w*.25,cy+dy*t.w*.9-rr*t.w*.3,rr*t.w*.45,0,TAU);c.fill();}}
 // Far-shore landmarks, softened by distance: the granite bluff that gives Big Rock Lake its name, a cabin across the pond, and emergent kapok trees over the jungle.
-function drawFarMark(c,m,dk,fog,Z){const hz=fog?.45:1,K=(col,a=1)=>rgbStr(mx(mx(col,'#a9c0c8',.28),'#0d1622',dk*.85),a*hz),b=SURF-5;
+function drawFarMark(c,m,dk,fog,Z,md){const ST=md!==2,AN=md!==1,hz=fog?.45:1,K=(col,a=1)=>rgbStr(mx(mx(col,'#a9c0c8',.28),'#0d1622',dk*.85),a*hz),b=SURF-5;
+  if(!ST&&m.k!=='cabin'&&m.k!=='falls'&&m.k!=='goat'&&m.k!=='egret')return;
   if(m.k==='bluff'){const x=m.x;const face=[[x-40,b],[x-36,b-34],[x-28,b-58],[x-16,b-80],[x-2,b-88],[x+14,b-85],[x+25,b-70],[x+30,b-46],[x+38,b-20],[x+46,b]];
     c.fillStyle=K('#8a8a84');c.beginPath();face.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();
     c.fillStyle=K('#a8a79e');c.beginPath();c.moveTo(x-28,b-58);c.lineTo(x-16,b-80);c.lineTo(x-2,b-88);c.lineTo(x-6,b-46);c.lineTo(x-18,b-18);c.lineTo(x-26,b-30);c.closePath();c.fill();
     c.strokeStyle=K('#5e5e58',.7);c.lineWidth=.8;c.beginPath();for(const [x0,y0,len] of [[-22,-66,46],[-10,-80,60],[4,-84,56],[16,-78,46],[26,-60,34]]){c.moveTo(x+x0,b+y0);c.lineTo(x+x0+2,b+y0+len);}c.stroke();
     c.fillStyle=K('#2e4a3a');for(const [dx,h] of [[-12,8],[-5,10],[3,9],[10,7],[17,6]]){const ty=b-86+Math.abs(dx)*.3;c.beginPath();c.moveTo(x+dx-2.5,ty);c.lineTo(x+dx,ty-h);c.lineTo(x+dx+2.5,ty);c.fill();}
     return;}
-  if(m.k==='cabin'){const x=m.x;c.fillStyle=K('#6a4a32');c.fillRect(x-7,b-9,14,9);c.fillStyle=K('#4a3424');c.beginPath();c.moveTo(x-9,b-9);c.lineTo(x,b-15);c.lineTo(x+9,b-9);c.closePath();c.fill();
+  if(m.k==='cabin'){const x=m.x;if(ST){c.fillStyle=K('#6a4a32');c.fillRect(x-7,b-9,14,9);c.fillStyle=K('#4a3424');c.beginPath();c.moveTo(x-9,b-9);c.lineTo(x,b-15);c.lineTo(x+9,b-9);c.closePath();c.fill();
     c.fillStyle=K('#5a4a40');c.fillRect(x+3,b-17,2.4,5);
     const lit=darkness()>.35;c.fillStyle=lit?`rgba(255,205,110,${.9*hz})`:K('#2a2a2e');c.fillRect(x-4.5,b-6.5,3,2.6);c.fillRect(x+1.5,b-6.5,3,2.6);
     if(lit){const g=c.createRadialGradient(x,b-5,0,x,b-5,12);g.addColorStop(0,'rgba(255,200,110,.25)');g.addColorStop(1,'rgba(255,200,110,0)');c.fillStyle=g;c.fillRect(x-12,b-17,24,24);}
-    c.fillStyle=`rgba(225,230,232,${.35*hz*(1-dk*.5)})`;for(let i=0;i<4;i++){const t=(G.t*.25+i*.25)%1;c.beginPath();c.arc(x+4.2+Math.sin(G.t*.6+i)*2+t*5,b-18-t*16,1.4+t*2.4,0,TAU);c.fill();}
+    }if(AN){c.fillStyle=`rgba(225,230,232,${.35*hz*(1-dk*.5)})`;for(let i=0;i<4;i++){const t=(G.t*.25+i*.25)%1;c.beginPath();c.arc(x+4.2+Math.sin(G.t*.6+i)*2+t*5,b-18-t*16,1.4+t*2.4,0,TAU);c.fill();}}
     return;}
   if(m.k==='falls'){// a dark granite cliff band in the hillside, a snowmelt stream winding down to it, and the fall dropping into the lake
     const x=m.x,wv=G.t;let hy=b-30;for(const p of hills)if(Math.abs(p[0]*.75-x)<8){hy=p[1];break;}const top=Math.min(b-30,hy+3);
-    c.fillStyle=K('#4e524e');c.beginPath();c.moveTo(x-20,b);c.lineTo(x-22,top+14);c.lineTo(x-15,top+4);c.lineTo(x-5,top);c.lineTo(x+8,top+2);c.lineTo(x+17,top+9);c.lineTo(x+21,top+20);c.lineTo(x+19,b);c.closePath();c.fill();
+    if(ST){c.fillStyle=K('#4e524e');c.beginPath();c.moveTo(x-20,b);c.lineTo(x-22,top+14);c.lineTo(x-15,top+4);c.lineTo(x-5,top);c.lineTo(x+8,top+2);c.lineTo(x+17,top+9);c.lineTo(x+21,top+20);c.lineTo(x+19,b);c.closePath();c.fill();
     c.fillStyle=K('#727670');c.beginPath();c.moveTo(x-22,top+14);c.lineTo(x-15,top+4);c.lineTo(x-5,top);c.lineTo(x-7,top+14);c.lineTo(x-12,b);c.lineTo(x-20,b);c.closePath();c.fill();
     c.strokeStyle=K('#3e403e',.6);c.lineWidth=.5;c.beginPath();for(const dx of[-13,-7,8,12]){c.moveTo(x+dx,top+6);c.lineTo(x+dx+1,b-2);}c.stroke();
-    const fa=1-Z.snow*.85;if(fa>.05){c.strokeStyle=K('#d8eaf2',.55*fa);c.lineWidth=.8;c.beginPath();c.moveTo(x+1,top);c.bezierCurveTo(x-4,top-6,x+6,top-12,x+2,top-20);c.stroke();
+    }const fa=1-Z.snow*.85;if(fa>.05){if(ST){c.strokeStyle=K('#d8eaf2',.55*fa);c.lineWidth=.8;c.beginPath();c.moveTo(x+1,top);c.bezierCurveTo(x-4,top-6,x+6,top-12,x+2,top-20);c.stroke();
       c.fillStyle=K('#f0f7fa',.95*fa);c.beginPath();c.moveTo(x-.5,top+1);c.lineTo(x+2.5,top+1);c.quadraticCurveTo(x+3,top+(b-top)*.5,x+4.2,b-1);c.lineTo(x-2.4,b-1);c.quadraticCurveTo(x-1,top+(b-top)*.5,x-.5,top+1);c.fill();
-      c.strokeStyle=K('#a8c8d8',.7*fa);c.lineWidth=.45;c.beginPath();for(let k=0;k<5;k++){const y=top+3+((wv*30+k*9)%(b-top-5));c.moveTo(x-.6+k*.7,y);c.lineTo(x-.2+k*.7,y+3.5);}c.stroke();
-      c.fillStyle=K('#f4f8fa',.45*fa);for(let k=0;k<6;k++){c.beginPath();c.arc(x+1+Math.sin(wv*1.6+k*1.3)*4,b-2-k*.8,1.8+k*.5,0,TAU);c.fill();}}
-    c.fillStyle=K('#2f4a34');for(const dx of[-24,-21,20,23,27]){c.beginPath();c.moveTo(x+dx-1.6,b);c.lineTo(x+dx,b-6-Math.abs(dx%4));c.lineTo(x+dx+1.6,b);c.fill();}
+      }if(AN){c.strokeStyle=K('#a8c8d8',.7*fa);c.lineWidth=.45;c.beginPath();for(let k=0;k<5;k++){const y=top+3+((wv*30+k*9)%(b-top-5));c.moveTo(x-.6+k*.7,y);c.lineTo(x-.2+k*.7,y+3.5);}c.stroke();
+      c.fillStyle=K('#f4f8fa',.45*fa);for(let k=0;k<6;k++){c.beginPath();c.arc(x+1+Math.sin(wv*1.6+k*1.3)*4,b-2-k*.8,1.8+k*.5,0,TAU);c.fill();}}}
+    if(ST){c.fillStyle=K('#2f4a34');}if(ST)for(const dx of[-24,-21,20,23,27]){c.beginPath();c.moveTo(x+dx-1.6,b);c.lineTo(x+dx,b-6-Math.abs(dx%4));c.lineTo(x+dx+1.6,b);c.fill();}
     return;}
-  if(m.k==='goat'){if(dk>.6||fog)return;const x=m.x+Math.sin(G.t*.05)*6,y=b-36;c.fillStyle=K('#f4f2ea');c.beginPath();c.ellipse(x,y,2.2,1.3,0,0,TAU);c.fill();c.fillRect(x+1.6,y-2.2,1,2);c.fillRect(x-1.6,y+.8,.5,1.6);c.fillRect(x+1.2,y+.8,.5,1.6);c.fillStyle=K('#2a2a2a');c.fillRect(x+2.2,y-2.8,.4,1);return;}
+  if(m.k==='goat'){if(!AN||dk>.6||fog)return;const x=m.x+Math.sin(G.t*.05)*6,y=b-36;c.fillStyle=K('#f4f2ea');c.beginPath();c.ellipse(x,y,2.2,1.3,0,0,TAU);c.fill();c.fillRect(x+1.6,y-2.2,1,2);c.fillRect(x-1.6,y+.8,.5,1.6);c.fillRect(x+1.2,y+.8,.5,1.6);c.fillStyle=K('#2a2a2a');c.fillRect(x+2.2,y-2.8,.4,1);return;}
   if(m.k==='camp'){// a weathered fish camp on stilts: tin roof, screened porch, a lit window after dark and a boat tied up
     const x=m.x,fy=b-3;c.fillStyle=K('#4a4034');for(const dx of[-12,-4,4,12])c.fillRect(x+dx-.6,fy-4,1.2,7);
     c.fillStyle=K('#8a8478');c.fillRect(x-14,fy-14,28,10);c.fillStyle=K('#6e6a60');for(let k=0;k<5;k++)c.fillRect(x-14,fy-13+k*2,28,.5);
@@ -3119,7 +3157,7 @@ function drawFarMark(c,m,dk,fog,Z){const hz=fog?.45:1,K=(col,a=1)=>rgbStr(mx(mx(
     if(lit){const g=c.createRadialGradient(x-7,fy-9,0,x-7,fy-9,16);g.addColorStop(0,'rgba(255,200,110,.28)');g.addColorStop(1,'rgba(255,200,110,0)');c.fillStyle=g;c.fillRect(x-23,fy-25,32,32);}
     c.fillStyle=K('#5a6a5a');c.beginPath();c.moveTo(x+16,fy+1);c.lineTo(x+30,fy+1);c.lineTo(x+28,fy+3);c.lineTo(x+17,fy+3);c.closePath();c.fill();
     return;}
-  if(m.k==='egret'){if(dk>.7)return;const x=m.x,y=b+1,bob=Math.sin(G.t*.4)>.7?2:0;c.strokeStyle=K('#2a2a24');c.lineWidth=.5;c.beginPath();c.moveTo(x-.5,y);c.lineTo(x-.4,y-5);c.moveTo(x+.6,y);c.lineTo(x+.4,y-5);c.stroke();
+  if(m.k==='egret'){if(!AN||dk>.7)return;const x=m.x,y=b+1,bob=Math.sin(G.t*.4)>.7?2:0;c.strokeStyle=K('#2a2a24');c.lineWidth=.5;c.beginPath();c.moveTo(x-.5,y);c.lineTo(x-.4,y-5);c.moveTo(x+.6,y);c.lineTo(x+.4,y-5);c.stroke();
     c.fillStyle=K('#f6f6f2');c.beginPath();c.ellipse(x,y-6.5,2.2,1.4,-.2,0,TAU);c.fill();c.strokeStyle=K('#f6f6f2');c.lineWidth=.9;c.beginPath();c.moveTo(x+1.5,y-7);c.quadraticCurveTo(x+.6,y-10+bob,x+1.8,y-11.5+bob);c.stroke();c.strokeStyle=K('#e0b030');c.lineWidth=.5;c.beginPath();c.moveTo(x+1.8,y-11.6+bob);c.lineTo(x+4,y-11+bob*.8);c.stroke();return;}
   if(m.k==='kapok'){const x=m.x,h=m.h,w=m.w;c.strokeStyle=K('#5a4a38');c.lineWidth=2.2;c.beginPath();c.moveTo(x,b);c.lineTo(x+1,b-h);c.stroke();
     c.lineWidth=1.2;c.beginPath();c.moveTo(x+1,b-h+4);c.lineTo(x-w*.4,b-h-2);c.moveTo(x+1,b-h+4);c.lineTo(x+w*.45,b-h-1);c.stroke();
@@ -3285,8 +3323,12 @@ function plantTinted(S,dk,brown){const dl=Math.round(Math.min(1,dk)*8),bl=Math.r
 function drawPlant(c,kind,H,seed,x,y,sway,o){const k=DPR*SC,S=plantSprite(kind,H,seed,o.extra),sc=1/k,sy=o.sy||1,img=plantTinted(S,o.dk||0,o.brown||0);
   c.save();c.translate(x,y);c.scale(o.flip?-sc:sc,sc*sy);const W0=S.cv.width;
   if(o.whole)c.drawImage(img,-S.ox,-S.oy);
-  else{const n=H<20?5:10,bh=Math.ceil(S.oy/n),sw=(o.flip?-sway:sway)*k;
-    for(let y0=0;y0<S.oy;y0+=bh){const h=Math.min(bh,S.oy-y0),t=1-(y0+h/2)/S.oy,dx=sw*t*t;c.drawImage(img,0,y0,W0,h,-S.ox+dx,y0-S.oy,W0,h);}
+  // The plant bends more toward its tip (offset grows with height squared). It is drawn as a few bands, each slanted so its
+  // top and bottom edges land exactly on that curve: no steps between bands, and the straight band edges stay within
+  // about half a device pixel of the true curve. Calm plants need one band, the most swaying ones four.
+  else{const sw=(o.flip?-sway:sway)*k,a=Math.abs(sw),n=a<1.5?1:a<6?2:a<22?3:4,bh=Math.ceil(S.oy/n),off=t=>sw*t*t;
+    for(let y0=0;y0<S.oy;y0+=bh){const h=Math.min(bh,S.oy-y0),top=off(1-y0/S.oy),bot=off(1-(y0+h)/S.oy),hh=Math.min(h+1,S.oy-y0);
+      c.save();c.transform(1,0,(bot-top)/h,1,-S.ox+top,y0-S.oy);c.drawImage(img,0,y0,W0,hh,0,0,W0,hh);c.restore();}
     if(S.cv.height>S.oy)c.drawImage(img,0,S.oy,W0,S.cv.height-S.oy,-S.ox,0,W0,S.cv.height-S.oy);}
   c.restore();}
 // floating plants (bayou hyacinth and water lettuce, Amazon meadows, Congo rafts, Gulf sargassum) and the bayou duckweed
@@ -4201,6 +4243,15 @@ function drawFlounder(c,sp,L,wig,sil,col,belly){if(FISH_FLAT)return drawFlounder
 //     edge, a long snorkel snout, a pale stripe through the eye
 //   gatorsnap: three tall rows of spiked keels, massive head and deeply hooked beak, small eyes ringed with fleshy points
 //   yellowspot: smooth, low, dark grey-brown shell, bright yellow spots on the head
+// In the live scene a turtle is a picture: one per size step and per moment of its stroke (32 moments across the full
+// cycle of legs, tail and head bob), made the first time each is needed. Catch cards still draw it exactly.
+const TCACHE=new Map();
+function drawTurtleCached(c,sp,L,wig){const m=c.getTransform(),need=Math.max(8,Math.hypot(m.a,m.b)*L),Lp=[16,24,32,48,64,96,128,192,256,384].find(v=>v>=need)||384;
+  const N=32,P4=Math.PI*4,ph=(((wig*.8)%P4)+P4)%P4,st=Math.round(ph/P4*N)%N,key=sp.id+':'+Lp+':'+st;let T=TCACHE.get(key);
+  if(!T){if(REAL.built>10){drawTurtle(c,sp,L,wig,false);return;}const t0=performance.now(),x0=-.8,y0=-.5,w=1.6,h=.85,cv=document.createElement('canvas');
+    cv.width=Math.ceil(w*Lp);cv.height=Math.ceil(h*Lp);const o=cv.getContext('2d');o.translate(-x0*Lp,-y0*Lp);drawTurtle(o,sp,Lp,st/N*P4/.8,false);
+    T={cv,x0,y0};if(TCACHE.size>400)TCACHE.delete(TCACHE.keys().next().value);TCACHE.set(key,T);REAL.built+=performance.now()-t0;}
+  const k=L/Lp;c.save();c.scale(k,k);c.drawImage(T.cv,T.x0*Lp,T.y0*Lp);c.restore();}
 function drawTurtle(c,sp,L,wig,sil){
   const S0=typeof sil==='string'?sil:'#0b1714',id=sp.id,soft=sp.shell==='soft',dome=sp.shell==='dome',snap=sp.shell==='snapper',gator=id==='gatorsnap';
   const sx=-L*.3,sw=L*.6,base=L*.025,sh=soft?L*.085:dome?L*.26:snap?L*.2:id==='painted'?L*.17:L*.18;
@@ -4425,9 +4476,8 @@ function plate(D,Lp){const key=D.id+':'+Lp;let P=CACHE.get(key);if(P)return P;co
   P={cv,ox,oy};if(CACHE.size>320)CACHE.delete(CACHE.keys().next().value);CACHE.set(key,P);R.built+=performance.now()-t0;return P;}
 
 // Hook for drawFish: c is already mirrored for facing and has alpha set.
-R.draw=(c,sp,L,wig,sil)=>{const D=R.S[sp.id];c.save();c.scale(L,L);const sway=Math.sin(wig||0)*.02,F=D.fins(sway);
-  if(sil){const s=typeof sil==='string'?sil:'#0b1714';for(const k of ['tail',...D.backFins,...(D.frontFins.pre||[]),...(D.frontFins.post||[])])drawFin(c,F[k],null,s);c.fillStyle=s;D.bodyPath(c);c.fill();c.restore();return;}
-  drawFin(c,F.tail,D.finStyle.tail);
+R.draw=(c,sp,L,wig,sil)=>{const D=R.S[sp.id];c.save();c.scale(L,L);const sway=Math.sin(wig||0)*.02;
+  if(sil){const F=D.fins(sway),s=typeof sil==='string'?sil:'#0b1714';for(const k of ['tail',...D.backFins,...(D.frontFins.pre||[]),...(D.frontFins.post||[])])drawFin(c,F[k],null,s);c.fillStyle=s;D.bodyPath(c);c.fill();c.restore();return;}
   // Pictures are kept at a fixed ladder of sizes, each about 1.5 times the last, and drawn shrunk from the next size up,
   // so a fish growing or shrinking on screen (moving through depth, the catch card) reuses a handful of pictures instead
   // of building a new one every few pixels. If this frame has already spent its share building pictures, a fish that
@@ -4435,7 +4485,18 @@ R.draw=(c,sp,L,wig,sil)=>{const D=R.S[sp.id];c.save();c.scale(L,L);const sway=Ma
   // catch cards, the fish log and other one-off pictures always get their proper size.)
   const m=c.getTransform(),k=Math.hypot(m.a,m.b)||1,need=Math.max(8,k);let Lp=LADDER.find(v=>v>=need)||LADDER[LADDER.length-1];
   if(R.scene&&!CACHE.has(D.id+':'+Lp)&&R.built>10){const have=LADDER.filter(v=>CACHE.has(D.id+':'+v));if(have.length)Lp=have.reduce((a,b)=>Math.abs(b-need)<Math.abs(a-need)?b:a);}
-  const P=plate(D,Lp);c.save();c.scale(1/Lp,1/Lp);c.imageSmoothingQuality='high';c.drawImage(P.cv,-P.ox,-P.oy);c.restore();c.restore();};
+  // The tail sways, so in the live scene it is also a picture: one for each of nine sway positions, made the first time
+  // that position is needed. Steps are a fraction of a pixel apart on a fish this size. Catch cards and other one-off
+  // pictures still draw the tail exactly.
+  const P=plate(D,Lp);
+  if(R.scene){const st=Math.round(Math.sin(wig||0)*4),T=P.tails||(P.tails=[]);let tp=T[st+4];
+    if(!tp&&R.built<=10){const t0=performance.now();tp=T[st+4]=tailSprite(D,Lp,st/4*.02);R.built+=performance.now()-t0;}
+    if(tp){c.save();c.scale(1/Lp,1/Lp);c.drawImage(tp.cv,-tp.ox,-tp.oy);c.restore();}else drawFin(c,D.fins(st/4*.02).tail,D.finStyle.tail);}
+  else drawFin(c,D.fins(sway).tail,D.finStyle.tail);
+  c.save();c.scale(1/Lp,1/Lp);c.imageSmoothingQuality='high';c.drawImage(P.cv,-P.ox,-P.oy);c.restore();c.restore();};
+function tailSprite(D,Lp,sway){const F=D.fins(sway).tail,pad=.012+2/Lp,xs=F.o.map(p=>p[0]),ys=F.o.map(p=>p[1]);
+  const X0=Math.min(...xs)-pad,Y0=Math.min(...ys)-pad,W=Math.ceil(Lp*(Math.max(...xs)+pad-X0)),H=Math.ceil(Lp*(Math.max(...ys)+pad-Y0)),ox=-X0*Lp,oy=-Y0*Lp;
+  const cv=document.createElement('canvas');cv.width=Math.max(1,W);cv.height=Math.max(1,H);const c=cv.getContext('2d');c.setTransform(Lp,0,0,Lp,ox,oy);drawFin(c,F,D.finStyle.tail);return{cv,ox,oy};}
 
 // ===== Largemouth Bass =====
 // Deep, heavy body; big head; the upper jaw reaches past the back of the eye; a deep notch almost splitting the spiny
@@ -5833,7 +5894,7 @@ function drawFish(c,sp,L,face,wig,alpha,sil,art){
   c.save();c.globalAlpha=alpha;c.scale(face,1);
   const sc=typeof sil==='string'?sil:'#0b1714',col=sil?sc:sp.col,belly=sil?sc:sp.belly;
   if(sp.shape==='eel'){drawEel(c,sp,L,wig,alpha,sil,col,belly);c.restore();return;}
-  if(sp.turtle){drawTurtle(c,sp,L,wig,sil);c.restore();return;}
+  if(sp.turtle){if(!sil&&REAL.scene)drawTurtleCached(c,sp,L,wig);else drawTurtle(c,sp,L,wig,sil);c.restore();return;}
   if(sp.shape==='flounder'){drawFlounder(c,sp,L,wig,sil,col,belly);c.restore();return;}
   if(REAL.S[sp.id]){REAL.draw(c,sp,L,wig,sil?sc:false);c.restore();return;}
   if(AF[sp.id]){drawAfro(c,sp,L,wig,sil,sc);c.restore();return;}
@@ -6085,12 +6146,13 @@ let last=performance.now();
 // sits waiting with no fish interested, 20 while a menu or card covers the game.
 let lastDraw=0,lastInput=0;
 for(const ev of['pointerdown','pointermove','keydown','wheel'])addEventListener(ev,()=>{lastInput=performance.now();},{passive:true,capture:true});
-function frameGap(now){const scr=currentScreen();if(G.mode==='play'&&!G.paused&&!scr&&now-lastInput<1500)return 0;
+function frameGap(now){const scr=currentScreen();if(G.mode==='play'&&!G.paused&&!scr&&now-lastInput<1500)return S.settings&&S.settings.batt?33.3:0;
   if(G.mode==='menu')return scr&&scr!=='menu'?50:33.3;
   if(G.mode!=='play')return 0;
   if(G.paused||scr)return 50;
-  const L=G.lure;if(G.fight||G.charging||G.fc||G.net||G.input.reel||L.state==='flying'||L.state==='hooked')return 0;
-  if(G.fish.some(f=>f.state==='approach'||f.state==='follow'||f.state==='nibble'||f.state==='bite'))return 0;
+  const full=S.settings&&S.settings.batt?33.3:0;   // battery saver: never more than 30 a second, even in a fight
+  const L=G.lure;if(G.fight||G.charging||G.fc||G.net||G.input.reel||L.state==='flying'||L.state==='hooked')return full;
+  if(G.fish.some(f=>f.state==='approach'||f.state==='follow'||f.state==='nibble'||f.state==='bite'))return full;
   return 33.3;}
 function frame(now){const gap=frameGap(now);if(gap&&now-lastDraw<gap-4){requestAnimationFrame(frame);return;}lastDraw=now;REAL.frameReset();  const dt=Math.min(.05,(now-last)/1000);last=now;G.t+=dt;
   if(G.mode==='play'&&!G.paused)update(dt);else if(G.mode==='menu')demoUpdate(dt);
@@ -6262,14 +6324,15 @@ function devInfo(){const ua=navigator.userAgent||'',w=Math.min(screen.width,scre
   const ios=/iPhone|iPod/.test(ua),ipad=/iPad/.test(ua)||(/Macintosh/.test(ua)&&touch),and=/Android/.test(ua),fire=/Silk|KF[A-Z]{2}/.test(ua);
   const kind=ios?'iPhone':ipad?'iPad':fire?'Fire tablet':and?(w>=600?'Android tablet':'Android phone'):touch?'Touch device':'Computer';
   return{device:kind,screen:`${screen.width}x${screen.height}`,app:!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true};}
-G.sess={min:0,locs:{},fish:0};
+G.sess={min:0,locs:{},fish:0,casts:0,hooked:0,lost:0,quests:0,lv0:null};
 function sessionPayload(){const d=devInfo(),locs={};for(const k in G.sess.locs)locs[k]=Math.round(G.sess.locs[k]*10)/10;
   const visited=[...new Set(Object.keys(S.landedL||{}).map(k=>k.split('|')[1]).concat([S.loc]))].join(',');
   return{p_id:sbPid(),p_version:VERSION,p_device:d.device,p_screen:d.screen,p_app:d.app,p_minutes:Math.round(G.sess.min*10)/10,p_locs:locs,p_fish:G.sess.fish,
-    p_level:lvlInfo().l,p_name:(S.name||'').slice(0,20),p_respect:S.respect||0,p_species:SPECIES.filter(sp=>S.log[sp.id]).length,p_visited:visited};}
+    p_level:lvlInfo().l,p_name:(S.name||'').slice(0,20),p_respect:S.respect||0,p_species:SPECIES.filter(sp=>S.log[sp.id]).length,p_visited:visited,
+    p_lv_start:G.sess.lv0==null?lvlInfo().l:G.sess.lv0,p_quit_loc:S.loc,p_casts:G.sess.casts,p_hooked:G.sess.hooked,p_lost:G.sess.lost,p_quests:G.sess.quests};}
 function statsLog(kind,data){S.statsSent=(S.statsSent||[]).slice(-7);S.statsSent.push({kind,at:Date.now(),data});save();}
 function statsPost(path,body){try{fetch(SB_URL+path,{method:'POST',keepalive:true,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>{});}catch(e){}}
-function sendSession(){if(!statsOn()||G.sess.min<.5)return;const b=sessionPayload();statsPost('/rest/v1/rpc/log_session',b);statsLog('Play session',b);G.sess={min:0,locs:{},fish:0};}
+function sendSession(){if(!statsOn()||G.sess.min<.5)return;const b=sessionPayload();statsPost('/rest/v1/rpc/log_session',b);statsLog('Play session',b);G.sess={min:0,locs:{},fish:0,casts:0,hooked:0,lost:0,quests:0,lv0:null};}
 let errSent=0,errSeen={};
 function reportError(msg,src){if(!statsOn()||errSent>=5)return;msg=String(msg||'Unknown error').slice(0,300);if(errSeen[msg])return;errSeen[msg]=1;errSent++;
   const b={p_id:sbPid(),p_version:VERSION,p_device:devInfo().device,p_msg:msg,p_src:String(src||'').slice(0,120)};statsPost('/rest/v1/rpc/log_error',b);statsLog('Error report',b);}
@@ -6278,10 +6341,10 @@ window.addEventListener('unhandledrejection',e=>{const r=e.reason;reportError(r&
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendSession();});
 window.addEventListener('pagehide',sendSession);
 function statsLines(b){const locs=Object.entries(b.p_locs||{}).map(([k,v])=>`${(LOCS[k]||{}).name||k} ${v} min`).join(', ')||'none yet';
-  return [['Version',b.p_version],['Device',`${b.p_device} \u00b7 ${b.p_screen}${b.p_app?' \u00b7 home-screen app':''}`],['Played',`${b.p_minutes} min (${locs})`],['Fish caught',b.p_fish],
+  return [['Version',b.p_version],['Device',`${b.p_device} \u00b7 ${b.p_screen}${b.p_app?' \u00b7 home-screen app':''}`],['Played',`${b.p_minutes} min (${locs})`],['Fish caught',b.p_fish],['Casts · hooked · lost',b.p_casts==null?'—':`${b.p_casts} · ${b.p_hooked} · ${b.p_lost}`],['Quests finished',b.p_quests??'—'],['Level',b.p_lv_start==null?b.p_level:`${b.p_lv_start} → ${b.p_level}`],['Last spot',(LOCS[b.p_quit_loc]||{}).name||'—'],
     ['Angler',`${b.p_name||'(no name)'} \u00b7 level ${b.p_level} \u00b7 respect ${b.p_respect}`],['Species caught',b.p_species],['Spots fished',(b.p_visited||'').split(',').filter(Boolean).map(k=>(LOCS[k]||{}).name||k).join(', ')],['Random ID',b.p_id]];}
 function kvHtml(lines){return `<div class="sv-k">${lines.map(([k,v])=>`<span>${esc(k)}</span><b>${esc(String(v))}</b>`).join('')}</div>`;}
-function exampleSession(){return{p_id:'5f3c9a1e-7b2d-4c8e-9a10-2e6b4d7c1f88',p_version:VERSION,p_device:'iPhone',p_screen:'390x844',p_app:true,p_minutes:23.4,p_locs:{pond:15.1,lake:8.3},p_fish:12,p_level:14,p_name:'Bob',p_respect:38,p_species:11,p_visited:'pond,lake'};}
+function exampleSession(){return{p_id:'5f3c9a1e-7b2d-4c8e-9a10-2e6b4d7c1f88',p_version:VERSION,p_device:'iPhone',p_screen:'390x844',p_app:true,p_minutes:23.4,p_locs:{pond:15.1,lake:8.3},p_fish:12,p_level:14,p_name:'Bob',p_respect:38,p_species:11,p_visited:'pond,lake',p_lv_start:13,p_quit_loc:'lake',p_casts:41,p_hooked:15,p_lost:3,p_quests:1};}
 function renderStatsAsk(){{const d=document.querySelector('#statsAsk .st-ex');if(d&&!d.dataset.w){d.dataset.w=1;d.addEventListener('toggle',()=>document.querySelector('#statsAsk .st-card').classList.toggle('ex',d.open));}}$('#stExample').innerHTML=kvHtml(statsLines(exampleSession()))+`<p style="margin:.6em 0 .2em"><b>An error report</b> looks like:</p>`+kvHtml([['Version',VERSION],['Device','Android phone'],['Error','Cannot read properties of undefined'],['Where','index.html:2210']]);}
 function renderStatsView(){const cur=sessionPayload(),on=S.settings.stats===true;
   let h=`<div class="panel"><p>Sharing is <b>${on?'on':'off'}</b>${S.dev?' (never sent from the dev build)':''}. ${on?'This is what the game will send when you put it away:':'If you turn it on, this is what would be sent when you put the game away:'}</p>${kvHtml(statsLines(cur))}<details><summary>Exact data</summary><pre class="sv-raw">${esc(JSON.stringify(cur,null,1))}</pre></details></div>`;
@@ -6746,6 +6809,8 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.05','Battery',['New Battery saver switch in Settings: draws the scene a little softer and at most 30 times a second, even in a fight','The ground and bottom are now drawn once and reused instead of being redrawn every frame, which takes a big share of the drawing work off every frame for everyone','Swimming fish and turtles now reuse ready-made pictures for their tails, legs and heads too, instead of redrawing them by hand every frame. Fish drawing work drops by about 95%, and they look the same','The hills, far forest, bridge and treeline are now drawn once and reused, and swaying plants are drawn in a few slanted bands instead of ten. Altogether each frame now takes about half as much drawing as before (less than a third at Mossback Pond), with the same look. Smoke, waterfalls, trains, falling leaves and reeds still move as before']],
+  ['v1.05','Play stats',['If you share play stats, each summary now also counts your casts, the fish you hooked, caught and lost, quests finished, the level you started at and the spot you stopped at. Settings \u203a What\u2019s sent shows all of it, as always']],
   ['v1.04','Easier on the battery',['When nothing much is moving the game draws fewer frames: 30 a second on the title screen and while your bait sits waiting with no fish interested, 20 while a menu or card is open','It goes straight back to full speed for casting, a fish coming to the bait, fights, reeling and for a moment after you touch the fishing scene','Fish pictures are kept at fewer sizes and built a few at a time, so arriving at a new place no longer freezes the game for most of a second','The pictures of each place on the Where & When map fill in one at a time instead of freezing the game the first time the map opens']],
   ['v1.04','One look for everything',['Boyoma Falls\' ten fish get the field-guide look: tigerfish and goliath tigerfish with their fangs, royal sprat, the winged African butterflyfish, redbreast tilapia, six-barred distichodus, nembwe, African pike, Nile perch and the giant vundu catfish','The southern flounder\'s catch card shows its eyed side as a real plate, both eyes, the long fringe fins and the big toothy mouth','The American eel is redrawn: olive back fading to a yellow-white belly, a wet sheen, and one soft fin fringe running round the tail','Turtles are redrawn: domed shells built of real plates with growth rings, scaly skin, clawed webbed feet, and each species\' own head and shell (the alligator snapper\'s spiked keels and hooked beak, the softshell\'s leathery pancake and snorkel nose)','The angler stands like a person now: boots, trousers, a shirt with collar and belt, a face in profile, and a bent arm holding the rod; every hat and shirt still fits']],
   ['v1.03','Sunken trees',['Sunken trees lie straight, resting on the high spots of the bottom instead of bending over it, and one that landed on a steep bank slides down to gentler ground','Tupelo Bayou\'s are dark, waterlogged cypress under a coat of silt and slime, with strings of old bark, wavering algae, a hollow heart and limbs rounded off by rot','Boyoma Falls\' is heavy hardwood scoured smooth by the current, deeply checked, almost bare of growth, with silt packed against its downstream end','The bayou\'s muck bottom no longer has stones in it']],
@@ -6786,13 +6851,14 @@ const NOTES=[
   ['v0.74','Big fish',['Heavy fish are matched against your line strength','Adjustable drag during fights','Simpler pause menu']]];
 function renderNotes(){$('#notesList').innerHTML=NOTES.map(([v,t,l])=>`<div class="note-v"><b>${v}</b><span>${t}</span></div><ul>${l.map(x=>`<li>${x}</li>`).join('')}</ul>`).join('');}
 $('#mNotes').onclick=()=>{SFX.ui();open('notes');};
-function renderSettings(){$('#sStats').setAttribute('aria-checked',S.settings.stats===true);{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
+function renderSettings(){$('#sStats').setAttribute('aria-checked',S.settings.stats===true);{const v=Math.round(sfxVol()*100);$('#sVol').value=v;$('#sVolV').textContent=v?v+'%':'Off';}$('#sChat').setAttribute('aria-checked',S.settings.chatter!==false);$('#sBatt').setAttribute('aria-checked',S.settings.batt===true);$('#sUnits').setAttribute('aria-checked',S.settings.units==='metric');$('#sLefty').setAttribute('aria-checked',S.settings.lefty);$('#sHints').setAttribute('aria-checked',S.settings.hints);$('#sFinder').setAttribute('aria-checked',!!S.owned.finder&&S.settings.finder!==false);$('#sFinder').disabled=!S.owned.finder;}
 $('#sStats').onclick=()=>{S.settings.stats=S.settings.stats!==true;save();renderSettings();SFX.ui();};
 $('#sStatsView').onclick=()=>{SFX.ui();open('statsView');};
 $('#sVol').oninput=e=>{const v=+e.target.value;S.settings.vol=v;S.settings.sound=v>0;$('#sVolV').textContent=v?v+'%':'Off';if(master)master.gain.value=.69*v/100;if(!v&&rainGain)rainGain.gain.value=0;};
 $('#sVol').onchange=()=>{save();SFX.plip();};
 $('#sLefty').onclick=()=>{S.settings.lefty=!S.settings.lefty;save();renderSettings();refreshControls();SFX.ui();};
 $('#sUnits').onclick=()=>{S.settings.units=S.settings.units==='metric'?'imperial':'metric';save();renderSettings();SFX.ui();};
+$('#sBatt').onclick=()=>{S.settings.batt=S.settings.batt!==true;save();resize();renderSettings();SFX.ui();};
 $('#sChat').onclick=()=>{S.settings.chatter=S.settings.chatter===false;if(S.settings.chatter===false)G.bubble=null;save();renderSettings();SFX.ui();};
 $('#sTour').onclick=()=>{S.tutDone=false;save();toast('The tour plays next time you go fishing');if(G.mode==='play'){G.stack=[];show(null);G.paused=false;setTimeout(tutStart,200);}};
 $('#sFinder').onclick=()=>{S.settings.finder=S.settings.finder===false;save();renderSettings();SFX.ui();};
@@ -7019,7 +7085,7 @@ function questCatch(sp,len){const Q=ensureQuests(),hits=[];
     else if(q.type==='lure')hit=S.lure===q.lure;
     else if(q.type==='variety'&&!q.kinds.includes(sp.id)){q.kinds.push(sp.id);hit=true;}
     if(!hit)continue;q.got++;
-    if(q.got>=q.n){q.done=true;S.coins+=q.reward;S.stats.earned+=q.reward;Q.total=(Q.total||0)+1;}
+    if(q.got>=q.n){q.done=true;G.sess.quests++;S.coins+=q.reward;S.stats.earned+=q.reward;Q.total=(Q.total||0)+1;}
     hits.push({q,done:q.done});}
   return hits;}
 function an(w){return/^[aeiou]/i.test(w)?'an':'a';}
