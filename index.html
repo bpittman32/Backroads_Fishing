@@ -42,7 +42,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 #hud{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;gap:8px;
   padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));pointer-events:none}
 #hud>*{pointer-events:auto}
-.chip{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;line-height:1.1;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap}
+.chip{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-size:13px;line-height:1.1;white-space:nowrap}
 #lureChip{min-width:0;overflow:hidden;flex:1 1 0}
 #lureChip .dot{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 0 0 2px rgba(0,0,0,.35)}
 #lureChip .nm{overflow:hidden;text-overflow:ellipsis}
@@ -58,7 +58,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 #pauseBtn i{display:block;width:4px;height:13px;background:var(--lichen);border-radius:2px;margin:0 2px}
 
 #fightHud{position:fixed;left:0;right:0;z-index:5;top:calc(env(safe-area-inset-top,0px) + 62px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));pointer-events:none}
-.fh-card{max-width:460px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:grid;gap:7px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.fh-card{max-width:460px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:grid;gap:7px;}
 .fh-row{display:grid;grid-template-columns:64px 1fr 58px;align-items:center;gap:8px;font-size:12px}
 .fh-row .lb{letter-spacing:.07em;text-transform:uppercase;color:var(--lichen-dim);font-size:11px}
 .fh-row .val{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -81,17 +81,18 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 #fightHud .say{text-align:center;font-family:var(--f-display);font-size:17px;letter-spacing:.02em;min-height:1.2em;color:var(--amber)}
 
 #shopBtn{position:fixed;z-index:5;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 64px);display:flex;flex-direction:column;align-items:center;gap:3px;
-  width:60px;padding:9px 0 7px;border-radius:16px;background:var(--panel);border:1px solid rgba(242,169,59,.55);font-family:var(--f-display);font-size:14px;letter-spacing:.03em;color:var(--amber);box-shadow:0 4px 0 rgba(0,0,0,.3);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-#lvChip{position:fixed;z-index:5;left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 64px);width:60px;padding:8px 8px 9px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:5px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  width:60px;padding:9px 0 7px;border-radius:16px;background:var(--panel);border:1px solid rgba(242,169,59,.55);font-family:var(--f-display);font-size:14px;letter-spacing:.03em;color:var(--amber);box-shadow:0 4px 0 rgba(0,0,0,.3);}
+#lvChip{position:fixed;z-index:5;left:max(16px,env(safe-area-inset-left,0px));top:calc(env(safe-area-inset-top,0px) + 64px);width:60px;padding:8px 8px 9px;border-radius:14px;background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:5px;}
 #lvChip b{font-family:var(--f-display);font-weight:400;font-size:16px;color:var(--sky)}
 #lvChip i{display:block;width:100%;height:5px;border-radius:3px;background:rgba(0,0,0,.45);overflow:hidden}
 #lvChip u{display:block;height:100%;width:0;background:var(--sky);text-decoration:none}
 #shopBtn:active{transform:translateY(2px)}
 #shopBtn .bag{width:22px;height:20px;border-radius:4px 4px 7px 7px;background:var(--amber);position:relative;margin-top:5px}
 #shopBtn .bag::before{content:"";position:absolute;left:5px;right:5px;top:-6px;height:9px;border:2.5px solid var(--amber);border-bottom:0;border-radius:8px 8px 0 0}
-#shopBtn.afford{animation:glow 1.4s ease-in-out infinite alternate}
+#shopBtn.afford::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:0 0 0 5px rgba(242,169,59,.25);opacity:0;pointer-events:none;animation:glowfade 1.4s ease-in-out infinite alternate}
+@keyframes glowfade{to{opacity:1}}
 #questBtn{position:fixed;z-index:5;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 160px);display:flex;flex-direction:column;align-items:center;gap:3px;
-  width:60px;padding:9px 0 7px;border-radius:16px;background:var(--panel);border:1px solid rgba(140,198,216,.5);font-family:var(--f-display);font-size:14px;letter-spacing:.03em;color:var(--sky);box-shadow:0 4px 0 rgba(0,0,0,.3);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  width:60px;padding:9px 0 7px;border-radius:16px;background:var(--panel);border:1px solid rgba(140,198,216,.5);font-family:var(--f-display);font-size:14px;letter-spacing:.03em;color:var(--sky);box-shadow:0 4px 0 rgba(0,0,0,.3);}
 #questBtn:active{transform:translateY(2px)}
 #questBtn .scroll{width:20px;height:22px;margin-top:3px;border-radius:3px;background:repeating-linear-gradient(transparent 0 5px,rgba(12,25,21,.55) 5px 7px) 4px 5px/12px 13px no-repeat,var(--sky)}
 #questBtn .qdot{position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:var(--danger,#e65a3d);border:2px solid #0c1915}
@@ -106,7 +107,6 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .q-foot{font-size:13px;color:var(--lichen-dim);text-align:center;line-height:1.5}
 .q-foot b{color:var(--sky)}
 .shop-sub{margin:6px 2px 0}
-@keyframes glow{to{box-shadow:0 0 0 5px rgba(242,169,59,.25),0 4px 0 rgba(0,0,0,.3)}}
 #tut{position:fixed;inset:0;z-index:40}
 .tut-hole{position:fixed;border-radius:18px;box-shadow:0 0 0 9999px rgba(4,10,8,.68);transition:all .25s ease;pointer-events:none;outline:2px solid var(--amber);outline-offset:3px}
 .tut-hole.none{box-shadow:0 0 0 9999px rgba(4,10,8,.68);width:0!important;height:0!important;outline:none}
@@ -1094,7 +1094,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.05a';
+const VERSION='v1.06a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1503,9 +1503,12 @@ function load(){let o=null;try{const r=localStorage.getItem(KEY);if(r)o=JSON.par
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(typeof sbSync==='function'&&!sbBusy){clearTimeout(save.t);save.t=setTimeout(sbSync,1500);}}
 
 // ---------------- AUDIO ----------------
-let AC=null,master=null,noiseBuf=null,rainSrc=null,rainGain=null;
+let AC=null,master=null,noiseBuf=null,rainSrc=null,rainGain=null,sndAt=0;
 function sfxVol(){const v=S.settings.vol;return v==null?(S.settings.sound===false?0:.8):v/100;}
-function audio(){if(!S.settings.sound||sfxVol()<=0)return null;if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.69*sfxVol();master.connect(AC.destination);}catch(e){return null;}}if(AC.state==='suspended')AC.resume().catch(()=>{});return AC;}
+function audio(){if(!S.settings.sound||sfxVol()<=0)return null;if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.69*sfxVol();master.connect(AC.destination);}catch(e){return null;}}if(AC.state!=='running')AC.resume().catch(()=>{});sndAt=performance.now();return AC;}
+// A running sound engine keeps the phone's audio hardware awake even in silence, so it sleeps after 8 quiet seconds
+// (unless rain is falling) and wakes the moment the next sound plays.
+function audioIdle(){if(AC&&AC.state==='running'&&!(rainGain&&rainGain.gain.value>.002)&&performance.now()-sndAt>8000)AC.suspend().catch(()=>{});}
 // One steam-whistle blast: a three-chime whistle (B-flat, D, F) with the breathy hiss of steam through it.
 // The pitch scoops up as the valve opens, holds, and sags a little as it closes. Kept soft so it doesn't startle.
 function hornBlast(delay,len){const a=audio();if(!a)return;const t=a.currentTime+delay,lp=a.createBiquadFilter(),g=a.createGain();lp.type='lowpass';lp.frequency.value=2600;lp.Q.value=.5;
@@ -1516,7 +1519,7 @@ function hornBlast(delay,len){const a=audio();if(!a)return;const t=a.currentTime
 function tone(f,d=.12,type='sine',v=.2,f2=null,delay=0){const a=audio();if(!a)return;const t=a.currentTime+delay;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.03);}
 function getNoise(a){if(!noiseBuf){noiseBuf=a.createBuffer(1,a.sampleRate*2,a.sampleRate);const ch=noiseBuf.getChannelData(0);for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;}return noiseBuf;}
 function noise(d=.3,v=.25,freq=1200,q=.8,delay=0){const a=audio();if(!a)return;const t=a.currentTime+delay;const s=a.createBufferSource();s.buffer=getNoise(a);const fl=a.createBiquadFilter();fl.type='bandpass';fl.frequency.value=freq;fl.Q.value=q;const g=a.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(fl);fl.connect(g);g.connect(master);s.start(t,Math.random());s.stop(t+d+.05);}
-function rainAudio(on){const a=AC;if(!a||!S.settings.sound){if(rainGain)rainGain.gain.value=0;return;}if(!rainSrc){rainSrc=a.createBufferSource();rainSrc.buffer=getNoise(a);rainSrc.loop=true;const fl=a.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1400;rainGain=a.createGain();rainGain.gain.value=0;rainSrc.connect(fl);fl.connect(rainGain);rainGain.connect(master);rainSrc.start();}rainGain.gain.setTargetAtTime(on?.07:0,a.currentTime,.6);}
+function rainAudio(on){const a=AC;if(!a||!S.settings.sound){if(rainGain)rainGain.gain.value=0;return;}if(!rainSrc){rainSrc=a.createBufferSource();rainSrc.buffer=getNoise(a);rainSrc.loop=true;const fl=a.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1400;rainGain=a.createGain();rainGain.gain.value=0;rainSrc.connect(fl);fl.connect(rainGain);rainGain.connect(master);rainSrc.start();}if(on&&a.state!=='running'){a.resume().catch(()=>{});sndAt=performance.now();}rainGain.gain.setTargetAtTime(on?.07:0,a.currentTime,.6);}
 const SFX={
   horn(){// grade-crossing whistle: long, long, short, long, the last one held as the engine crosses
     for(const [d,l] of [[0,2.4],[3.2,2.4],[6.4,.9],[8,3.6]])hornBlast(d,l);},
@@ -6146,15 +6149,19 @@ let last=performance.now();
 // sits waiting with no fish interested, 20 while a menu or card covers the game.
 let lastDraw=0,lastInput=0;
 for(const ev of['pointerdown','pointermove','keydown','wheel'])addEventListener(ev,()=>{lastInput=performance.now();},{passive:true,capture:true});
-function frameGap(now){const scr=currentScreen();if(G.mode==='play'&&!G.paused&&!scr&&now-lastInput<1500)return S.settings&&S.settings.batt?33.3:0;
-  if(G.mode==='menu')return scr&&scr!=='menu'?50:33.3;
+// Behind an open menu, shop or card the scene only needs redrawing for a moment after it opens or after a tap (the
+// blurred view behind it hardly changes), so it then stops, and the phone stops re-blurring it too.
+let lastScr=null,scrAt=0;
+const coveredGap=(now)=>now-scrAt<1000||now-lastInput<1000?50:1e9;
+function frameGap(now){const scr=currentScreen();if(scr!==lastScr){lastScr=scr;scrAt=now;}if(G.mode==='play'&&!G.paused&&!scr&&now-lastInput<1500)return S.settings&&S.settings.batt?33.3:0;
+  if(G.mode==='menu')return scr&&scr!=='menu'?coveredGap(now):33.3;
   if(G.mode!=='play')return 0;
-  if(G.paused||scr)return 50;
+  if(G.paused||scr)return coveredGap(now);
   const full=S.settings&&S.settings.batt?33.3:0;   // battery saver: never more than 30 a second, even in a fight
   const L=G.lure;if(G.fight||G.charging||G.fc||G.net||G.input.reel||L.state==='flying'||L.state==='hooked')return full;
   if(G.fish.some(f=>f.state==='approach'||f.state==='follow'||f.state==='nibble'||f.state==='bite'))return full;
   return 33.3;}
-function frame(now){const gap=frameGap(now);if(gap&&now-lastDraw<gap-4){requestAnimationFrame(frame);return;}lastDraw=now;REAL.frameReset();  const dt=Math.min(.05,(now-last)/1000);last=now;G.t+=dt;
+function frame(now){audioIdle();const gap=frameGap(now);if(gap&&now-lastDraw<gap-4){requestAnimationFrame(frame);return;}lastDraw=now;REAL.frameReset();  const dt=Math.min(.05,(now-last)/1000);last=now;G.t+=dt;
   if(G.mode==='play'&&!G.paused)update(dt);else if(G.mode==='menu')demoUpdate(dt);
   updateAmbient(dt);updateCam(dt);render();REAL.frameEnd();requestAnimationFrame(frame);
 }
@@ -6809,6 +6816,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.06','Battery',['The sound engine now goes to sleep after a few quiet seconds and wakes the instant a sound plays. Before, once any sound had played it ran until you closed the game, which keeps the phone\'s audio hardware awake','While a menu, the shop or a card is open, the scene behind it stops redrawing after a moment instead of redrawing 20 times a second','The buttons over the scene no longer blur what is behind them. They were nine-tenths solid already, so they look the same, but the phone had to redo that blur every frame','The Shop button\'s glow now fades a fixed ring in and out, which the phone does almost for free, instead of redrawing the button\'s shadow every frame']],
   ['v1.05','Battery',['New Battery saver switch in Settings: draws the scene a little softer and at most 30 times a second, even in a fight','The ground and bottom are now drawn once and reused instead of being redrawn every frame, which takes a big share of the drawing work off every frame for everyone','Swimming fish and turtles now reuse ready-made pictures for their tails, legs and heads too, instead of redrawing them by hand every frame. Fish drawing work drops by about 95%, and they look the same','The hills, far forest, bridge and treeline are now drawn once and reused, and swaying plants are drawn in a few slanted bands instead of ten. Altogether each frame now takes about half as much drawing as before (less than a third at Mossback Pond), with the same look. Smoke, waterfalls, trains, falling leaves and reeds still move as before']],
   ['v1.05','Play stats',['If you share play stats, each summary now also counts your casts, the fish you hooked, caught and lost, quests finished, the level you started at and the spot you stopped at. Settings \u203a What\u2019s sent shows all of it, as always']],
   ['v1.04','Easier on the battery',['When nothing much is moving the game draws fewer frames: 30 a second on the title screen and while your bait sits waiting with no fish interested, 20 while a menu or card is open','It goes straight back to full speed for casting, a fish coming to the bait, fights, reeling and for a moment after you touch the fishing scene','Fish pictures are kept at fewer sizes and built a few at a time, so arriving at a new place no longer freezes the game for most of a second','The pictures of each place on the Where & When map fill in one at a time instead of freezing the game the first time the map opens']],
