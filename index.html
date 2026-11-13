@@ -1094,7 +1094,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.06a';
+const VERSION='v1.07a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1424,7 +1424,15 @@ const RANKS=[['Newcomer',0],['Regular',10],['Local',30],['Old Hand',70],['Guide'
 function rankIdx(r=S.respect||0){let i=0;RANKS.forEach(([,n],k)=>{if(r>=n)i=k;});return i;}
 function rankName(r){return RANKS[rankIdx(r)][0];}
 function rankNeed(name){const k=RANKS.findIndex(x=>x[0]===name);return k<0?0:RANKS[k][1];}
-function respectFor(P){if(!P||P.gut)return 0;let r=0;if(P.bed)r+=3;const m=medalFor(P.sp.id,P.len);if(m>=0)r+=[4,6,10][m];if(P.record&&P.prevBest)r+=3;if(P.sp.legend)r+=25;return r;}
+// Respect is for firsts, not repeats. Each medal size (bronze 4, silver 6, gold 10) pays once per species, the first time
+// you release one that size or bigger; a fish off its nest pays once per species each year; a new personal best and
+// every legend still pay each time. Before this, the same trophy fish paid again with every release.
+function respectFor(P){if(!P||P.gut)return 0;const id=P.sp.id,paid=(S.respPaid&&S.respPaid[id]!=null)?S.respPaid[id]:-1;let r=0;
+  if(P.bed&&!(S.respBed&&S.respBed[id]===yearIdx()))r+=3;const m=medalFor(id,P.len);for(let i=paid+1;i<=m;i++)r+=[4,6,10][i];
+  if(P.record&&P.prevBest)r+=3;if(P.sp.legend)r+=25;return r;}
+function markRespect(P){const id=P.sp.id;S.respPaid=S.respPaid||{};S.respBed=S.respBed||{};const m=medalFor(id,P.len);
+  if(m>(S.respPaid[id]!=null?S.respPaid[id]:-1))S.respPaid[id]=m;if(P.bed)S.respBed[id]=yearIdx();}
+function yearIdx(){return Math.floor((S.yday||0)/YEAR_DAYS);}
 function rankUnlocks(i){const nm=RANKS[i][0],out=[];for(const k of SETUP_ORDER)if(SETUPS[k].resp===nm)out.push(SETUPS[k].name);
   for(const sl in LOOKS)for(const k in LOOKS[sl])if(LOOKS[sl][k].resp===nm)out.push(LOOKS[sl][k].name);return out.length?'Now available: '+out.join(', '):'Other anglers are starting to notice';}
 function medalFor(id,len){const t=TROPHY[id];let m=-1;if(t)for(let i=0;i<3;i++)if(len>=t[i])m=i;return m;}
@@ -6484,6 +6492,11 @@ function startGame(){
   // The Moth Fly became fly-rod only. Anglers without a fly rod get their coins back for any they had.
   // Respect started after many players had already been releasing fish; give them a head start from what they let go.
   if(S.respect==null){S.respect=Math.min(60,Math.floor(((S.stats&&S.stats.released)||0)/3));save();}
+  // Respect for repeats ended in v1.07: count every medal size already reached in the journal as paid. Respect already
+  // earned is kept.
+  if(!S.respPaid){S.respPaid={};for(const k in S.log||{}){const b=S.log[k]&&S.log[k].best;if(b>0){const m=medalFor(k,b);if(m>=0)S.respPaid[k]=m;}}
+    if((S.respect||0)>0)queueNotice('Respect for firsts',['Respect now comes from firsts: the first bronze, silver and gold of each species, a fish off its nest once per species each year, every new personal best and every legend. Releasing the same trophy again no longer adds more.','Your respect and rank stay exactly as they are.']);
+    save();}
   if(!S.respNote){S.respNote=1;if((S.stats&&S.stats.caught)>0)queueNotice('Respect is here',['Letting the right fish go now earns respect: fish from their nests, trophies, personal bests and legends. Respect never goes down.',
     `You have ${S.respect} respect (${rankName()}), counted from the fish you\u2019ve already released.`,
     setupOK('fly')?'You keep your Fly Rod.':`The Fly Rod now unlocks at Local respect (${rankNeed('Local')}), along with new outfits as you rank up.`,
@@ -6816,6 +6829,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.07','Respect',['Respect now comes from firsts: the first bronze, silver and gold of each species, a fish off its nest once per species each year, every new personal best and every legend. Releasing the same trophy fish again no longer adds more, so respect means something again','Respect you already earned is kept, and medals already in your journal count as paid']],
   ['v1.06','Battery',['The sound engine now goes to sleep after a few quiet seconds and wakes the instant a sound plays. Before, once any sound had played it ran until you closed the game, which keeps the phone\'s audio hardware awake','While a menu, the shop or a card is open, the scene behind it stops redrawing after a moment instead of redrawing 20 times a second','The buttons over the scene no longer blur what is behind them. They were nine-tenths solid already, so they look the same, but the phone had to redo that blur every frame','The Shop button\'s glow now fades a fixed ring in and out, which the phone does almost for free, instead of redrawing the button\'s shadow every frame']],
   ['v1.05','Battery',['New Battery saver switch in Settings: draws the scene a little softer and at most 30 times a second, even in a fight','The ground and bottom are now drawn once and reused instead of being redrawn every frame, which takes a big share of the drawing work off every frame for everyone','Swimming fish and turtles now reuse ready-made pictures for their tails, legs and heads too, instead of redrawing them by hand every frame. Fish drawing work drops by about 95%, and they look the same','The hills, far forest, bridge and treeline are now drawn once and reused, and swaying plants are drawn in a few slanted bands instead of ten. Altogether each frame now takes about half as much drawing as before (less than a third at Mossback Pond), with the same look. Smoke, waterfalls, trains, falling leaves and reeds still move as before']],
   ['v1.05','Play stats',['If you share play stats, each summary now also counts your casts, the fish you hooked, caught and lost, quests finished, the level you started at and the spot you stopped at. Settings \u203a What\u2019s sent shows all of it, as always']],
@@ -6904,8 +6918,8 @@ function showCatch(){
     x.fillStyle='rgba(255,255,255,.5)';for(let i=0;i<10;i++){const a=t*.8+i*.63,r=140+Math.sin(t*2+i)*14;x.fillRect(320+Math.cos(a)*r*1.6,160+Math.sin(a)*r*.7,3,3);}
     requestAnimationFrame(anim);};anim();
 }
-function finishCatch(sold){const P=G.pending;if(!P)return;const amt=sold?P.value:Math.ceil(P.value*.5);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));{const rp=respectFor(P);if(rp){const r0=rankIdx();S.respect=(S.respect||0)+rp;if(rankIdx()>r0)setTimeout(()=>{toast(`Respect earned: ${rankName()}`,rankUnlocks(rankIdx()));SFX.coin();vib([60,40,60]);},1700);}}gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
-  G.pending=null;save();SFX.coin();resume();toast(sold?`+${amt} coins`:P.bed?'Back to its nest':'Released',sold?null:`+${amt} coins · luck now +${Math.round(S.luck*100)}%`+(respectFor(P)?` · +${respectFor(P)} respect`:''));
+function finishCatch(sold){const P=G.pending;if(!P)return;const rp0=sold?0:respectFor(P);const amt=sold?P.value:Math.ceil(P.value*.5);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));{const rp=rp0;markRespect(P);if(rp){const r0=rankIdx();S.respect=(S.respect||0)+rp;if(rankIdx()>r0)setTimeout(()=>{toast(`Respect earned: ${rankName()}`,rankUnlocks(rankIdx()));SFX.coin();vib([60,40,60]);},1700);}}gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
+  G.pending=null;save();SFX.coin();resume();toast(sold?`+${amt} coins`:P.bed?'Back to its nest':'Released',sold?null:`+${amt} coins · luck now +${Math.round(S.luck*100)}%`+(rp0?` · +${rp0} respect`:''));
   const qd=(P.quest||[]).filter(h=>h.done);if(qd.length)setTimeout(()=>{toast('Quest complete!',qd.map(h=>`${qTitle(h.q)} · +${h.q.reward} coins`).join(' · '));SFX.coin();},1300);updateQuestBtn();}
 
 // ---------- Cast net: throw over a school of baitfish near the bank, let it sink, haul it in ----------
