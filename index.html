@@ -95,6 +95,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 #questBtn{position:fixed;z-index:5;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 160px);display:flex;flex-direction:column;align-items:center;gap:3px;
   width:60px;padding:9px 0 7px;border-radius:16px;background:var(--panel);border:1px solid rgba(140,198,216,.5);font-family:var(--f-display);font-size:14px;letter-spacing:.03em;color:var(--sky);box-shadow:0 4px 0 rgba(0,0,0,.3);}
 #questBtn:active{transform:translateY(2px)}
+#shopBtn,#questBtn{transition:opacity .25s}#shopBtn.behind,#questBtn.behind{opacity:.22}
 #questBtn .scroll{width:20px;height:22px;margin-top:3px;border-radius:3px;background:repeating-linear-gradient(transparent 0 5px,rgba(12,25,21,.55) 5px 7px) 4px 5px/12px 13px no-repeat,var(--sky)}
 #questBtn .qdot{position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:var(--danger,#e65a3d);border:2px solid #0c1915}
 .season-line b{display:block;font-family:var(--f-display);font-weight:400;font-size:20px}.season-line span{font-size:13px;color:var(--lichen-dim)}
@@ -1096,7 +1097,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.11a';
+const VERSION='v1.12a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -4147,11 +4148,56 @@ function drawBoulders(c,dk,vx0,vx1){for(const k of cboulders){if(k.x<vx0-60||k.x
   if(k.y-k.r<SURF+3){c.strokeStyle=`rgba(240,250,250,${.55*(1-dk*.6)})`;c.lineWidth=1.2;for(let i=0;i<3;i++){const o=(G.t*18+i*9)%26;c.beginPath();c.moveTo(k.x-k.r*1.1-o,SURF+1+i);c.lineTo(k.x-k.r*1.1-o-6,SURF+1.4+i);c.stroke();}}}}
 function drawRiffles(c,dk,vx0,vx1,maxDep){c.strokeStyle=`rgba(245,252,252,${(maxDep>100?.3:.5)*(1-dk*.6)})`;c.lineWidth=1;c.beginPath();
   for(let x=Math.max(DOCKX,Math.floor(vx0/5)*5);x<vx1;x+=5){const dep=bottomAt(x)-SURF;if(dep>maxDep)continue;const ph=(x*.37+G.t*3)%1;if(((x*13)%7)>3)continue;const xx=x-((G.t*22+x*.7)%10);c.moveTo(xx,SURF+1.5+(x%3));c.lineTo(xx-4-ph*3,SURF+1.8+(x%3));}c.stroke();}
-function drawUndercut(c,dk){const x0=WX-70,top=SURF-12;const soil=rgbStr(mix('#5b4632','#15100a',dk*.8)),dark=rgbStr(mix('#1e1610','#050302',dk*.8));
-  c.fillStyle=dark;c.beginPath();c.ellipse(WX-28,SURF+12,46,20,0,0,TAU);c.fill();
-  c.fillStyle=soil;c.beginPath();c.moveTo(x0,top);c.lineTo(WX+80,top);c.lineTo(WX+80,GROUND+40);c.lineTo(WX-6,GROUND+40);c.lineTo(WX-6,SURF+30);c.quadraticCurveTo(WX-20,SURF+6,x0+6,SURF+5);c.quadraticCurveTo(x0-4,SURF+2,x0,top);c.fill();
-  c.fillStyle=rgbStr(mix('#4f7a3a','#0c1a12',dk*.85));c.fillRect(x0-2,top-4,150,5);
-  c.strokeStyle=rgbStr(mix('#3a2a1a','#0a0705',dk*.8));c.lineWidth=1;c.lineCap='round';for(let i=0;i<7;i++){const rx=x0+8+i*8,len=8+((i*13)%12);c.beginPath();c.moveTo(rx,SURF+5);c.quadraticCurveTo(rx+2+Math.sin(G.t*.8+i)*1.5,SURF+5+len*.6,rx-1,SURF+5+len);c.stroke();}}
+// The undercut bank at the far end of Willow Creek: the current has eaten under the bank, leaving a lip of sod and
+// root-bound soil hanging out over a dark hollow where the big brown lives. Layers from the top: grass (it browns in
+// fall and takes snow in winter, like the shore strip), dark humus held together by roots, brown topsoil, then pale
+// gravelly clay down the face. Roots hang out of the underside of the lip and trail in the current.
+function drawUndercut(c,dk){const Zg=sea(),gt=c0=>rgbStr(mx(mx(mx(c0,'#a89a5a',Zg.grass*.7),'#eef2f5',Zg.snow*.8),'#0c1a12',dk*.85)),D=(col,a)=>rgbStr(mx(col,'#0a0705',dk*.82),a??1),h=i=>hs(i,4193);
+  const top=SURF-24,lipX=WX-92,back=WX-6,R=WX+90,lipLow=SURF-3,bot=x=>bottomAt(Math.min(x,WX-1));
+  // the hollow under the lip: a shadow that deepens toward the back of the cut and fades out into the open water
+  {c.save();c.beginPath();c.rect(lipX-60,SURF,back-lipX+64,140);c.clip();c.translate(back-6,SURF+8);c.scale(1.35,.85);
+    const g=c.createRadialGradient(0,0,3,0,0,82);g.addColorStop(0,D('#0a0805',.95));g.addColorStop(.35,D('#130e08',.82));g.addColorStop(.7,D('#1c150c',.38));g.addColorStop(1,D('#241a10',0));
+    c.fillStyle=g;c.fillRect(-90,-20,180,140);c.restore();}
+  // the bank face below the hollow, running down to the creek bed: gravelly clay with stones bedded in it
+  const face=()=>{c.beginPath();c.moveTo(back,SURF+40);c.bezierCurveTo(back+4,SURF+70,WX-22,bot(WX-24)-30,WX-34,bot(WX-34)+4);c.lineTo(R,GROUND+60);c.lineTo(R,SURF+20);c.closePath();};
+  {const g=c.createLinearGradient(WX-40,0,WX+10,0);g.addColorStop(0,D('#6e5a40'));g.addColorStop(.5,D('#7e6a4c'));g.addColorStop(1,D('#5a4834'));c.fillStyle=g;face();c.fill();
+    c.save();face();c.clip();for(let i=0;i<26;i++){const x=lerp(WX-40,WX+20,h(i)),y=lerp(SURF+34,GROUND,h(i+40)),r=1.2+h(i+80)*2.6;c.fillStyle=D(['#8a8274','#6a645a','#9a8e7a'][i%3]);c.beginPath();c.ellipse(x,y,r*1.3,r,h(i+9)*3,0,TAU);c.fill();
+      c.fillStyle=D('#ffffff',.12*(1-dk));c.beginPath();c.ellipse(x-r*.3,y-r*.35,r*.5,r*.3,0,0,TAU);c.fill();}
+    const sh=c.createLinearGradient(0,SURF+20,0,SURF+70);sh.addColorStop(0,D('#000000',.45));sh.addColorStop(1,D('#000000',0));c.fillStyle=sh;c.fillRect(WX-60,SURF+20,160,50);c.restore();}
+  // the overhang: a slab of soil with a rounded, crumbling lip, the underside cut back toward the bank
+  const slab=()=>{c.beginPath();c.moveTo(lipX+2,top+1);c.bezierCurveTo(lipX-3,top+5,lipX+1,top+9,lipX-2,top+12);c.bezierCurveTo(lipX-4,top+16,lipX,lipLow-4,lipX-1,lipLow-1);c.quadraticCurveTo(lipX+4,lipLow+3,lipX+10,lipLow+1.5);
+    for(let k=0;k<=12;k++){const u=k/12,x=lerp(lipX+10,back-14,u),y=lerp(lipLow+1.5,SURF+3,u*u)+Math.sin(u*13+1)*1.6+(h(k+2000)>.7?2.2:0);c.lineTo(x,y);}
+    c.quadraticCurveTo(back-4,SURF+4,back,SURF+46);c.lineTo(R,SURF+46);c.lineTo(R,top);c.lineTo(lipX+6,top-.5);c.closePath();};
+  {const g=c.createLinearGradient(0,top,0,SURF+30);g.addColorStop(0,D('#2a1e14'));g.addColorStop(.18,D('#3e2c1c'));g.addColorStop(.32,D('#5e4630'));g.addColorStop(.6,D('#6e5638'));g.addColorStop(1,D('#7a6448'));c.fillStyle=g;slab();c.fill();
+    c.save();slab();c.clip();
+    // soil texture: crumbs, small stones, the odd worm hole, and a pale band of clay
+    c.fillStyle=D('#8a7458',.5);c.fillRect(lipX-4,SURF-6,R-lipX+8,2.4);
+    c.strokeStyle=D('#5a4430',.8);c.lineWidth=.6;for(let i=0;i<14;i++){const x=lerp(lipX+2,R,h(i+250)),y=lerp(top+4,SURF-6,h(i+260));c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+3,y+2,x+6+h(i+270)*6,y+1+h(i+280)*3);c.stroke();}
+    for(let i=0;i<70;i++){const x=lerp(lipX-2,R,h(i+200)),y=lerp(top+3,SURF+28,h(i+300)),r=.4+h(i+400)*1.1;c.fillStyle=D(h(i+500)<.5?'#2a1e12':'#8e7a5c',.55);c.beginPath();c.arc(x,y,r,0,TAU);c.fill();}
+    // the underside of the lip in shadow
+    const us=c.createLinearGradient(0,SURF-6,0,SURF+6);us.addColorStop(0,D('#000000',0));us.addColorStop(1,D('#000000',.5));c.fillStyle=us;c.fillRect(lipX-4,SURF-6,back-lipX+10,12);
+    // the lit rim of the lip
+    c.fillStyle=D('#9a8260',.35*(1-dk*.6));c.fillRect(lipX-2,top+2,3,lipLow-top-3);c.restore();}
+  for(let i=0;i<5;i++){const x=lipX+6+h(i+2100)*34,y=lipLow+2.5+h(i+2200)*1.5,r=1+h(i+2300)*1.6;c.fillStyle=D(i%2?'#4a3826':'#6a5640');c.beginPath();c.ellipse(x,y,r*1.2,r,0,0,TAU);c.fill();}
+  // roots: hanging out of the underside of the lip, a few thick ones and many fine ones, the ends swaying in the current
+  c.lineCap='round';
+  for(let i=0;i<30;i++){const u=h(i+600),x=lerp(lipX+4,back-10,u),y0=lerp(lipLow,SURF+3,u*u)+1,thick=i<7,len=(thick?16:8)+h(i+700)*(thick?22:18),sw=Math.sin(G.t*(.8+h(i+800)*.6)+i)*(1.5+len*.06);
+    const y1=y0+len,x1=x+(h(i+900)-.6)*6+sw;c.strokeStyle=D(thick?'#4a3624':'#5e4a34',thick?1:.85);c.lineWidth=thick?1.8:.6;
+    c.beginPath();c.moveTo(x,y0);c.bezierCurveTo(x+(h(i+1000)-.5)*5,y0+len*.35,x1-sw*.6,y0+len*.7,x1,y1);c.stroke();
+    if(thick){c.lineWidth=.45;c.strokeStyle=D('#6a5440',.8);for(let k=0;k<2;k++){const t=.45+k*.25,bx=lerp(x,x1,t),by=lerp(y0,y1,t);c.beginPath();c.moveTo(bx,by);c.quadraticCurveTo(bx+(k?3:-3),by+3,bx+(k?2:-4)+sw*.5,by+7);c.stroke();}}
+    c.fillStyle=D('#b8a888',.6);c.beginPath();c.arc(x1,y1,thick?.6:.4,0,TAU);c.fill();}
+  // grass on top: a thick mat, taller toward the back; long blades fold over the lip and hang down its face
+  {c.fillStyle=gt('#3e6a30');c.beginPath();c.moveTo(lipX-1,top+3);c.quadraticCurveTo(lipX+1,top-1.5,lipX+8,top-2);c.lineTo(R,top-2);c.lineTo(R,top+3);c.closePath();c.fill();
+    c.lineWidth=.8;for(let i=0;i<140;i++){const x=lerp(lipX+1,R,i/140)+(h(i+1100)-.5)*1.5,ht=3+h(i+1200)*7+(x>WX-30?3:0),lean=(h(i+1300)-.4)*3+Math.sin(G.t*1.1+x*.07)*.8;
+      c.strokeStyle=gt(['#4f7a3a','#6a9a48','#5a8a3e','#7aa24e'][i%4]);c.beginPath();c.moveTo(x,top-1);c.quadraticCurveTo(x+lean*.4,top-1-ht*.6,x+lean,top-1-ht);c.stroke();}
+    // a few seed heads
+    for(let i=0;i<6;i++){const x=lerp(lipX+10,R-10,h(i+1400)),ht=10+h(i+1450)*5,lean=Math.sin(G.t*1.1+x*.07)*1.2+1;c.strokeStyle=gt('#7a8a4a');c.lineWidth=.5;c.beginPath();c.moveTo(x,top-1);c.quadraticCurveTo(x+lean*.5,top-ht*.6,x+lean,top-ht);c.stroke();
+      c.fillStyle=gt('#b0a060');c.beginPath();c.ellipse(x+lean,top-ht-1.4,.8,2,lean*.08,0,TAU);c.fill();}
+    // the overhanging blades
+    for(let i=0;i<26;i++){const x=lipX+h(i+1500)*12,len=7+h(i+1600)*16,sw=Math.sin(G.t*1.2+i)*1.2;c.strokeStyle=gt(['#4f7a3a','#6a9a48','#5a8a3e'][i%3]);c.lineWidth=.75;
+      c.beginPath();c.moveTo(x,top);c.bezierCurveTo(x-4-h(i+1700)*3,top-1,x-6+sw,top+len*.4,x-4-h(i+1800)*3+sw,top+len);c.stroke();}}
+  // the lip's shadow lying on the water
+  c.fillStyle=D('#000000',.18*(1-dk*.5));c.beginPath();c.ellipse((lipX+back)/2-6,SURF+2,(back-lipX)/2+4,2.4,0,0,TAU);c.fill();}
 // A long-dead tree lying on the bottom. The trunk follows the shape of the bottom and sinks into the silt, rising only
 // where the root ball holds the deep end up; bark furrows, knots, a snapped-off top, limbs, moss and slime.
 // Sunken trees. Each place's log is drawn for the water it lies in:
@@ -7178,9 +7224,18 @@ function frameGap(now){const scr=currentScreen();if(scr!==lastScr){lastScr=scr;s
   return 33.3;}
 function frame(now){audioIdle();const gap=frameGap(now);if(gap&&now-lastDraw<gap-4){requestAnimationFrame(frame);return;}lastDraw=now;REAL.frameReset();  const dt=Math.min(.05,(now-last)/1000);last=now;G.t+=dt;
   if(G.mode==='play'&&!G.paused)update(dt);else if(G.mode==='menu')demoUpdate(dt);
-  updateAmbient(dt);updateCam(dt);render();REAL.frameEnd();requestAnimationFrame(frame);
+  updateAmbient(dt);updateCam(dt);uiFade(now);render();REAL.frameEnd();requestAnimationFrame(frame);
 }
 
+// The Shop and Quests buttons sit over the top right of the scene. On shorter screens the water line runs behind them,
+// so a long cast could land where you can't see it. While the lure, the bobber or a hooked fish is behind one, it fades.
+let uiFadeAt=0;
+function uiFade(now){if(now-uiFadeAt<150)return;uiFadeAt=now;const L=G.lure,pts=[];
+  if(G.mode==='play'&&L.state!=='ready'){pts.push([L.x,L.y]);if(G.bob)pts.push([G.bob.x,SURF]);if(G.fight&&G.fight.f)pts.push([G.fight.f.x,G.fight.f.y]);}
+  const camY=G.camY||0,sc=SC||1;
+  for(const id of['shopBtn','questBtn']){const el=document.getElementById(id);if(!el)continue;let hide=false;
+    if(pts.length&&!el.hidden){const r=el.getBoundingClientRect(),m=14;hide=pts.some(([x,y])=>{const sx=(x-G.cam)*sc,sy=(y-camY)*sc;return sx>r.left-m&&sx<r.right+m&&sy>r.top-m&&sy<r.bottom+m;});}
+    el.classList.toggle('behind',hide);}}
 // ---------------- HUD & CONTROLS ----------------
 let lastHud='';
 function updateHUD(force){
@@ -7868,6 +7923,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.12','Fixes',['The Shop and Quests buttons fade while your lure or fish is behind them, so a long cast on a short screen doesn\u2019t disappear under them','When you land the right fish for a quest but it doesn\u2019t count (wrong time of day, or too small), the catch card now says why','The undercut bank at the far end of Willow Creek is redrawn: a grassy, root-bound lip of sod over a dark hollow, with long grass hanging over the edge','The map’s place pictures fill in about twice as fast. They show the scenery and season without fish']],
   ['v1.11','Fixes',['If you share play stats, a session cut short when your phone closes the game is no longer lost. It\u2019s saved and sent the next time you open the game']],
   ['v1.10','Grey Ghost',['New fly: the Grey Ghost streamer, Carrie Stevens\u2019 classic Maine smelt pattern, at the tackle shop for the fly rod. Strip it fast for trout, smallmouth, pickerel, pike, fallfish and lake trout. It also comes as a Mickey Finn for stained water and a Black Ghost for low light']],
   ['v1.09','Fixes',['The Log no longer crashes on the Boyoma Falls tab. Its fish now have trophy sizes, and any you\u2019ve already caught show their medals']],
@@ -7946,7 +8002,7 @@ function showCatch(){
   if(P.medal>=0){const s=document.createElement('span');s.className='badge medal '+MEDALS[P.medal];s.textContent=`${P.newMedal?'New ':''}${MEDALN[P.medal]} trophy`;b.append(s);}
   {const s=document.createElement('span');s.className='badge xp';s.textContent=`+${P.xp} XP`;b.append(s);}
   if(P.bed){const s=document.createElement('span');s.className='badge alt';s.textContent='Was guarding a nest';b.append(s);}
-  for(const h of P.quest||[]){const s=document.createElement('span');s.className='badge alt';s.textContent=h.done?`Quest done · +${h.q.reward} coins`:`Quest ${h.q.got}/${h.q.n}`;b.append(s);}
+  for(const h of P.quest||[]){const s=document.createElement('span');s.className='badge alt';s.textContent=h.miss?h.miss:h.done?`Quest done · +${h.q.reward} coins`:`Quest ${h.q.got}/${h.q.n}`;b.append(s);}
   if(P.gut){const s=document.createElement('span');s.className='badge gut';s.textContent='Gut-hooked · 35% value';b.append(s);}
   const rel=Math.ceil(P.value*.5);
   $('#cSellAmt').textContent=`+${P.value} coins`;$('#cRelAmt').textContent=P.gut?'Won\u2019t survive':P.bed?`+${rel} · back to its nest`+(respectFor(P)?` · +${respectFor(P)} respect`:''):`+${rel} · luck up`+(respectFor(P)?` · +${respectFor(P)} respect`:'');$('#cRelease').disabled=!!P.gut;
@@ -8074,15 +8130,18 @@ const SNAPS={};
 // The map shows a picture of each place, made by briefly setting up that place and drawing it. Making all of them at
 // once froze the game for most of a second the first time the map opened, so a card first shows a plain sky-and-water
 // placeholder and the real pictures are made one at a time, a few frames apart, filling in as they finish.
+// The pictures show the place and its season, not fish: spawning and drawing every place's fish made the first map
+// open more than twice as slow. Only the strip the card keeps is drawn, and the screen behind the map is redrawn once
+// after the last card rather than after every one.
 const SNAPQ=[],SNAPOUT={};
 function buildSnap(id){
   if(SNAPS[id])return;try{
-    const keep={loc:S.loc,min:S.minutes,wx:S.weather,fish:G.fish,cam:G.cam,mode:G.mode,ls:G.lure.state,parts:G.parts,rip:G.ripples,bub:G.bubble,pan:G.pan,fight:G.fight};
-    S.loc=id;S.minutes=(LOCS[id].preview||12)*60;S.weather='clear';G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.mode='menu';G.cam=0;G.pan=null;G.fight=null;G.lure.state='ready';ROPE.pts=null;
-    resize();spawnTick(true);for(const f of G.fish){f.alpha=1;f.fz=0;f.x=rand(DOCKX+60,W*.98);const [a2,b2]=bandRange(f.sp,f.x);f.y=rand(a2,b2);f.face=Math.random()<.5?-1:1;f.wig=Math.random()*6;}
-    render();const sx=0,sy=Math.max(0,(SURF-95)*SC*DPR),sw=cv.width,sh=Math.min(cv.height-sy,sw/2);
+    const keep={loc:S.loc,min:S.minutes,wx:S.weather,fish:G.fish,cam:G.cam,mode:G.mode,ls:G.lure.state,parts:G.parts,rip:G.ripples,bub:G.bubble,pan:G.pan,fight:G.fight,beds:G.beds};
+    S.loc=id;G.beds=[];S.minutes=(LOCS[id].preview||12)*60;S.weather='clear';G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.mode='menu';G.cam=0;G.pan=null;G.fight=null;G.lure.state='ready';ROPE.pts=null;
+    resize();const sx=0,sy=Math.max(0,(SURF-95)*SC*DPR),sw=cv.width,sh=Math.min(cv.height-sy,sw/2);
+    ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.beginPath();ctx.rect(sx,sy,sw,sh);ctx.clip();render();ctx.restore();
     const snap=document.createElement('canvas');snap.width=800;snap.height=400;snap.getContext('2d').drawImage(cv,sx,sy,sw,sh,0,0,800,400);SNAPS[id]=snap;
-    S.loc=keep.loc;S.minutes=keep.min;S.weather=keep.wx;G.fish=keep.fish;G.cam=keep.cam;G.mode=keep.mode;G.lure.state=keep.ls;G.parts=keep.parts;G.ripples=keep.rip;G.bubble=keep.bub;G.pan=keep.pan;G.fight=keep.fight;ROPE.pts=null;resize();render();
+    S.loc=keep.loc;S.minutes=keep.min;S.weather=keep.wx;G.fish=keep.fish;G.cam=keep.cam;G.mode=keep.mode;G.lure.state=keep.ls;G.parts=keep.parts;G.ripples=keep.rip;G.bubble=keep.bub;G.pan=keep.pan;G.fight=keep.fight;G.beds=keep.beds;ROPE.pts=null;resize();
   }catch(e){}}
 function paintPreview(id,out){const o=out.getContext('2d');o.clearRect(0,0,800,400);
   if(!SNAPS[id]){const g0=o.createLinearGradient(0,0,0,400);g0.addColorStop(0,'#9cc0cc');g0.addColorStop(.45,'#5f8a86');g0.addColorStop(1,'#1f3a34');o.fillStyle=g0;o.fillRect(0,0,800,400);}
@@ -8092,8 +8151,8 @@ function paintPreview(id,out){const o=out.getContext('2d');o.clearRect(0,0,800,4
     o.strokeStyle='#f2a93b';o.lineWidth=9;o.beginPath();o.arc(400,160,17,Math.PI,0);o.stroke();o.fillStyle='#2a1903';o.beginPath();o.arc(400,180,6,0,TAU);o.fill();o.fillRect(397,182,6,12);}
 }
 function locPreview(id){const out=document.createElement('canvas');out.width=800;out.height=400;SNAPOUT[id]=out;paintPreview(id,out);
-  if(!SNAPS[id]&&!SNAPQ.includes(id)){SNAPQ.push(id);if(SNAPQ.length===1)setTimeout(pumpSnaps,80);}return out;}
-function pumpSnaps(){if($('#map').hidden){SNAPQ.length=0;return;}const id=SNAPQ.shift();if(id==null)return;buildSnap(id);if(SNAPOUT[id])paintPreview(id,SNAPOUT[id]);if(SNAPQ.length)setTimeout(pumpSnaps,70);}
+  if(!SNAPS[id]&&!SNAPQ.includes(id)){SNAPQ.push(id);if(SNAPQ.length===1)setTimeout(pumpSnaps,20);}return out;}
+function pumpSnaps(){if($('#map').hidden){SNAPQ.length=0;render();return;}const id=SNAPQ.shift();if(id==null)return;buildSnap(id);if(SNAPOUT[id])paintPreview(id,SNAPOUT[id]);if(SNAPQ.length)setTimeout(pumpSnaps,20);else render();}
 function renderMap(){
   {const Z=sea(),tip=Z.jungle?(LOC().congo?(Z.dry>.6?'Low water bares the rocks. Tigerfish pack into the rapids after the sprat.':Z.wet>.6?'High water. The river runs fast and brown, and the big fish hold in the eddies.':'The river is on the move.'):Z.dry>.6?'Low water packs the fish together. Piranhas get bold.':Z.wet>.6?'The forest floods. Pacu and arowana feed on fruit and bugs at the surface.':'The water is on the move.'):['Fish move shallow. Pike, walleye and crappie bite first.','Fish go deep at midday. Dawn and dusk are best.','Fish feed hard before winter. Predators are on the prowl.','Warm-water fish slow down. Perch, pike and trout still bite.'][seasonIdx()];
     $('#seasonLine').innerHTML=`<b>${seasonName()}</b><span>Day ${seasonDay()} of ${SEASON_DAYS}. ${tip}</span>`;}$('#restPanel').hidden=G.mode!=='play';const box=$('#mapList');box.innerHTML='';const lv=lvlInfo().l;
@@ -8157,7 +8216,10 @@ function questCatch(sp,len){const Q=ensureQuests(),hits=[];
     else if(q.type==='spot')hit=S.loc===q.loc;
     else if(q.type==='lure')hit=S.lure===q.lure;
     else if(q.type==='variety'&&!q.kinds.includes(sp.id)){q.kinds.push(sp.id);hit=true;}
-    if(!hit)continue;q.got++;
+    // the right fish that misses the quest's condition: say why, so it doesn't look like the quest is broken
+    if(!hit){if(q.type==='when'&&sp.id===q.sp)hits.push({q,miss:`Not ${QWHEN[q.per]}, so it doesn\u2019t count for the quest`});
+      else if(q.type==='size'&&sp.id===q.sp)hits.push({q,miss:`The quest needs one over ${fLen(q.len,0)}`});continue;}
+    q.got++;
     if(q.got>=q.n){q.done=true;G.sess.quests++;S.coins+=q.reward;S.stats.earned+=q.reward;Q.total=(Q.total||0)+1;}
     hits.push({q,done:q.done});}
   return hits;}
