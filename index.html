@@ -1096,7 +1096,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.10a';
+const VERSION='v1.11a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1547,7 +1547,7 @@ function adopt(o){const d=DEF();S=Object.assign(d,o||{});S.settings=Object.assig
 function load(){let o=null;try{const r=localStorage.getItem(KEY);if(r)o=JSON.parse(r);}catch(e){}adopt(o);S.dev=!!window.DEV_BUILD;if(S.bait)syncOwnBait(true);}
 // At sea S.lure holds the charter tackle; the save keeps the angler's own lure (SEA_KEEP) so nothing changes ashore.
 let SEA_KEEP=null;
-function save(){try{localStorage.setItem(KEY,JSON.stringify(SEA_KEEP?Object.assign({},S,{lure:SEA_KEEP.lure}):S));}catch(e){}if(typeof sbSync==='function'&&!sbBusy){clearTimeout(save.t);save.t=setTimeout(sbSync,1500);}}
+function save(){if(typeof keepOpenSession==='function')keepOpenSession();try{localStorage.setItem(KEY,JSON.stringify(SEA_KEEP?Object.assign({},S,{lure:SEA_KEEP.lure}):S));}catch(e){}if(typeof sbSync==='function'&&!sbBusy){clearTimeout(save.t);save.t=setTimeout(sbSync,1500);}}
 
 // ---------------- AUDIO ----------------
 let AC=null,master=null,noiseBuf=null,rainSrc=null,rainGain=null,sndAt=0;
@@ -7369,13 +7369,29 @@ function sessionPayload(){const d=devInfo(),locs={};for(const k in G.sess.locs)l
     p_lv_start:G.sess.lv0==null?lvlInfo().l:G.sess.lv0,p_quit_loc:S.loc,p_casts:G.sess.casts,p_hooked:G.sess.hooked,p_lost:G.sess.lost,p_quests:G.sess.quests};}
 function statsLog(kind,data){S.statsSent=(S.statsSent||[]).slice(-7);S.statsSent.push({kind,at:Date.now(),data});save();}
 function statsPost(path,body){try{fetch(SB_URL+path,{method:'POST',keepalive:true,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>{});}catch(e){}}
-function sendSession(){if(!statsOn()||G.sess.min<.5)return;const b=sessionPayload();statsPost('/rest/v1/rpc/log_session',b);statsLog('Play session',b);G.sess={min:0,locs:{},fish:0,casts:0,hooked:0,lost:0,quests:0,lv0:null};}
+// Sessions are queued on the phone and resent until the server says it has them, the same way personal bests are.
+// iOS can close the app, or drop the one request sent as it goes to the background, so a session sent only then
+// could vanish while its catches still arrived. Each carries the time it ended and a key, so a late or repeated
+// send lands once, at the right time.
+const newSessKey=()=>(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,12));
+function sessRecord(){const b=sessionPayload();b.p_at=new Date().toISOString();b.p_key=G.sess.key||(G.sess.key=newSessKey());return b;}
+function keepOpenSession(){if(!G.sess)return;if(statsOn()&&G.sess.min>=.5)S.sessOpen=sessRecord();else if(S.sessOpen&&!G.sess.min)S.sessOpen=null;}
+function queueSession(b){S.sessQ=(S.sessQ||[]).filter(x=>x.p_key!==b.p_key).concat([b]).slice(-20);}
+function sendSession(){if(!statsOn()||G.sess.min<.5)return;const b=sessRecord();queueSession(b);statsLog('Play session',b);
+  G.sess={min:0,locs:{},fish:0,casts:0,hooked:0,lost:0,quests:0,lv0:null,key:newSessKey()};S.sessOpen=null;save();flushSessions();}
+function flushSessions(){clearTimeout(flushSessions.t);if(!statsOn()||flushSessions.busy||!(S.sessQ&&S.sessQ.length))return;const b=S.sessQ[0];flushSessions.busy=true;
+  const done=ok=>{flushSessions.busy=false;if(ok){S.sessQ=(S.sessQ||[]).filter(x=>x.p_key!==b.p_key);save();flushSessions();}else flushSessions.t=setTimeout(flushSessions,60000);};
+  try{fetch(SB_URL+'/rest/v1/rpc/log_session',{method:'POST',keepalive:true,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(b)})
+    // a 4xx means the server will never take this one (bad data): drop it rather than block the queue
+    .then(r=>done(r.ok||(r.status>=400&&r.status<500))).catch(()=>done(false));}catch(e){done(false);}}
+// On launch: a session that was still open when the app was closed goes in the queue, then the queue is sent.
+function recoverSessions(){if(S.sessOpen){if(S.sessOpen.p_minutes>=.5)queueSession(S.sessOpen);S.sessOpen=null;}G.sess.key=newSessKey();setTimeout(flushSessions,3000);}
 let errSent=0,errSeen={};
 function reportError(msg,src){if(!statsOn()||errSent>=5)return;msg=String(msg||'Unknown error').slice(0,300);if(errSeen[msg])return;errSeen[msg]=1;errSent++;
   const b={p_id:sbPid(),p_version:VERSION,p_device:devInfo().device,p_msg:msg,p_src:String(src||'').slice(0,120)};statsPost('/rest/v1/rpc/log_error',b);statsLog('Error report',b);}
 window.addEventListener('error',e=>reportError(e.message,(String(e.filename||'').split('/').pop()||'game')+':'+(e.lineno||0)));
 window.addEventListener('unhandledrejection',e=>{const r=e.reason;reportError(r&&r.message||String(r),'promise');});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendSession();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendSession();else flushSessions();});
 window.addEventListener('pagehide',sendSession);
 function statsLines(b){const locs=Object.entries(b.p_locs||{}).map(([k,v])=>`${(LOCS[k]||{}).name||k} ${v} min`).join(', ')||'none yet';
   return [['Version',b.p_version],['Device',`${b.p_device} \u00b7 ${b.p_screen}${b.p_app?' \u00b7 home-screen app':''}`],['Played',`${b.p_minutes} min (${locs})`],['Fish caught',b.p_fish],['Casts · hooked · lost',b.p_casts==null?'—':`${b.p_casts} · ${b.p_hooked} · ${b.p_lost}`],['Quests finished',b.p_quests??'—'],['Level',b.p_lv_start==null?b.p_level:`${b.p_lv_start} → ${b.p_level}`],['Last spot',(LOCS[b.p_quit_loc]||{}).name||'—'],
@@ -7852,6 +7868,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.11','Fixes',['If you share play stats, a session cut short when your phone closes the game is no longer lost. It\u2019s saved and sent the next time you open the game']],
   ['v1.10','Grey Ghost',['New fly: the Grey Ghost streamer, Carrie Stevens\u2019 classic Maine smelt pattern, at the tackle shop for the fly rod. Strip it fast for trout, smallmouth, pickerel, pike, fallfish and lake trout. It also comes as a Mickey Finn for stained water and a Black Ghost for low light']],
   ['v1.09','Fixes',['The Log no longer crashes on the Boyoma Falls tab. Its fish now have trophy sizes, and any you\u2019ve already caught show their medals']],
   ['v1.08','North Lake Banks',['New place: North Lake Banks, Prince Edward Island (level 30 and 1,000 respect, 500 coins a trip). Charters leave at dawn on a boat headed a few miles out on the Gulf of St. Lawrence, after giant bluefin tuna. Leave and the next trip out is paid for again','The boat runs out to the grounds and the captain settles you over a school of herring. Fill the live well on the bait rod, a string of small jigs dropped straight down','Fish live herring or mackerel for bluefin on the 130-class tuna rod, drifting or under a kite. Chum brings them up. Giants are tagged and released at the boat','The bottom rod sends cut mackerel down for cod and spiny dogfish','Seals, porpoises, white-sided dolphins, minke whales, eiders and gannets share the water. Lobster pots and herring nets can cost you a fish','Where & When now always opens at the top instead of where you last left it','Fight messages stay up for at least a second so you can read them, instead of flickering between two lines','Messages no longer call the boat or the bank a dock','Fish in a school no longer pile up at exactly the biggest size their kind grows to, which was filling the leaderboard with ties at the maximum','Let go of REEL when the line-twist warning shows and it clears right away; the twist only builds while you crank against a slipping drag','Fish that school no longer always turn up in exact pairs: bass, redfish, peacock bass and others are sometimes alone or in threes, and perch, shad and other true schoolers come in bigger groups. The number of fish around you is the same']],
@@ -8313,6 +8330,7 @@ try{installBtn();}catch(e){}
 // ---------------- BOOT ----------------
 function start(data){
   if(data&&data.S)adopt(data.S);else load();
+  recoverSessions();
   resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}ensureQuests();updateQuestBtn();
   show('menu');renderMenu();inGameUI(false);updateHUD(true);refreshControls();
   requestAnimationFrame(frame);
