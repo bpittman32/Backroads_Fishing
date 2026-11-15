@@ -1016,11 +1016,22 @@ P.quillwort=(c,H,seed)=>{const r=rng(seed),n=30+Math.floor(r()*10);c.fillStyle='
   for(let k=0;k<n;k++){const a=(r()-.5)*1.7,len=H*(.55+.45*r()),p=[];for(let i=0;i<=12;i++){const t=i/12;p.push([Math.sin(a)*len*t*(.6+.4*t),-len*t*Math.cos(a*.6)+Math.abs(Math.sin(a))*len*t*t*.35]);}
     taper(c,p,Math.max(.8,H*.034),Math.max(.3,H*.004),mixc('#2a4a26','#5a7e40',r()*.7+.1,.95));strokePts(c,p.slice(0,10),Math.max(.25,H*.004),'rgba(200,220,170,.22)');}};
 // Turtle grass (Gulf): dense flat strap blades with rounded tips, browning tips and white epiphyte crusts
-P.turtlegrass=(c,H,seed)=>{const r=rng(seed),n=12+Math.floor(r()*8);
-  for(let k=0;k<n;k++){const len=H*(.45+.55*r()),p=stemPts(len,(r()-.5)*.4,H*.04,r()*6,26,(r()-.5)*H*.6);
-    strap(c,p,H*.05,[[0,'rgba(70,92,44,.97)'],[.25,'rgba(84,130,56,.97)'],[.8,'rgba(120,150,70,.95)'],[.93,'rgba(150,140,80,.95)'],[1,'rgba(150,120,70,.9)']],true);
-    c.fillStyle='rgba(235,230,215,.55)';for(let j=0;j<4;j++){const q=at(p,.45+r()*.5);c.beginPath();c.ellipse(q[0]+(r()-.5)*H*.02,q[1],H*.008,H*.004,0,0,TAU);c.fill();}}
-  c.strokeStyle='rgba(60,52,30,.6)';c.lineWidth=Math.max(.5,H*.008);c.beginPath();c.moveTo(-H*.3,0);c.lineTo(H*.3,0);c.stroke();};
+// Turtle grass: flat ribbon blades of even width with rounded tips, in shoots of 2-5 from the buried runner. The outer,
+// older blades of a shoot are shorter, browner at the tip and crusted with pale epiphytes; the inner ones are young and green.
+P.turtlegrass=(c,H,seed)=>{const r=rng(seed),ns=5+Math.floor(r()*3),w=Math.max(1,H*.032);
+  for(let s=0;s<ns;s++){const sx=(s/(ns-1)-.5)*H*.62+(r()-.5)*H*.06,sl=(r()-.5)*.25,nb=2+Math.floor(r()*4),top=H*(.6+.4*r());
+    for(let b=0;b<nb;b++){const age=Math.abs(b-(nb-1)/2)/Math.max(1,(nb-1)/2),len=top*(1-.35*age)*(.9+.1*r()),
+      p=stemPts(len,sl+(b-(nb-1)/2)*.2,H*.06,r()*6,22,sx+(b-(nb-1)/2)*w*.5),g=c.createLinearGradient(0,0,0,-len);
+      g.addColorStop(0,'rgba(64,86,40,.98)');g.addColorStop(.3,mixc('#5a8c3a','#4c7434',age,.97));g.addColorStop(.85,mixc('#7aa650','#8a9a58',age,.95));g.addColorStop(1,mixc('#86ac58','#9a8250',age,.95));
+      strokePts(c,p,w,g);
+      // faint parallel veins
+      strokePts(c,p.slice(0,-2),w*.18,'rgba(200,225,160,.18)');
+      // old blades: a brown, worn tip
+      if(age>.4){const k=Math.floor(p.length*(.9-.06*r()));strokePts(c,p.slice(k),w*.9,`rgba(150,126,74,${.25+.25*age})`);}
+      // pale epiphyte crust on the upper half, heavier on old blades
+      c.fillStyle='rgba(232,228,210,.55)';const ne=1+Math.floor((2+3*age)*r()+age*2);for(let e=0;e<ne;e++){const q=at(p,.45+r()*.5);c.beginPath();c.ellipse(q[0]+(r()-.5)*w*.6,q[1],w*.22,w*.12,0,0,TAU);c.fill();}}
+    // the short sheath where the shoot leaves the sand
+    c.fillStyle='rgba(84,70,40,.7)';c.beginPath();c.ellipse(sx,-H*.006,w*(.4+nb*.22),H*.014,0,0,TAU);c.fill();}};
 // Shoal grass: thin flat blades; Manatee grass: taller round, wiry blades
 P.shoalgrass=(c,H,seed)=>{const r=rng(seed),n=24+Math.floor(r()*12);for(let k=0;k<n;k++){const len=H*(.3+.5*r()),p=stemPts(len,(r()-.5)*.5,H*.03,r()*6,16,(r()-.5)*H*.6);taper(c,p,Math.max(.8,H*.012),Math.max(.6,H*.008),mixc('#4a6a34','#86a456',r(),.92));}};
 P.manateegrass=(c,H,seed)=>{const r=rng(seed),n=16+Math.floor(r()*10);for(let k=0;k<n;k++){const len=H*(.5+.5*r()),p=stemPts(len,(r()-.5)*.6,H*.05,r()*6,22,(r()-.5)*H*.6);
@@ -1061,14 +1072,40 @@ function victoria(c,x,y,R,flower,stalkDepth){c.save();c.translate(x,y);const sy=
   if(flower){const fx=R*.5,fy=-R*sy*.9;for(let ring=0;ring<4;ring++){const k=10,rr=R*(.2-ring*.035);for(let i=0;i<k;i++){const a=i/k*TAU+ring*.3,px=fx+Math.cos(a)*rr*.6,py=fy+Math.sin(a)*rr*.2-ring*R*.03;
       c.fillStyle=ring>=2?'rgba(255,250,250,1)':'rgba(255,236,240,1)';c.beginPath();c.ellipse(px,py-rr*.2,rr*.18,rr*.48,Math.cos(a)*.6,0,TAU);c.fill();c.strokeStyle='rgba(220,180,200,.6)';c.lineWidth=.5;c.stroke();}}}
   c.restore();}
-// Growth on salt-water pilings: green sea lettuce and fuzz near the waterline, a white barnacle band, oysters lower down
-function fouling(c,x,w,surf,bottom,seed){const r=rng(seed);c.save();c.beginPath();c.rect(x-w/2-3,surf-6,w+6,bottom-surf+6);c.clip();
-  // barnacle band (intertidal) just above and below the waterline
-  for(let i=0;i<w*1.6;i++){const bx=x+(r()-.5)*w,by=surf-5+r()*16,s=1+r()*2.2;c.fillStyle='rgba(220,214,196,.95)';c.beginPath();c.moveTo(bx-s,by+s*.5);c.lineTo(bx,by-s);c.lineTo(bx+s,by+s*.5);c.closePath();c.fill();c.fillStyle='rgba(90,80,70,.8)';c.beginPath();c.arc(bx,by-s*.2,s*.25,0,TAU);c.fill();}
-  // green algae fringe and sea lettuce sheets hanging in the water
-  c.fillStyle='rgba(70,110,50,.55)';c.fillRect(x-w/2,surf+2,w,38);for(let i=0;i<w*1.4;i++){const bx=x+(r()-.5)*w*1.1,by=surf+4+r()*40,l=5+r()*16;c.fillStyle=mixc('#3a7a3a','#8ac860',r(),.75);c.beginPath();c.moveTo(bx,by);c.bezierCurveTo(bx+l*.5,by+l*.3,bx+l*.2,by+l*.9,bx+(r()-.5)*l*.6,by+l);c.bezierCurveTo(bx-l*.4,by+l*.6,bx-l*.3,by+l*.3,bx,by);c.fill();}
-  // oysters and dark fuzz further down
-  c.fillStyle='rgba(60,60,40,.35)';c.fillRect(x-w/2,surf+40,w,bottom-surf-40);for(let i=0;i<w*1.2;i++){const bx=x+(r()-.5)*w*.95,by=surf+30+r()*(bottom-surf-30);c.fillStyle=mixc('#5a5a4a','#8a8476',r(),.8);c.beginPath();c.ellipse(bx,by,.8+r()*1.2,.5+r()*.7,(r()-.5)*1.4,0,TAU);c.fill();}
+// Growth on salt-water pilings, as it really sits on a Gulf pier: a dark wet stain just above the water, a grey crust of
+// barnacles through the tide line, and below that a fuzzy olive coat of algae and hydroids over the whole underwater
+// part that roughens the piling's outline, with a few thin, see-through sea lettuce ribbons near the top and the odd
+// oyster clump lower down. Drawn every frame, so each layer is batched into a few paths.
+function fouling(c,x,w,surf,bottom,seed,dk=0){const r=rng(seed),D=(col,a=1)=>mixc(col,'#0a120e',dk*.7,a),L=x-w/2,R=x+w/2,hd=bottom-surf;
+  c.save();c.beginPath();c.rect(L-4,surf-7,w+8,hd+7);c.clip();
+  // wet stain above the waterline
+  c.fillStyle=D('#1e1810',.35);c.fillRect(L,surf-6,w,6);
+  // the fuzzy coat: an olive layer a little wider than the piling, browner and thinner with depth
+  const g=c.createLinearGradient(0,surf+6,0,bottom);g.addColorStop(0,D('#4f6236',.7));g.addColorStop(.35,D('#4c5634',.55));g.addColorStop(1,D('#4a4530',.4));
+  c.fillStyle=g;c.fillRect(L-.7,surf+6,w+1.4,hd-6);
+  // hairs off both edges, in three shades, each shade one path
+  const hair=[new Path2D(),new Path2D(),new Path2D()];
+  const ph=r()*9,patch=y=>{const t=(y-surf)/Math.max(1,hd);return cl((.55+.45*Math.sin(y*.09+ph)*Math.sin(y*.037+ph*2))*(1.15-t*.75),0,1);};
+  for(let y=surf+7;y<bottom-1;y+=1.1){const pa=patch(y);for(const sd of[-1,1]){if(r()>pa)continue;const len=(.5+r()*2.4*pa)*(y<surf+60?1.25:1),k=Math.floor(r()*3),ex=sd<0?L-.4:R+.4,p=hair[k];
+    p.moveTo(ex-sd*.6,y);p.quadraticCurveTo(ex+sd*len*.5,y+len*.2,ex+sd*len*.8,y+len*(.5+r()*.5));}}
+  c.lineWidth=.5;c.lineCap='round';['#5d7040','#3e4c2a','#6f7a4a'].forEach((col,k)=>{c.strokeStyle=D(col,.8);c.stroke(hair[k]);});
+  // speckle on the face of the coat
+  const sp=[new Path2D(),new Path2D()];for(let i=0;i<hd*.5;i++){const y=surf+8+r()*(hd-9);if(r()>patch(y))continue;const xx=L+r()*w,p=sp[r()<.5?0:1];p.moveTo(xx+.45,y);p.arc(xx,y,.45,0,TAU);}
+  c.fillStyle=D('#2f3a20',.55);c.fill(sp[0]);c.fillStyle=D('#7d8656',.35);c.fill(sp[1]);
+  // barnacle crust through the tide line: a grey band with a bumpy edge, pale shells and dark openings
+  const cr=new Path2D(),hi=new Path2D(),pit=new Path2D();
+  for(let i=0;i<w*5;i++){const y=surf-4+Math.pow(r(),1.4)*14,xx=L-.9+r()*(w+1.8),rr=.55+r()*.75;cr.moveTo(xx+rr,y);cr.arc(xx,y,rr,0,TAU);
+    if(r()<.6){hi.moveTo(xx-rr*.3+rr*.45,y-rr*.3);hi.arc(xx-rr*.3,y-rr*.3,rr*.45,0,TAU);}if(r()<.5){pit.moveTo(xx+.28,y-rr*.1);pit.arc(xx,y-rr*.1,.28,0,TAU);}}
+  c.fillStyle=D('#8f8a7e',.95);c.fill(cr);c.fillStyle=D('#d6d0c0',.85);c.fill(hi);c.fillStyle=D('#3c3730',.8);c.fill(pit);
+  // a few sea lettuce ribbons hanging from just under the crust, thin and see-through
+  const nr=2+Math.floor(r()*3);for(let i=0;i<nr;i++){const sd=r()<.5?-1:1,ax=sd<0?L+.3:R-.3,ay=surf+9+r()*30,len=12+r()*16,wd=1.8+r()*1.8,wv=(r()-.5)*4;
+    c.fillStyle=D(r()<.5?'#5c8c3a':'#6e9a44',.6);c.beginPath();c.moveTo(ax,ay);
+    c.bezierCurveTo(ax+sd*(wd+1),ay+len*.3,ax+sd*(wd*.6)+wv,ay+len*.7,ax+sd*.8+wv,ay+len);
+    c.bezierCurveTo(ax+sd*.2+wv*.6,ay+len*.6,ax-sd*.4,ay+len*.3,ax,ay);c.fill();}
+  // oyster clumps lower down, sticking out from the sides
+  const no=1+Math.floor(r()*3);for(let i=0;i<no;i++){const sd=r()<.5?-1:1,oy=surf+50+r()*Math.max(1,hd-60),ox=sd<0?L:R;
+    for(let k=0;k<3;k++){const ex=ox+sd*(.6+r()*1.4),ey=oy+(r()-.5)*4;c.fillStyle=D(k%2?'#7c776a':'#9a9484',.95);c.beginPath();c.ellipse(ex,ey,1.4+r()*.9,.8+r()*.5,(r()-.5)*1.2,0,TAU);c.fill();
+      c.strokeStyle=D('#4a463c',.7);c.lineWidth=.35;c.stroke();}}
   c.restore();}
 
 // ---------- sprite cache + bending ----------
@@ -1097,7 +1134,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.12a';
+const VERSION='v1.13a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1353,7 +1390,7 @@ const SPECIES=[
   {id:'pacu',locs:['amazon'],name:'Pacu',times:['dawn','day','dusk'],peak:['day'],off:.85,weather:['clear','rain','fog'],band:[.3,.9],lures:['corn','dough','worm','cricket'],likes:'still',power:.55,speed:50,end:1.2,bite:.75,rar:6,len:[30,65],price:30,shape:'round',col:'#5a6066',belly:'#e0603a',mark:'none',school:[2,4],nibbles:[2,3],hint:'A gentle cousin of the piranha that eats fruit and nuts that fall in the water. Sweet corn or dough works great.'},
   {id:'oscar',locs:['amazon'],name:'Oscar',times:['dawn','day','dusk'],peak:['dusk'],off:.9,weather:['clear','rain','fog'],band:[.3,.85],lures:['worm','cricket','spinner','minnow','bugger'],likes:'still',power:.3,speed:45,end:.8,bite:.75,rar:7,len:[15,35],price:15,shape:'round',col:'#3e3a2e',belly:'#d9783a',mark:'oscar',school:[1,3],nibbles:[1,2],hint:'Hides by the stumps. Look for the orange spot on its tail.'},
   {id:'redtail',locs:['amazon'],name:'Redtail Catfish',times:['dusk','night','day'],peak:['night'],off:.8,weather:['clear','rain','fog'],band:[.75,1],lures:['liver','minnow','worm','dough'],likes:'still',power:.75,speed:50,end:1.5,bite:.8,rar:5,len:[50,110],price:55,shape:'cat',col:'#3a3c3e',belly:'#efe9d8',mark:'none',scent:true,deep:true,nibbles:[1,2],hint:'A big whiskered catfish with a bright red tail. Sniffs out bait on the bottom.'},
-  {id:'arapaima',locs:['amazon'],name:'Arapaima',times:['dawn','day','dusk'],peak:['dusk'],weather:['clear','rain','fog'],band:[0,.5],lures:['minnow','frog','crank','popper'],likes:'move',power:1.1,speed:75,end:3,bite:.6,rar:1.4,len:[150,250],price:500,shape:'bowfin',col:'#5d6a4e',belly:'#d9c6a0',mark:'arapaima',legend:true,legendName:'Arapaima!',surface:true,gulp:true,nibbles:[1,1],jumps:.35,hint:'One of the biggest freshwater fish in the world. It comes up to gulp air, so watch for the bubbles. Try a live minnow.'},
+  {id:'arapaima',locs:['amazon'],name:'Arapaima',times:['dawn','day','dusk'],peak:['dusk'],weather:['clear','rain','fog'],band:[0,.5],lures:['minnow','frog','crank','popper'],likes:'move',power:1.1,speed:75,end:3,bite:.6,rar:1.4,len:[128,212.7],price:500,shape:'bowfin',col:'#5d6a4e',belly:'#d9c6a0',mark:'arapaima',legend:true,legendName:'Arapaima!',surface:true,gulp:true,nibbles:[1,1],jumps:.35,hint:'One of the biggest freshwater fish in the world. It comes up to gulp air, so watch for the bubbles. Try a live minnow.'},
   // ---- Tupelo Bayou ----
   {id:'spottedgar',locs:['bayou'],name:'Spotted Gar',times:['dawn','day','dusk','night'],peak:['dusk'],off:.8,weather:['clear','rain','fog'],band:[0,.35],lures:['minnow','spinner','swim','jerk','bugger','shrimp'],likes:'move',power:.55,speed:92,end:1.2,bite:.42,rar:7,len:[45,88],price:22,shape:'gar',col:'#7c7a4c',belly:'#e8dfb6',mark:'gar',surface:true,gulp:true,school:[1,3],nibbles:[1,2],jumps:.3,bony:true,lie:.5,seas:[1,1.2,1,.5],hint:'Hangs just under the surface like a stick and rolls up to gulp air. Its bony beak is hard to hook: when it bites, give it a moment before you set.'},
   {id:'warmouth',locs:['bayou'],name:'Warmouth',times:['dawn','day','dusk'],peak:['dusk'],off:.85,weather:['clear','rain','fog'],band:[.35,.95],lures:['worm','cricket','minnow','jig','grub','plastic','spinner','nymph','bugger','popbug'],likes:'still',power:.3,speed:46,end:.8,bite:.7,rar:7,len:[12,28],price:12,shape:'round',col:'#6b5232',belly:'#dcb66c',mark:'warmouth',school:[1,2],nibbles:[1,2],hint:'A big-mouthed sunfish with red eyes that lives right in the cypress knees and stumps. Drop a worm or a little jig tight to the wood.'},
@@ -1387,9 +1424,9 @@ const SPECIES=[
   {id:'nembwe',locs:['congo'],name:'Nembwe',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.35,.95],rest:[.6,1],lures:['minnow','spinner','crank','swim','jig','grub'],likes:'move',power:.55,speed:85,end:1.1,bite:.55,rar:4,len:[18,50],price:30,shape:'nembwe',col:'#8eaa72',belly:'#e8d888',mark:'none',school:[1,2],ambush:true,nibbles:[1,1],hint:'A big-mouthed predatory cichlid that lurks by the rocks and grabs small fish. Strictly a fish of the upper Congo, so it is rare this far down. Spinners, jigs and live minnows.'},
   {id:'africanpike',locs:['congo'],name:'African Pike',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.75,weather:['clear','rain','fog'],band:[0,.45],rest:[.05,.5],lures:['minnow','spinner','spoon','jerk','swim'],likes:'move',power:.5,speed:95,end:.9,bite:.55,rar:3.5,len:[20,55],price:25,shape:'africanpike',col:'#bcaa72',belly:'#ece2c0',mark:'none',ambush:true,lie:.5,nibbles:[1,1],hint:'Not a true pike, but it hunts like one: still and hidden in the shallows, then a lunge. Spotted fins and dark lines running back from the eye. Sharp teeth.'},
   {id:'tigerfish',locs:['congo'],name:'African Tigerfish',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[0,.55],rest:[.3,.8],lures:['minnow','spinner','spoon','crank','swim','jerk'],likes:'move',power:.85,speed:135,end:1.7,bite:.5,rar:3,len:[30,90],price:70,shape:'tigerfish',col:'#c4ccc8',belly:'#f2f2ec',mark:'none',school:[2,5],jumps:.7,runs:1.3,bony:true,nibbles:[1,1],hint:'Silver with black stripes, red fins and teeth on the outside of its jaws. Packs of them hunt the sprat in the fast water. It hits like a truck, leaps again and again, and its bony mouth throws hooks.'},
-  {id:'nileperch',locs:['congo'],name:'Nile Perch',times:['dawn','dusk','night'],peak:['night'],off:.7,weather:['clear','rain','fog'],band:[.6,1],rest:[.75,1],minDep:.4,lures:['minnow','swim','crank','liver'],likes:'move',power:1,speed:90,end:2.4,bite:.45,rar:1.6,len:[60,190],price:220,shape:'nileperch',col:'#b8c4c4',belly:'#eceee8',mark:'none',ambush:true,nibbles:[1,1],jumps:.25,hint:'A giant, humpbacked perch with a glowing yellow-ringed eye. It lies deep in the eddies and comes up at night to feed. A big live bait on heavy line.'},
-  {id:'vundu',locs:['congo'],name:'Vundu',times:['dusk','night'],peak:['night'],off:.6,weather:['clear','rain','fog'],band:[.85,1],rest:[.92,1],minDep:.45,lures:['liver','worm','dough','corn'],likes:'still',power:1.15,speed:70,end:3,bite:.45,rar:2,len:[60,150],price:260,shape:'vundu',col:'#76786a',belly:'#d8d4c2',mark:'none',bottom:true,nibbles:[2,3],hint:'A huge, flat-headed catfish that sits in the deepest holes and feeds at night, mostly by smell. Smelly bait on the bottom, and the strongest rod you have.'},
-  {id:'goliath',locs:['congo'],name:'Goliath Tigerfish',times:['dawn','dusk'],peak:['dusk'],weather:['clear','rain','fog'],band:[.25,.85],rest:[.5,.95],minDep:.35,lures:['minnow','swim'],likes:'move',power:1.35,speed:140,end:3.6,bite:.38,rar:.4,len:[110,150],price:600,shape:'goliath',col:'#b4bec2',belly:'#eef0ea',mark:'none',legend:true,legendName:'Mbenga!',bigOnly:true,ambush:true,jumps:.45,runs:1.6,bony:true,nibbles:[1,1],hint:'Mbenga, the dangerous fish. Only the Congo has it. It waits in the calm water behind the rapids and runs down anything that drifts past, with teeth like a dog. Bring a wire leader, a live bait, and every pound of line you own.'},
+  {id:'nileperch',locs:['congo'],name:'Nile Perch',times:['dawn','dusk','night'],peak:['night'],off:.7,weather:['clear','rain','fog'],band:[.6,1],rest:[.75,1],minDep:.4,lures:['minnow','swim','crank','liver'],likes:'move',power:1,speed:90,end:2.4,bite:.45,rar:1.6,len:[54,171.5],price:220,shape:'nileperch',col:'#b8c4c4',belly:'#eceee8',mark:'none',ambush:true,nibbles:[1,1],jumps:.25,hint:'A giant, humpbacked perch with a glowing yellow-ringed eye. It lies deep in the eddies and comes up at night to feed. A big live bait on heavy line.'},
+  {id:'vundu',locs:['congo'],name:'Vundu',times:['dusk','night'],peak:['night'],off:.6,weather:['clear','rain','fog'],band:[.85,1],rest:[.92,1],minDep:.45,lures:['liver','worm','dough','corn'],likes:'still',power:1.15,speed:70,end:3,bite:.45,rar:2,len:[52,130.4],price:260,shape:'vundu',col:'#76786a',belly:'#d8d4c2',mark:'none',bottom:true,nibbles:[2,3],hint:'A huge, flat-headed catfish that sits in the deepest holes and feeds at night, mostly by smell. Smelly bait on the bottom, and the strongest rod you have.'},
+  {id:'goliath',locs:['congo'],name:'Goliath Tigerfish',times:['dawn','dusk'],peak:['dusk'],weather:['clear','rain','fog'],band:[.25,.85],rest:[.5,.95],minDep:.35,lures:['minnow','swim'],likes:'move',power:1.35,speed:140,end:3.6,bite:.38,rar:.4,len:[97,131.6],price:600,shape:'goliath',col:'#b4bec2',belly:'#eef0ea',mark:'none',legend:true,legendName:'Mbenga!',bigOnly:true,ambush:true,jumps:.45,runs:1.6,bony:true,nibbles:[1,1],hint:'Mbenga, the dangerous fish. Only the Congo has it. It waits in the calm water behind the rapids and runs down anything that drifts past, with teeth like a dog. Bring a wire leader, a live bait, and every pound of line you own.'},
   {id:'tarpon',locs:['pier'],name:'Tarpon',times:['dawn','dusk','night'],peak:['dusk'],weather:['clear','rain','fog'],band:[0,.5],lures:['minnow','swim','jerk','shrimp'],likes:'move',power:1.25,speed:120,end:3.5,bite:.35,rar:.45,len:[140,210],price:500,shape:'long',col:'#8fa2aa',belly:'#f4f6f6',mark:'tarpon',legend:true,legendName:'The Silver King!',surface:true,gulp:true,bigOnly:true,nibbles:[1,1],jumps:.5,runs:1.6,bony:true,seas:[.5,1.4,.8,.05],hint:'Huge, armor-scaled and chrome bright. Rolls at the surface at dusk to gulp air. Its mouth is like concrete and it jumps again and again: most people lose them. A live bait at dusk is your shot.'}
 ];
 LURES.worm.bait=true;
@@ -1421,7 +1458,7 @@ SPECIES.push(
     hint:'Fast little schooling fish with wavy black bars on a green back. A string of small jigs fills the bait well in minutes, and live mackerel is the tuna charter\u2019s favourite bait.'},
   {id:'cod',locs:['pei'],name:'Atlantic Cod',times:['dawn','day','dusk','night'],peak:['dawn','day'],off:.85,weather:['clear','rain','fog'],band:[.85,1],lures:['seacut','jig','cutbait','spoon','livebait','minnow','grub'],likes:'jig',power:.5,speed:60,end:1.1,bite:.5,rar:5,len:[45,120],price:30,shape:'cod',col:'#6e6640',belly:'#ece8de',mark:'none',school:[1,3],transit:true,nibbles:[1,2],mouth:2,
     hint:'The fish that built Atlantic Canada. Cod hug the bottom on the banks and take a heavy jig worked right on the sand.'},
-  {id:'dogfish',locs:['pei'],name:'Spiny Dogfish',times:['dawn','day','dusk','night'],peak:['dusk','night'],off:.85,weather:['clear','rain','fog'],band:[.7,1],lures:['seacut','tunadead'],likes:'still',power:.45,speed:55,end:1,bite:.6,rar:3,len:[60,110],price:2,shape:'dogfish',col:'#5c6268',belly:'#e8e8e4',mark:'none',max:1,nibbles:[1,2],mouth:1,transit:true,
+  {id:'dogfish',locs:['pei'],name:'Spiny Dogfish',times:['dawn','day','dusk','night'],peak:['dusk','night'],off:.85,weather:['clear','rain','fog'],band:[.7,1],lures:['seacut','tunadead'],likes:'still',power:.45,speed:55,end:1,bite:.6,rar:3,len:[52,95.2],price:2,shape:'dogfish',col:'#5c6268',belly:'#e8e8e4',mark:'none',max:1,nibbles:[1,2],mouth:1,transit:true,
     hint:'A small shark that hunts the Gulf banks in packs, a sharp spine in front of each back fin. Usually alone, but food can draw a pack of them in.'},
   {id:'bluefin',locs:['pei'],name:'Atlantic Bluefin Tuna',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','fog','rain'],band:[0,.8],lures:['tunalive','tunadead'],likes:'still',power:1,speed:160,end:2.5,bite:.4,rar:2,len:[190,310],price:0,shape:'tuna',col:'#12263c',belly:'#e4e8ea',mark:'none',school:[1,3],nibbles:[1,1],mouth:2,giant:true,release:true,sounds:true,runs:6,
     hint:'A warm-blooded giant that follows the herring into the Gulf every summer. Off North Lake they run 500 to 1,000 pounds, and every one is released.'});
@@ -1451,11 +1488,21 @@ function lureAppeal(sp,f){const lu=LURES[S.lure];if(lu.sea)return seaAppeal(sp);
     if(o&&f&&o.len>f.len*.35)m*=Math.max(.04,Math.pow(f.len*.35/o.len,3));return m;}
   if(S.lure==='cutbait'){const src=BK().cs;return(CUTPULL[sp.id]||1)*(OILY[src]?1.3:1);}
   if(lu.bait)return(BAITPULL[S.lure]&&BAITPULL[S.lure][sp.id])||1;const v=lureVar();return(v.color===condPref()?1.5:.8)*SIZES[v.size].mouth[sp.mouth];}
-const TROPHY={shad:[26,29,32],pinfish:[20,23,25],mullet:[36,41,45],bluegill:[18,21,24],pumpkinseed:[15,18,21],perch:[22,27,32],crappie:[25,30,34],bass:[40,50,58],trout:[38,46,52],catfish:[55,68,78],pickerel:[48,56,63],carp:[65,78,88],eel:[70,85,96],bowfin:[65,75,85],brownbull:[30,34,38],blackbull:[25,28,31],smallmouth:[30,40,48],brook:[20,26,31],brown:[38,48,56],rockbass:[18,22,25],fallfish:[25,32,37],chub:[15,19,23],sucker:[33,40,46],undercut:[72,78,83],walleye:[50,61,68],pike:[70,85,97],whitebass:[33,38,42],drum:[45,55,63],tigermuskie:[100,110,120],flathead:[95,105,115],piranha:[22,26,30],peacock:[45,55,63],arowana:[65,75,84],pacu:[45,55,61],oscar:[24,29,33],redtail:[75,90,102],arapaima:[180,210,235],spottedgar:[70,79,85],alligatorgar:[190,212,230],warmouth:[20,24,27],redear:[24,27,29],flier:[15,17,19],bluecat:[80,95,105],cutthroat:[40,47,52],grayling:[36,40,43],golden:[32,38,42],whitefish:[38,44,48],laketrout:[65,76,84],mackinaw:[110,117,122],redfish:[70,82,90],seatrout:[50,57,63],sheepshead:[45,52,57],flounder:[48,56,62],mackerel:[55,62,67],pompano:[38,44,48],hardhead:[34,39,42],tarpon:[170,190,203]};
+const TROPHY={shad:[26,29,32],pinfish:[20,23,25],mullet:[36,41,45],bluegill:[18,21,24],pumpkinseed:[15,18,21],perch:[22,27,32],crappie:[25,30,34],bass:[40,50,58],trout:[38,46,52],catfish:[55,68,78],pickerel:[48,56,63],carp:[65,78,88],eel:[70,85,96],bowfin:[65,75,85],brownbull:[30,34,38],blackbull:[25,28,31],smallmouth:[30,40,48],brook:[20,26,31],brown:[38,48,56],rockbass:[18,22,25],fallfish:[25,32,37],chub:[15,19,23],sucker:[33,40,46],undercut:[72,78,83],walleye:[50,61,68],pike:[70,85,97],whitebass:[33,38,42],drum:[45,55,63],tigermuskie:[100,110,120],flathead:[95,105,115],piranha:[22,26,30],peacock:[45,55,63],arowana:[65,75,84],pacu:[45,55,61],oscar:[24,29,33],redtail:[75,90,102],arapaima:[153,179,200],spottedgar:[70,79,85],alligatorgar:[190,212,230],warmouth:[20,24,27],redear:[24,27,29],flier:[15,17,19],bluecat:[80,95,105],cutthroat:[40,47,52],grayling:[36,40,43],golden:[32,38,42],whitefish:[38,44,48],laketrout:[65,76,84],mackinaw:[110,117,122],redfish:[70,82,90],seatrout:[50,57,63],sheepshead:[45,52,57],flounder:[48,56,62],mackerel:[55,62,67],pompano:[38,44,48],hardhead:[34,39,42],tarpon:[170,190,203]};
 // Boyoma Falls shipped without trophy sizes, which crashed the Log on its tab. Set the way the others are: bronze about
 // 72%, silver 85% and gold 94% of the biggest the species gets.
-Object.assign(TROPHY,{sprat:[7,8,9],butterflyfish:[9,11,12],redbreast:[29,34,38],distichodus:[50,59,66],nembwe:[36,42,47],africanpike:[40,47,52],tigerfish:[65,76,85],nileperch:[137,161,179],vundu:[108,127,141],goliath:[122,134,143]});
-Object.assign(TROPHY,{herring:[31,34,37],atlmackerel:[37,41,44],cod:[90,105,115],dogfish:[95,102,108],bluefin:[255,280,300]});
+Object.assign(TROPHY,{sprat:[7,8,9],butterflyfish:[9,11,12],redbreast:[29,34,38],distichodus:[50,59,66],nembwe:[36,42,47],africanpike:[40,47,52],tigerfish:[65,76,85],nileperch:[124,145,162],vundu:[94,110,123],goliath:[107,118,125]});
+Object.assign(TROPHY,{herring:[31,34,37],atlmackerel:[37,41,44],cod:[90,105,115],dogfish:[82,88,93],bluefin:[255,280,300]});
+// Size ceilings: the length at which the game's weight formula gives the IGFA all-tackle world record for the species
+// (records checked Nov 2026). Everyday fish stay inside sp.len; about 1 in 60 (up to 1 in 40 with a big reputation)
+// lands above the old top, and the bigger it is the rarer, approaching the record without reaching it, so catches
+// no longer pile up tied at one maximum. Species with no IGFA weight record keep sp.len[1] as their top.
+const SIZE_CEIL={bluegill:44.8,pumpkinseed:30.5,perch:52.7,crappie:54.8,bass:87.6,trout:125.6,catfish:138,pickerel:89.2,carp:129,brownbull:63.6,blackbull:65.7,bowfin:93.3,smallmouth:71.2,brook:84.2,brown:122.3,rockbass:38.4,fallfish:55.1,sucker:64.5,walleye:99.5,pike:160.9,whitebass:59.1,drum:115.6,tigermuskie:157,peacock:94.3,pacu:110.5,redtail:177.6,arapaima:234.1,spottedgar:97.1,warmouth:35.8,redear:49.1,flier:34.1,bluecat:186.5,alligatorgar:277.6,cutthroat:119.1,grayling:62.6,golden:76.8,laketrout:143.7,redfish:157.2,seatrout:89.6,sheepshead:73.8,flounder:89.5,mackerel:86.9,pompano:63,hardhead:64.4,tigerfish:110.2,nileperch:188.8,vundu:143.5,goliath:144.8,tarpon:227.8,herring:48.4,atlmackerel:56.1,cod:168.6,dogfish:104.8,bluefin:325.9};
+function ceilOf(sp){return Math.max(sp.len[1],SIZE_CEIL[sp.id]||0);}
+function rollLen(sp,expo){const a=sp.len[0],b=sp.len[1],c=ceilOf(sp);
+  if(c>b+.5){const rep=clamp(Math.log10(1+(S.respect||0))/4,0,1);
+    if(Math.random()<(1+.5*rep)/60)return +Math.min(c-.1,b+(c-b)*(1-Math.pow(Math.random(),.35))).toFixed(1);}
+  return +(a+(b-a)*Math.pow(Math.random(),expo)).toFixed(1);}
 const MEDALS=['bronze','silver','gold'],MEDALN=['Bronze','Silver','Gold'];
 // Respect: earned by letting the right fish go. Permanent, and it unlocks gear and outfits money can't buy.
 const RANKS=[['Newcomer',0],['Regular',10],['Local',30],['Old Hand',70],['Guide',140],['Legend',250]];
@@ -1710,15 +1757,71 @@ function drawSeaFloor(c,dk,vx0,vx1){const sx=G.seaX||0,D=(col,a=1)=>rgbStr(mix(c
       if(t==='reef'&&r(5)<.45){const R=6+r(6)*12,px=x+CW/2;drawSeaBoulder(c,px,R,r(50),D);
         if(seaBottomFt(X+CW/2)<90&&r(60)<.5){const top=bottomAt(px)-R*.9;c.fillStyle=D('#6a5a26',.85);for(let k=0;k<3;k++){const h=14+r(61+k)*18,sw=Math.sin(G.t*.9+k+n)*4,bx=px-3+k*3,w=1.6+r(64+k)*1.2;c.beginPath();c.moveTo(bx-.5,top);c.quadraticCurveTo(bx-w+sw*.5,top-h*.5,bx+sw,top-h);c.quadraticCurveTo(bx+w+sw*.5,top-h*.5,bx+.5,top);c.closePath();c.fill();}}}
       if(r(7)<(big?.1:.05)){const px=x+r(8)*CW;drawStar(c,px,bottomAt(px)-.5,r(9),D);}
-      if(r(40)<.035){const px=x+r(41)*CW+Math.sin(G.t*.25+r(42)*9)*4;drawCrab(c,px,bottomAt(px),r(42),D);}}}
-  for(const p of pots){const px=p.X-sx+p.lean,h=hash2(Math.round(p.X),77);if(px<vx0-30||px>vx1+30||h>=.55)continue;const lx=px+(h<.3?-17:17);drawLobster(c,lx,bottomAt(lx),h,D);}}
+      if(r(40)<.07)crabAt(c,'rock',x+r(41)*CW,r(42),D);}
+    // rock crabs work the sand as well as the gravel
+    if(t==='sand'&&r(43)<.05)crabAt(c,'rock',x+r(44)*CW,r(45),D);}
+  // a lobster by some traps, and rock crabs drawn in by the bait at most of them
+  for(const p of pots){const px=p.X-sx+p.lean,h=hash2(Math.round(p.X),77);if(px<vx0-30||px>vx1+30)continue;const side=h<.3?-1:1;if(h<.55)drawLobster(c,px+side*17,bottomAt(px+side*17),h,D);
+    const hc=hash2(Math.round(p.X),79);if(hc<.75)crabAt(c,'rock',px-side*(14+hc*8),hash2(Math.round(p.X),81),D);if(hc<.3)crabAt(c,'rock',px+side*(28+hc*10),hash2(Math.round(p.X),83),D);}}
 // A boulder sitting in the bottom: its base follows the bottom line, so it never floats on a slope.
 function drawSeaBoulder(c,px,R,h,D){const top=Math.min(bottomAt(px-R*.5),bottomAt(px),bottomAt(px+R*.5))-R*(.75+.3*h);c.fillStyle=D(h<.4?'#5a4a42':'#4e4c46');c.beginPath();c.moveTo(px-R,bottomAt(px-R)+1.5);
   c.bezierCurveTo(px-R*1.02,top+R*.25,px-R*.45,top,px+R*.1*(h-.5),top);c.bezierCurveTo(px+R*.55,top,px+R*1.02,top+R*.3,px+R,bottomAt(px+R)+1.5);for(let k=R;k>=-R;k-=3)c.lineTo(px+k,bottomAt(px+k)+1.5);c.closePath();c.fill();
   c.fillStyle=D('#7a766a',.45);c.beginPath();c.ellipse(px-R*.25,top+R*.22,R*.45,R*.14,-.1,0,TAU);c.fill();c.fillStyle=D('#2e2c28',.35);c.beginPath();c.ellipse(px+R*.4,bottomAt(px+R*.4)-R*.12,R*.4,R*.12,0,0,TAU);c.fill();}
 function drawStar(c,x,y,h,D){c.fillStyle=D(h<.5?'#c8683a':'#7c4068');c.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5+h*6,R=i%2?1.7:5;c.lineTo(x+Math.cos(a)*R,y-1+Math.sin(a)*R*.42);}c.closePath();c.fill();}
-function drawCrab(c,x,y,h,D){c.save();c.translate(x,y);c.scale(1.6,1.6);c.translate(-x,-y);const f=h<.5?1:-1,col=D('#8a4a30');c.strokeStyle=col;c.lineWidth=.5;c.beginPath();for(const k of[-1.6,-.6,.4,1.4]){c.moveTo(x+k,y-1.2);c.lineTo(x+k*1.5,y-.1);}c.stroke();
-  c.fillStyle=col;c.beginPath();c.ellipse(x,y-1.6,2.6,1.3,0,0,TAU);c.fill();c.beginPath();c.ellipse(x+f*3,y-1.4,.9,.6,0,0,TAU);c.fill();c.fillStyle=D('#c9a070',.6);c.fillRect(x-1.4,y-2.6,2.8,.5);c.restore();}
+// Crabs, seen from the front as they walk sideways along the bottom: a wide shell, four jointed legs a side and two
+// claws held in front. Rock crab (North Lake banks): a rounded, speckled purplish-red shell edged with blunt teeth and
+// black-tipped claws. Blue crab (Gulf): a wide olive shell with a sharp spine at each side, blue legs and claws, and
+// flat paddle back legs it holds up and can swim with. Sizes are to the fish's scale (a 16 cm blue crab is ~14 px wide).
+const CRAB={rock:{w:11,hi:'#b06a56',shell:'#9a4a3a',dark:'#5e2a2a',under:'#e2cf9c',leg:'#a8644a',tip:'#1c1414',spine:0},
+  blue:{w:14,hi:'#7a8a5e',shell:'#62704a',dark:'#3e4a34',under:'#ece6d4',leg:'#4f7aa8',tip:'#f0ece2',spine:1}};
+// How a crab moves, worked out from the clock so nothing needs storing: quick sideways walks and little shuffles of
+// different lengths with sits between, and now and then a blue crab swims up off the bottom with its paddles and
+// settles further along. Sitting, it picks at the bottom, one claw down to the sand and up to its mouth, then the other.
+function crabMove(kind,h){const P=kind==='blue'?30+h*12:9+h*6,u=(G.t+h*211)%P/P,a=.6+h*.8,ks=kind==='blue'?
+    [[0,.03,10*a,0],[.12,.02,5*a,0],[.24,.03,0,0],[.36,.07,24,1],[.58,.03,15,0],[.72,.02,11,0],[.86,.04,0,0]]:
+    [[0,.07,8*a,0],[.2,.03,5*a,0],[.38,.08,-6*a,0],[.6,.04,-2*a,0],[.76,.05,3,0],[.9,.04,0,0]];
+  let dx=0,prev=0,walk=false,swim=0;for(const [t0,d,to,sw] of ks){if(u<t0)break;const q=Math.min(1,(u-t0)/d);dx=prev+(to-prev)*q*q*(3-2*q);if(q<1){walk=!sw;swim=sw?Math.sin(q*Math.PI):0;}prev=to;}
+  return{dx:dx*(h<.5?1:-1),walk,lift:swim*26,swim,feed:!walk&&!swim&&Math.sin(G.t*.45+h*17)>-.2};}
+function crabAt(c,kind,hx,h,D){const m=crabMove(kind,h),x=hx+m.dx,y=bottomAt(x)-m.lift;
+  // claws go up when a lure or a fish comes close
+  let near=1e9;const L=G.lure;if(L&&L.state==='water')near=Math.hypot(L.x-x,L.y-y);for(const f of G.fish){const d=Math.hypot(f.x-x,f.y-y)-f.L*.4;if(d<near)near=d;}
+  drawCrab(c,x,y,kind,{walk:m.walk,swim:m.swim,feed:m.feed,claw:clamp((42-near)/16,0,1),ph:h*9},D);}
+function drawCrab(c,x,y,kind,o,D){const K=CRAB[kind],W=K.w,bh=W*.36,legH=W*.3,cy=y-legH-bh*.35,t=G.t*14+o.ph;
+  c.lineCap='round';c.lineJoin='round';
+  // walking legs: hip at the shell's edge, knee up and out, foot on the bottom; they step while walking, tuck while swimming
+  for(const sd of[-1,1])for(let i=0;i<(K.spine?3:4);i++){const st=o.walk?Math.sin(t+i*1.9+(sd>0?Math.PI:0)):0,up=Math.max(0,st)*1.3,tuck=o.swim;
+    const hx=x+sd*W*(.28+i*.045),hy=cy+bh*.15,kx=x+sd*W*(.5+i*.09),ky=cy-bh*(.95-i*.2)+tuck*bh*.5-up*.4,fx=x+sd*W*(.56+i*.1)+st*sd*.9-tuck*sd*W*.18,fy=y-up-tuck*legH*.7;
+    c.strokeStyle=D(K.leg);c.lineWidth=W*.1;c.beginPath();c.moveTo(hx,hy);c.lineTo(kx,ky);c.stroke();c.lineWidth=W*.07;c.beginPath();c.moveTo(kx,ky);c.lineTo(fx,fy);c.stroke();
+    c.strokeStyle=D(K.dark,.55);c.lineWidth=W*.025;c.beginPath();c.moveTo(kx,ky);c.lineTo((kx+fx)/2,(ky+fy)/2);c.stroke();c.fillStyle=D(K.dark,.7);c.beginPath();c.arc(kx,ky,W*.045,0,TAU);c.fill();}
+  // blue crab: the flat back paddles held up at the sides, sculling hard when it swims
+  if(K.spine)for(const sd of[-1,1]){const fl=o.swim?Math.sin(G.t*22+(sd>0?1:0))*.6:Math.sin(G.t*1.5+o.ph)*.12,px=x+sd*W*.62,py=cy-bh*.55-fl*W*.15;
+    c.strokeStyle=D(K.leg);c.lineWidth=W*.07;c.beginPath();c.moveTo(x+sd*W*.3,cy-bh*.1);c.lineTo(px,py);c.stroke();
+    c.fillStyle=D('#6a90b8',.95);c.beginPath();c.ellipse(px+sd*W*.05,py-W*.02,W*.11,W*.055,sd*(.5+fl),0,TAU);c.fill();}
+  // shell: the underside shows as a pale crescent below the front edge
+  c.fillStyle=D(K.under);c.beginPath();c.ellipse(x,cy+bh*.16,W*.3,bh*.3,0,0,Math.PI);c.fill();
+  const g=c.createLinearGradient(0,cy-bh*.6,0,cy+bh*.3);g.addColorStop(0,D(K.hi));g.addColorStop(1,D(K.dark));c.fillStyle=g;c.beginPath();
+  if(K.spine){c.moveTo(x-W*.6,cy-bh*.12);c.quadraticCurveTo(x-W*.3,cy-bh*.72,x,cy-bh*.62);c.quadraticCurveTo(x+W*.3,cy-bh*.72,x+W*.6,cy-bh*.12);c.lineTo(x+W*.4,cy+bh*.05);c.quadraticCurveTo(x,cy+bh*.42,x-W*.4,cy+bh*.05);c.closePath();}
+  else{c.moveTo(x-W*.47,cy);c.bezierCurveTo(x-W*.45,cy-bh*.62,x-W*.2,cy-bh*.7,x,cy-bh*.68);c.bezierCurveTo(x+W*.2,cy-bh*.7,x+W*.45,cy-bh*.62,x+W*.47,cy);c.quadraticCurveTo(x,cy+bh*.45,x-W*.47,cy);c.closePath();}
+  c.fill();
+  // the teeth along the front edge, and speckles on a rock crab
+  c.fillStyle=D(K.dark,.9);for(let k=-4;k<=4;k++){const tx=x+k*W*.1,ty=cy+bh*(.08+.02*Math.abs(k))-Math.abs(k)*bh*.02;c.beginPath();c.arc(tx,ty,W*.028,0,TAU);c.fill();}
+  if(!K.spine){c.fillStyle=D('#6a2a3a',.6);for(let k=0;k<9;k++){const a=k*2.4+o.ph;c.beginPath();c.arc(x+Math.cos(a)*W*.3,cy-bh*.3+Math.sin(a*1.7)*bh*.2,W*.025,0,TAU);c.fill();}}
+  // eyes on short stalks: they swivel a little, and every so often both fold down flat for a moment
+  const fold=(G.t*.5+o.ph)%6<.35?1:0;for(const sd of[-1,1]){const ex=x+sd*W*(.09+.03*Math.sin(G.t*1.7+o.ph+sd)),ey=cy-bh*(.88-.3*fold);
+    c.strokeStyle=D(K.dark);c.lineWidth=W*.04;c.beginPath();c.moveTo(x+sd*W*.06,cy-bh*.55);c.lineTo(ex,ey+bh*.03);c.stroke();c.fillStyle=D('#111');c.beginPath();c.arc(ex,ey,W*.035,0,TAU);c.fill();}
+  // claws: arm down and in from under the shell to a claw held in front; raised up and out when something comes close
+  // feeding: each claw goes down to the sand and back up to the mouth, the two out of step
+  for(const sd of[-1,1]){const cl=o.claw;let ex=x+sd*W*(.3+.12*cl),ey=cy+bh*(.55-1.2*cl),cx2=x+sd*W*(.16+.26*cl),cy2=cy+bh*(.75-1.9*cl);
+    const fw=(o.feed?1:0)*(1-cl);if(fw>0){const dn=(Math.sin(G.t*2.6+o.ph+(sd>0?Math.PI:0))+1)/2,
+      tx=lerp(x+sd*W*.05,x+sd*W*.24,dn),ty=lerp(cy+bh*.3,y-W*.06,dn),tex=lerp(x+sd*W*.27,x+sd*W*.38,dn),tey=lerp(cy+bh*.15,cy+bh*.95,dn);
+      cx2=lerp(cx2,tx,fw);cy2=lerp(cy2,ty,fw);ex=lerp(ex,tex,fw);ey=lerp(ey,tey,fw);}
+    c.strokeStyle=D(K.leg);c.lineWidth=W*.09;c.beginPath();c.moveTo(x+sd*W*.18,cy+bh*.1);c.lineTo(ex,ey);c.lineTo(cx2,cy2);c.stroke();
+    const ang=sd>0?Math.PI*(1-.35*cl):Math.PI*.35*cl;c.save();c.translate(cx2,cy2);c.rotate(ang+(sd>0?0:Math.PI)*0);
+    c.fillStyle=D(kind==='blue'?'#4a74a6':K.shell);c.beginPath();c.ellipse(0,0,W*.15,W*.085,0,0,TAU);c.fill();
+    c.fillStyle=D(K.tip);c.beginPath();c.ellipse(-W*.13,-W*.02,W*.06,W*.03,-.2,0,TAU);c.fill();c.beginPath();c.ellipse(-W*.12,W*.035,W*.05,W*.025,.2,0,TAU);c.fill();c.restore();}}
+// Blue crabs at Pelican Point Pier: a few on the sand and in the grass, always in the same spots for a given place.
+function drawPierCrabs(c,dk,vx0,vx1){const D=(col,a=1)=>rgbStr(mix(col,'#0a1418',dk*.75+.12),a);
+  for(let i=0;DOCKX+60+i*170<WX;i++){const h=hash2(i,911);if(h>.5)continue;const hx=DOCKX+60+i*170+h*90;if(hx<vx0-40||hx>vx1+40||bottomAt(hx)-SURF<40)continue;crabAt(c,'blue',hx,hash2(i,913),D);}}
 function drawLobster(c,x,y,h,D){const f=h<.3?1:-1,col=D('#3e4630');c.save();c.translate(x,y-2.2);c.scale(f*1.5,1.5);
   c.fillStyle=col;c.beginPath();c.ellipse(-1,0,3.2,1.25,0,0,TAU);c.fill();for(let i=0;i<4;i++){c.beginPath();c.ellipse(-4.6-i*1.4,.2+i*.1,.9,1-i*.08,0,0,TAU);c.fill();}
   c.beginPath();c.moveTo(-9.6,.4);c.lineTo(-11,-.8);c.lineTo(-11,1.6);c.closePath();c.fill();
@@ -1808,7 +1911,7 @@ function updateBaitClouds(dt){const s=G.sea;if(!s)return;if(!s.cloudInit){s.clou
       if(c.excite>0){c.excite-=dt;const L=G.lure;if(L.state==='water')c.X+=((L.x+(G.seaX||0))-c.X)*Math.min(1,dt*.5);}}c.vx+=(c.tvx-c.vx)*Math.min(1,dt*(c.mack?.8:.35));c.X+=c.vx*dt;const cx=bcX(c),bot=bottomAt(cx);
     const pushed=threats.some(f=>f.charge&&f.charge.c===c);c.ty=pushed?Math.max(SURF+24,c.ty-dt*12):c.mack?c.ty:Math.min(c.ty+dt*1.5,bot-c.r*.5);c.y+=(c.ty-c.y)*Math.min(1,dt*.6);
     // how fast the school really moved this frame (its drift plus any pull toward the rig), so each fish faces the way it's going
-    const avx=c.pX!=null&&dt>0?(c.X-c.pX)/dt:c.vx;c.pX=c.X;
+    const avx=c.pX!=null&&dt>0?(c.X-c.pX)/dt:c.vx;c.pX=c.X;c.avx=avx;
     for(const p of c.pts){for(const f of threats){const dx=cx+p.x-f.x,dy=c.y+p.y-f.y,R=f.L*1.35;if(Math.abs(dx)<R&&Math.abs(dy)<R){const d=Math.hypot(dx,dy)||1;if(d<R){const w=Math.sqrt(1-d/R)*(p.re||1);p.fx+=dx/d*560*w*dt;p.fy+=dy/d*360*w*dt;}}}
       p.fx*=1-Math.min(1,dt*1.6);p.fy*=1-Math.min(1,dt*1.6);
       const tx=p.hx+Math.sin(c.t*.3+p.ph)*4,ty=p.hy+Math.cos(c.t*.4+p.ph)*2,vx=(tx-p.x)*.8+p.fx,vy=(ty-p.y)*.8+p.fy;p.x+=vx*dt;p.y+=vy*dt;
@@ -1858,10 +1961,15 @@ function seaHold(dt){const s=G.sea;if(!s)return;s.pv=0;if(S.lure!=='sabiki'||(S.
   // tx: where the rig hangs, under the rod tip held out over the stern
   const tx=44+Math.cos(-.45)*curSetup().len;let best=null,bd=1500;for(const c of s.clouds||[]){if(c.mack&&c.mode!=='feed')continue;const d=Math.abs(bcX(c)-tx);if(d<bd){bd=d;best=c;}}
   if(G.lure.state==='water'&&s.runTo&&s.clouds.includes(s.runTo))best=s.runTo; // with the rig down he stays on the school you're in
+  // and he sticks with the school he's running to unless another is clearly closer, so two about as near don't swap back and forth
+  else if(best&&s.runTo&&best!==s.runTo&&s.clouds.includes(s.runTo)&&!(s.runTo.mack&&s.runTo.mode!=='feed')&&Math.abs(bcX(s.runTo)-tx)<bd+60)best=s.runTo;
   if(!best)return;
-  const d=bcX(best)-tx;if(Math.abs(d)<10){if(s.runTo===best&&!s.toldOn){s.toldOn=true;const [a,b]=markFt(best);toast(best.mack?'Over the mackerel':'Over the herring',`The sounder marks them at ${a}\u2013${b} ft`);}return;}
-  if(s.runTo!==best){s.runTo=best;s.toldOn=false;if(Math.abs(d)>W*.6)toast('Running up on a bait mark',best.mack?'Mackerel feeding on the sounder':'The captain has herring on the sounder');}
-  const v=clamp(Math.abs(d)*.7,4,G.lure.state==='water'?10:34)*Math.sign(d);seaShift(v*dt);s.pv=Math.abs(v);}
+  // s.over: you're over the school. It turns on within 10 px and only off again past 40, so the hint doesn't flicker.
+  const d=bcX(best)-tx,top=G.lure.state==='water'?10:34;if(Math.abs(d)<10){s.over=true;if(s.runTo===best&&!s.toldOn){s.toldOn=true;const [a,b]=markFt(best);toast(best.mack?'Over the mackerel':'Over the herring',`The sounder marks them at ${a}\u2013${b} ft`);}}else if(Math.abs(d)>40)s.over=false;
+  if(s.runTo!==best){s.runTo=best;s.toldOn=false;s.over=Math.abs(d)<10;if(Math.abs(d)>W*.6)toast('Running up on a bait mark',best.mack?'Mackerel feeding on the sounder':'The captain has herring on the sounder');}
+  // match the school's own drift and close the gap on top of it; chasing on the gap alone left him trailing a moving school
+  // move with the school's own drift and close any gap on top of it; once over it he just stays with it
+  const v=clamp((best.avx||0)+(Math.abs(d)<10?d*.7:clamp(Math.abs(d)*.7,4,top)*Math.sign(d)),-top,top);seaShift(v*dt);s.pv=Math.abs(v);}
 function markFt(c){const f=y=>Math.max(0,Math.round((unwarpY(y)-SURF)/pxPerFt()));return[f(c.y-c.r*.45),f(c.y+c.r*.45)];}
 function bottomHint(){const L=G.lure,ft=rigFt(),bft=Math.max(0,Math.round((unwarpY(bottomAt(L.x))-SURF)/pxPerFt()));
   return L.dropping?`Going down\u2026 ${ft} ft`:ft>=bft-3?`On the bottom at ${bft} ft. Let it sit. When the rod tip bangs, HOOK!`:`Bait at ${ft} ft, bottom at ${bft}. Hold DROP to let it down`;}
@@ -1875,7 +1983,7 @@ function sabikiString(dt){const L=G.lure;if(!G.sea||S.lure!=='sabiki'||L.state!=
   for(let i=0;i<SABIKI_HOOKS;i++){if(st.some(o=>o.slot===i))continue;const hy=hookY(L,i);if(hy<SURF+2)continue;const cs=bcAll(L.x,hy);if(!cs.length)continue;
     let best=null,bi=-1,bd=24,near=0;for(const c of cs){const cx=bcX(c);c.pts.forEach((p,k)=>{const d=Math.hypot(cx+p.x-L.x,c.y+p.y-hy);if(d<30)near++;if(d<bd){bd=d;best=c;bi=k;}});}
     if(!best||Math.random()>=dt*.2*Math.min(1,near/4)*(jig?1.7:1)*(G.input.reel?.35:1)*(best.mack&&best.excite>0?2.5:1))continue;
-    const p=best.pts.splice(bi,1)[0],sp=p.m?SPMAP.atlmackerel:SPMAP.herring;if(best.mack)best.excite=8;st.push({slot:i,sp:sp.id,len:+(sp.len[0]+(sp.len[1]-sp.len[0])*Math.pow(Math.random(),1.6)).toFixed(1),ph:Math.random()*TAU});
+    const p=best.pts.splice(bi,1)[0],sp=p.m?SPMAP.atlmackerel:SPMAP.herring;if(best.mack)best.excite=8;st.push({slot:i,sp:sp.id,len:rollLen(sp,1.6),ph:Math.random()*TAU});
     vib(12);if(st.length===1)toast('Fish on the sabiki','Leave it in the school and more will come on');updateHUD(true);}}
 function drawSabikiString(c,dk,L){const st=L.string||[],D=col=>rgbStr(mix(col,'#0a1418',dk*.75+.05));
   c.strokeStyle='rgba(220,226,230,.55)';c.lineWidth=.4;c.beginPath();c.moveTo(L.x,hookY(L,SABIKI_HOOKS-1)-4);c.lineTo(L.x,L.y);c.stroke();
@@ -2399,7 +2507,7 @@ function visMul(){let v=1-darkness()*.62;if(S.weather==='rain')v*=gearOn('shades
 function farZ(x){return clamp((x-TW*1.05)/(TW*.6),0,1);}
 function makeFish(sp,x){
   const z=farZ(x);
-  const len=+(sp.len[0]+(sp.len[1]-sp.len[0])*Math.pow(Math.random(),1.5-.9*z)).toFixed(1);
+  const len=rollLen(sp,1.5-.9*z);
   const L=fishPx(len,sp);const [a,b]=bandRange(sp,x,!isActive(sp));const y=rand(a,b);
   const f={sp,len,L,x,y,vx:0,vy:0,face:-1,state:'wander',tx:x-40,ty:y,timer:0,cool:2,alpha:0,wig:Math.random()*6,nib:0,t2:0};
   newWanderTarget(f);return f;
@@ -2443,7 +2551,7 @@ function spawnTick(initial){
     const n=sp.school?Math.max(1,Math.min(schoolSize(sp),need-i+2)):1,sc=n>1?{m:[]}:null;
     for(let k=0;k<n;k++){const f=makeFish(sp,clamp(x+rand(-30,30),LOC().ocean?G.cam-330:DOCKX+40,WX-20));if(LOC().ocean){f.alpha=1;f.fz=0;}
       if(sc){if(k>0){const ld=sc.m[0];// School mates are within about 15% of the leader's size, picked inside the species' range (clamping piled them up exactly on the maximum).
-        f.len=+rand(Math.max(sp.len[0],ld.len*.85),Math.min(sp.len[1],ld.len*1.15)).toFixed(1);f.L=fishPx(f.len,sp);f.y=ld.y+rand(-14,14);f.off={dx:rand(-42,42),dy:rand(-18,18)};}f.school=sc;sc.m.push(f);}
+        {const lo=Math.max(sp.len[0],ld.len*.85),hi=Math.min(ceilOf(sp)-.1,ld.len*1.15);f.len=+rand(Math.min(lo,hi),Math.max(lo,hi)).toFixed(1);}f.L=fishPx(f.len,sp);f.y=ld.y+rand(-14,14);f.off={dx:rand(-42,42),dy:rand(-18,18)};}f.school=sc;sc.m.push(f);}
       // Start clear of the bottom along the fish's whole length (a steep bank can catch the tail), as every later frame keeps it.
       f.y=Math.min(f.y,Math.max(SURF+6,fishFloor(f,.45)-3));
       G.fish.push(f);}
@@ -2633,14 +2741,16 @@ function updateLure(dt){G.lure.ox=G.lure.x;G.lure.oy=G.lure.y;
   if(G.bob&&L.fish&&L.fish.state==='bite')G.bob.x+=(L.x-G.bob.x)*Math.min(1,dt*1.5);
   if(isBait()&&!(L.fish&&L.fish.state==='bite')&&rig().type==='bobber'){
     // Bobber rig: the bobber floats at the surface and the bait hangs on a line below it.
-    // Reeling drags the bobber in and the bait swings up behind it. A slip bobber lets line slide
-    // through until the bait reaches the set depth; it lies flat until then.
+    // Reeling drags the bobber in and the line pulls the bait along behind it, rising as it goes; when you stop, the
+    // bait sinks back under the bobber. The line only ever pulls the bait toward the bobber, so it can't fling out
+    // away from you. In a current the bait drifts too, a little slower than the bobber on top. A slip bobber lets line
+    // slide through until the bait reaches the set depth; it lies flat until then.
     const r=rig();if(!G.bob)G.bob={x:L.x,th:0,out:0,tilt:0};const B=G.bob,ppf=pxPerFt(),floor=bottomAt(B.x)-3,full=Math.max(4,Math.min(warpY(SURF+r.depth*ppf)-SURF,floor-SURF-1));
-    if(G.input.reel){const sp=curReel().speed;B.x-=sp*dt;L.moving=true;reelClick(dt);B.th+=(.75-B.th)*Math.min(1,dt*3);if(Math.random()<dt*6)ripple(B.x,.3);}
-    else B.th+=(0-B.th)*Math.min(1,dt*1.6);
+    if(G.input.reel){const sp=curReel().speed;B.x-=sp*dt;L.moving=true;reelClick(dt);if(Math.random()<dt*6)ripple(B.x,.3);}
     if(r.bob==='slip'){if(!G.input.reel)B.out=Math.min(full,B.out+Math.max(45,sinkRate()*1.5)*dt);else B.out=Math.min(B.out,full);}else B.out=full;
     if(LOC().current)B.x+=currentAt(B.x,SURF+2)*dt;
-    const k=Math.min(1,dt*5);L.x+=(B.x+Math.sin(B.th)*B.out-L.x)*k;L.y+=(SURF+1+Math.cos(B.th)*B.out-L.y)*k;
+    if(LOC().current)L.x+=currentAt(L.x,L.y)*dt;L.y+=Math.max(50,sinkRate()*2)*dt;
+    {const dx=L.x-B.x,dy=L.y-(SURF+1),d=Math.hypot(dx,dy);if(d>B.out){const q=B.out/Math.max(d,.001);L.x=B.x+dx*q;L.y=SURF+1+dy*q;}}
     const onBot=warpY(SURF+r.depth*ppf)>floor+2,settling=r.bob==='slip'&&B.out<full-1.5&&!G.input.reel;
     B.tilt+=((settling?1:G.input.reel?.35:onBot?.8:0)-B.tilt)*Math.min(1,dt*(settling?6:2.5));
     L.y=clamp(L.y,SURF+1,bottomAt(L.x)-3);if(B.x<DOCKX+12)retrieve();return;
@@ -2953,7 +3063,8 @@ function updateFight(dt){if(S.dev&&G.fight)G.fight.f.devT=true;
   f.wig+=dt*(running?20:8+F.stamina*4);
   if(running){F.thrashT-=dt;if(F.thrashT<=0){F.thrash=.45;F.thrashT=rand(.9,1.8);SFX.thrash();vib(35);if(f.y<SURF+30)splash(f.x,.5);}}
   if(F.thrash>0)F.thrash-=dt;
-  const size=(f.len-sp.len[0])/Math.max(1,sp.len[1]-sp.len[0]);
+  // a fish above the everyday range pulls harder, but capped so a record fish is still landable on good tackle
+  const size=Math.min(1.6,(f.len-sp.len[0])/Math.max(1,sp.len[1]-sp.len[0]));
   const tired=.35+.65*F.stamina;
   let p=sp.power*(.75+.5*size)*line.f*tired*mods().fightPull*(F.heft||1);
   p*=running?1.6:F.phase==='tell'?.7:F.phase==='surge'?.9:F.phase==='air'?.5:.35;
@@ -3069,7 +3180,7 @@ function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const 
   const F=G.fight,f=F.f,sp=f.sp;
   f.dead=true;splash(DOCKX+20,1);
   const weight=SHAPES[sp.shape].k*Math.pow(f.len,3);
-  const size=(f.len-sp.len[0])/Math.max(1,sp.len[1]-sp.len[0]);
+  const size=Math.min(3,(f.len-sp.len[0])/Math.max(1,sp.len[1]-sp.len[0]));
   const value=Math.round(sp.price*(.6+.9*size));
   const rec=S.log[sp.id];const first=!rec;const record=!rec||f.len>rec.best;const medal=medalFor(sp.id,f.len),prevMedal=rec?medalFor(sp.id,rec.best):-1;
   G.pending={sp,len:f.len,weight,value,first,record,prevBest:rec?rec.best:null};if(sp.giant)G.pending.fightT=F.t;
@@ -3179,7 +3290,10 @@ function render(){
   c.lineCap='round';
   // weeds: about a third of the taller clumps stand in front of the fish, so fish slip behind them
   const drawWeed=w=>{if(!w.pk)return;const Zw=sea(),H=w.pH,sw=Math.sin(G.t*1.2+w.ph)*(4+H*.06)-(LOC().current?H*.25:0);
-    drawPlant(c,w.pk,H,w.pseed,w.x,bottomAt(w.x)+3,sw,{flip:w.pflip,extra:w.pred,sy:Zw.weed,brown:(1-Zw.weed)*.8,dk:dk*.9});};
+    // on the pier's sloping sand a clump sits at the deepest point under it, so no blades hang in the water; the sand,
+    // drawn over the plants, buries the uphill side a little
+    if(w.pb==null)w.pb=LOC().salt?Math.max(...[-1,-.5,0,.5,1].map(u=>bottomAt(w.x+u*H*.36))):bottomAt(w.x);
+    drawPlant(c,w.pk,H,w.pseed,w.x,w.pb+3,sw,{flip:w.pflip,extra:w.pred,sy:Zw.weed,brown:(1-Zw.weed)*.8,dk:dk*.9});};
   const isFront=w=>w.front??(w.front=Math.random()<.32&&w.blades.some(bl=>bl.h>28));
   for(const w of weeds){if(w.x<vx0||w.x>vx1||isFront(w))continue;drawWeed(w);}
   // fish: in the flooded forest some fish pass behind the trunks, so they're drawn before the trunks and the rest after
@@ -3200,6 +3314,7 @@ function render(){
   if(LOC().shore==='dock'||LOC().shore==='camp')drawPilings(c,dk);if(LOC().shore==='pier')drawPierPilings(c,dk);
   if(congoRocks.length)drawCongoRocks(c,dk,vx0,vx1);
   drawGroundCached(c,cam,dk);
+  if(LOC().salt)drawPierCrabs(c,dk,vx0,vx1);
   if(LOC().ocean){drawSeaFloor(c,dk,vx0,vx1);drawSeaGear(c,dk,vx0,vx1,false);drawChum(c,dk);}
   drawRockWater(c,dk,vx0,vx1);
   drawBeds(c,dk,vx0,vx1);
@@ -4573,8 +4688,8 @@ function drawPierPilings(c,dk){const y=dockY(),K=col=>rgbStr(mix(col,'#120e0a',d
   c.fillStyle=K('#3e3326');c.fillRect(-10,SURF-4,P[P.length-1]+3.5+10,2.4);
   for(const x of P){const end=bottomAt(x)+40,w=7;const g=c.createLinearGradient(x-w/2,0,x+w/2,0);g.addColorStop(0,K('#5a4a36'));g.addColorStop(.35,K('#6e5c44'));g.addColorStop(1,K('#2e251a'));c.fillStyle=g;c.fillRect(x-w/2,y+2,w,end-y);
     c.strokeStyle=Ka('#2a2016',.5);c.lineWidth=.5;c.beginPath();for(let yy=y+6;yy<SURF-2;yy+=5){c.moveTo(x-w/2+1,yy);c.lineTo(x+w/2-1,yy+1.5);}c.stroke();
-    // growth on the piling: barnacles at the tide line, sea lettuce and algae below, oysters lower down
-    c.save();c.globalAlpha=1-dk*.7;PLANTS.fouling(c,x,w,SURF,bottomAt(x)-1,x*7+3);c.restore();
+    // growth on the piling: a barnacle crust at the tide line, a fuzzy coat of algae below, sea lettuce and oysters
+    PLANTS.fouling(c,x,w,SURF,bottomAt(x)-1,x*7+3,dk);
     c.fillStyle=Ka('#000',.2);c.beginPath();c.ellipse(x,bottomAt(x)+2,w*.9,1.6,0,0,TAU);c.fill();}}
 function drawPier(c,dk,y){const K=col=>rgbStr(mix(col,'#16120c',dk*.75)),Ka=(col,a)=>rgbStr(mix(col,'#16120c',dk*.75),a);
   // deck: weathered gray planks over a heavy stringer
@@ -7100,7 +7215,8 @@ function vertLure(){return!!(G.sea&&(S.lure==='sabiki'||S.lure==='seacut'));}
 function seaUseBait(){const s=G.sea;if(s&&S.lure==='seacut'){s.cut=Math.max(0,(s.cut||0)-1);updateHUD(true);return;}if(!s||S.lure!=='tunalive')return;const i=s.well.findIndex(o=>o.sp===s.bait);if(i>=0)s.well.splice(i,1);
   if(!wellN(s.bait)){const o=s.well[0];if(o)s.bait=o.sp;else{S.lure='tunadead';toast('Out of live bait','Back to frozen herring. The bait rod fills the well');}}updateHUD(true);}
 function seaRig(id){const s=G.sea;if(!s)return;if(s.steam){toast('Still running out','The captain\u2019s looking for bait first');return;}s.rig=id;
-  if(id==='seajig')S.lure='sabiki';
+  // the bait rod: come off any troll so the captain can run onto a herring mark and hold you over it
+  if(id==='seajig'){S.lure='sabiki';if((S.devBoatV??0)>0){S.devBoatV=0;toast('The captain comes off the troll','He\u2019ll run you onto the next herring mark');}}
   else if(id==='seabottom'){S.lure='seacut';if(S.devBoatV!==0){S.devBoatV=0;toast('The captain shuts down to drift','Bottom fishing goes best drifting slowly over the bank');}}
   else{if(!wellN(s.bait)&&s.well.length)s.bait=s.well[0].sp;S.lure=wellN(s.bait)?'tunalive':'tunadead';
     if(period()==='night')toast('Tuna charters fish by daylight','The mate starts the chum at first light');
@@ -7290,7 +7406,7 @@ function updateHint(){
   else if(L.state==='ready'&&netSel())k='Cast net ready · hold THROW and let go over a school of baitfish';
   else if(L.state==='ready'&&G.sea&&G.sea.steam)k='Running out to the grounds. The captain\u2019s watching the sounder for bait';
   else if(L.state==='ready'&&G.sea&&S.lure==='seacut')k=G.sea.cut||G.sea.well.length?'Tap DROP to send the bait to the bottom':'No bait yet. Fill the well on the bait rod, then the mate cuts it up';
-  else if(L.state==='ready'&&G.sea&&S.lure==='sabiki')k=G.sea.pv>12?'The captain is running up on the bait. Wait till you\u2019re over it':'Tap DROP to send the rig straight down off the stern';
+  else if(L.state==='ready'&&G.sea&&S.lure==='sabiki')k=G.sea.runTo&&!G.sea.over?'The captain is running up on the bait. Wait till you\u2019re over it':'Tap DROP to send the rig straight down off the stern';
   else if(L.state==='ready')k=G.schoolHint?`The school is still here. Cast back for another ${G.schoolHint.toLowerCase()}`:S.stats.caught===0&&!curSetup().fly?'Hold CAST, then release at full power':curSetup().fly?`${LURES[S.lure].name} ready · tap CAST to start false casting`:`${LURES[S.lure].name} ready · drag the water to look around`;
   else if(L.state==='water'){
     if(L.bare)k='Bait\u2019s gone. Reel in to rebait';
@@ -7465,7 +7581,7 @@ $('#stNo').onclick=()=>{S.settings.stats=false;save();SFX.ui();resume();setTimeo
 function sbSyncLoc(){if(G.sbLocOff||!S.landedL)return false;S.sbSentL=S.sbSentL||{};
   const k=Object.keys(S.landedL).find(k=>SPMAP[k.split('|')[0]]&&S.landedL[k]>(S.sbSentL[k]||0)&&!(G.sbSkip||{})['L'+k]);if(!k)return false;
   const [id,loc]=k.split('|'),sp=SPMAP[id],len=S.landedL[k],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046;
-  sbBusy=true;sbFetch('/rest/v1/rpc/submit_loc_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
+  sbBusy=true;sbFetch('/rest/v1/rpc/submit_loc_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(99999,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
     .then(()=>{S.sbSentL[k]=len;if(G.sbWatch===k){G.sbWatch=null;toast(`Leaderboard: your ${sp.name} is up at ${(LOCS[loc]||{}).name||loc}`);}save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
     .catch(err=>{sbBusy=false;sbFail(err,'L'+k,true);setTimeout(sbSync,300);});return true;}
 function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;if(G.sbRetryAt&&Date.now()<G.sbRetryAt){clearTimeout(sbSync.t);sbSync.t=setTimeout(sbSync,G.sbRetryAt-Date.now()+50);return;}S.sbSent=S.sbSent||{};if(sbSyncLoc())return;
@@ -7476,7 +7592,7 @@ function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;if(G.sbRe
       .then(()=>{S.sbProf=prof;save();for(const k in sbCache)delete sbCache[k];sbBusy=false;if(!G.sbLocOff)sbFetch('/rest/v1/rpc/set_loc_profile',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l})}).catch(()=>{});}).catch(err=>{sbBusy=false;G.sbErr=String(err&&err.message||err);});
     return;}
   const sp=SPMAP[id],len=S.landed[id],lb=SHAPES[sp.shape].k*Math.pow(len,3)*2.2046,loc=(S.bestLoc&&S.bestLoc[id])||(sp.locs||['pond'])[0];
-  sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(699,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
+  sbBusy=true;sbFetch('/rest/v1/rpc/submit_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(99999,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
     .then(()=>{S.sbSent[id]=len;S.sbProf=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
     .catch(err=>{sbBusy=false;sbFail(err,id);setTimeout(sbSync,300);});}
 const sbCache={};
@@ -7923,6 +8039,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.13','Fixes',['Fish sizes now run up toward the real world records. Most fish are the same as before, but about 1 in 60 grows past the old top size (a little more often the more respect you have), and the bigger it gets the rarer it is, up toward the IGFA all-tackle record for its species. Arapaima, Nile perch, vundu, goliath tigerfish and spiny dogfish were bigger than their real records, so their everyday sizes are scaled down a little','Reeling a bobber no longer flings the bait out away from you. The line drags it along behind the bobber, and it sinks back down when you stop','Pelican Point Pier: the pilings carry a real crust of barnacles at the tide line and a fuzzy coat of growth below, and the turtle grass has flat, round-tipped blades. Seagrass on the slope no longer hangs in the water','Crabs: blue crabs now live on the sand at Pelican Point Pier, and the rock crabs on the North Lake banks are redrawn. They scuttle sideways, pick at the bottom with their claws, swivel their eyes, and raise their claws when your lure or a fish comes close. A blue crab now and then swims up off the bottom with its paddles. Rock crabs are now on the sand too, and gather round the lobster traps','North Lake: switching back to the herring rod after kite trolling now has the captain come off the troll and find you a school, and he no longer trails a drifting school without ever getting over it. The \u201crunning up on the bait\u201d and DROP hints no longer flicker back and forth']],
   ['v1.12','Fixes',['The Shop and Quests buttons fade while your lure or fish is behind them, so a long cast on a short screen doesn\u2019t disappear under them','When you land the right fish for a quest but it doesn\u2019t count (wrong time of day, or too small), the catch card now says why','The undercut bank at the far end of Willow Creek is redrawn: a grassy, root-bound lip of sod over a dark hollow, with long grass hanging over the edge','The map’s place pictures fill in about twice as fast. They show the scenery and season without fish']],
   ['v1.11','Fixes',['If you share play stats, a session cut short when your phone closes the game is no longer lost. It\u2019s saved and sent the next time you open the game']],
   ['v1.10','Grey Ghost',['New fly: the Grey Ghost streamer, Carrie Stevens\u2019 classic Maine smelt pattern, at the tackle shop for the fly rod. Strip it fast for trout, smallmouth, pickerel, pike, fallfish and lake trout. It also comes as a Mickey Finn for stained water and a Black Ghost for low light']],
