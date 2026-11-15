@@ -1096,7 +1096,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.08a';
+const VERSION='v1.09a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1450,6 +1450,9 @@ function lureAppeal(sp,f){const lu=LURES[S.lure];if(lu.sea)return seaAppeal(sp);
   if(S.lure==='cutbait'){const src=BK().cs;return(CUTPULL[sp.id]||1)*(OILY[src]?1.3:1);}
   if(lu.bait)return(BAITPULL[S.lure]&&BAITPULL[S.lure][sp.id])||1;const v=lureVar();return(v.color===condPref()?1.5:.8)*SIZES[v.size].mouth[sp.mouth];}
 const TROPHY={shad:[26,29,32],pinfish:[20,23,25],mullet:[36,41,45],bluegill:[18,21,24],pumpkinseed:[15,18,21],perch:[22,27,32],crappie:[25,30,34],bass:[40,50,58],trout:[38,46,52],catfish:[55,68,78],pickerel:[48,56,63],carp:[65,78,88],eel:[70,85,96],bowfin:[65,75,85],brownbull:[30,34,38],blackbull:[25,28,31],smallmouth:[30,40,48],brook:[20,26,31],brown:[38,48,56],rockbass:[18,22,25],fallfish:[25,32,37],chub:[15,19,23],sucker:[33,40,46],undercut:[72,78,83],walleye:[50,61,68],pike:[70,85,97],whitebass:[33,38,42],drum:[45,55,63],tigermuskie:[100,110,120],flathead:[95,105,115],piranha:[22,26,30],peacock:[45,55,63],arowana:[65,75,84],pacu:[45,55,61],oscar:[24,29,33],redtail:[75,90,102],arapaima:[180,210,235],spottedgar:[70,79,85],alligatorgar:[190,212,230],warmouth:[20,24,27],redear:[24,27,29],flier:[15,17,19],bluecat:[80,95,105],cutthroat:[40,47,52],grayling:[36,40,43],golden:[32,38,42],whitefish:[38,44,48],laketrout:[65,76,84],mackinaw:[110,117,122],redfish:[70,82,90],seatrout:[50,57,63],sheepshead:[45,52,57],flounder:[48,56,62],mackerel:[55,62,67],pompano:[38,44,48],hardhead:[34,39,42],tarpon:[170,190,203]};
+// Boyoma Falls shipped without trophy sizes, which crashed the Log on its tab. Set the way the others are: bronze about
+// 72%, silver 85% and gold 94% of the biggest the species gets.
+Object.assign(TROPHY,{sprat:[7,8,9],butterflyfish:[9,11,12],redbreast:[29,34,38],distichodus:[50,59,66],nembwe:[36,42,47],africanpike:[40,47,52],tigerfish:[65,76,85],nileperch:[137,161,179],vundu:[108,127,141],goliath:[122,134,143]});
 Object.assign(TROPHY,{herring:[31,34,37],atlmackerel:[37,41,44],cod:[90,105,115],dogfish:[95,102,108],bluefin:[255,280,300]});
 const MEDALS=['bronze','silver','gold'],MEDALN=['Bronze','Silver','Gold'];
 // Respect: earned by letting the right fish go. Permanent, and it unlocks gear and outfits money can't buy.
@@ -2540,7 +2543,7 @@ function fLen(cm,d=1){return imp()?(cm/2.54).toFixed(d)+' in':cm.toFixed(d)+' cm
 function fWt(kg,precise){if(precise){if(!imp())return kg<1?(kg*1000).toFixed(1)+' g':kg.toFixed(3)+' kg';const oz=kg*35.274;if(oz<16)return oz.toFixed(2)+' oz';const lb=Math.floor(oz/16),r=oz-lb*16;return `${lb} lb ${r.toFixed(1)} oz`;}
   if(!imp())return kg<1?Math.round(kg*1000)+' g':kg.toFixed(2)+' kg';const oz=kg*35.274;if(oz<16)return oz.toFixed(1)+' oz';let lb=Math.floor(oz/16),r=Math.round(oz-lb*16);if(r===16){lb++;r=0;}if(lb>=100)return `${Math.round(oz/16)} lb`;return r?`${lb} lb ${r} oz`:`${lb} lb`;}
 function fDist(m,d=0){return imp()?(m*3.281).toFixed(d)+' ft':m.toFixed(d)+' m';}
-function fTrophy(id){const t=TROPHY[id];return imp()?t.map(v=>Math.round(v/2.54)).join(' / ')+' in':t.join(' / ')+' cm';}
+function fTrophy(id){const t=TROPHY[id];if(!t)return'\u2014';return imp()?t.map(v=>Math.round(v/2.54)).join(' / ')+' in':t.join(' / ')+' cm';}
 function lvlSummary(){return`Casts reach ${fDist(castReach()/10)} \u00b7 hook sets up to ${Math.round(Math.min(.97,.92*hookSkill())*100)}%`;}
 function gainXP(n){const before=lvlInfo().l;S.xp=(S.xp||0)+n;const now=lvlInfo().l;updateLvChip();
   if(now>before){G.lvMsg=[`Angler level ${now}`,lvlSummary()];if(!currentScreen())flushLv();}}
@@ -7798,6 +7801,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.09','Fixes',['The Log no longer crashes on the Boyoma Falls tab. Its fish now have trophy sizes, and any you\u2019ve already caught show their medals']],
   ['v1.08','North Lake Banks',['New place: North Lake Banks, Prince Edward Island (level 30 and 1,000 respect, 500 coins a trip). Charters leave at dawn on a boat headed a few miles out on the Gulf of St. Lawrence, after giant bluefin tuna. Leave and the next trip out is paid for again','The boat runs out to the grounds and the captain settles you over a school of herring. Fill the live well on the bait rod, a string of small jigs dropped straight down','Fish live herring or mackerel for bluefin on the 130-class tuna rod, drifting or under a kite. Chum brings them up. Giants are tagged and released at the boat','The bottom rod sends cut mackerel down for cod and spiny dogfish','Seals, porpoises, white-sided dolphins, minke whales, eiders and gannets share the water. Lobster pots and herring nets can cost you a fish','Where & When now always opens at the top instead of where you last left it','Fight messages stay up for at least a second so you can read them, instead of flickering between two lines','Messages no longer call the boat or the bank a dock','Fish in a school no longer pile up at exactly the biggest size their kind grows to, which was filling the leaderboard with ties at the maximum','Let go of REEL when the line-twist warning shows and it clears right away; the twist only builds while you crank against a slipping drag','Fish that school no longer always turn up in exact pairs: bass, redfish, peacock bass and others are sometimes alone or in threes, and perch, shad and other true schoolers come in bigger groups. The number of fish around you is the same']],
   ['v1.07','Respect',['Respect now comes from firsts: the first bronze, silver and gold of each species, a fish off its nest once per species each year, every new personal best and every legend. Releasing the same trophy fish again no longer adds more, so respect means something again','Respect you already earned is kept, and medals already in your journal count as paid']],
   ['v1.06','Battery',['The sound engine now goes to sleep after a few quiet seconds and wakes the instant a sound plays. Before, once any sound had played it ran until you closed the game, which keeps the phone\'s audio hardware awake','While a menu, the shop or a card is open, the scene behind it stops redrawing after a moment instead of redrawing 20 times a second','The buttons over the scene no longer blur what is behind them. They were nine-tenths solid already, so they look the same, but the phone had to redo that blur every frame','The Shop button\'s glow now fades a fixed ring in and out, which the phone does almost for free, instead of redrawing the button\'s shadow every frame']],
