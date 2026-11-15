@@ -1,4 +1,4 @@
-# Backroads Fishing
+# Snag & Brag
 
 A laid-back fishing game for phones and tablets.
 

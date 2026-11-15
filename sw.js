@@ -1,7 +1,7 @@
-// Backroads Fishing offline support.
+// Snag & Brag offline support.
 // The game page is fetched fresh when online (so updates arrive on their own)
 // and served from the phone's copy when offline. Fonts and icons are kept once loaded.
-const CACHE = 'backroads-v56';
+const CACHE = 'backroads-v57';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -27,6 +27,8 @@ self.addEventListener('fetch', e => {
 
   // The stats dashboard is not part of the game: always load it straight from the network.
   if (url.pathname.endsWith('/stats.html')) return;
+  // version.txt tells an open game a new version is out: never answer it from the saved copy.
+  if (url.pathname.endsWith('/version.txt')) return;
 
   // The game page: try the network briefly, fall back to the saved copy.
   if (req.mode === 'navigate') {
