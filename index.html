@@ -443,6 +443,12 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 .ang-name{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .ang-name b{font-family:var(--f-display);font-weight:400;font-size:24px;min-width:0;overflow-wrap:anywhere}
 #confirm{display:flex;align-items:center;z-index:30}
+#charter{display:flex;align-items:center;z-index:31;background:#000;backdrop-filter:none;-webkit-backdrop-filter:none;animation:chFade 1.6s ease both}
+#charter[hidden]{display:none}
+#charter .panel{max-width:360px;margin:auto;display:grid;gap:12px;text-align:center;animation:chFade 1s .9s ease both}
+#charter h3{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px}
+#charter #chBook:disabled{opacity:.45}
+@keyframes chFade{from{opacity:0}to{opacity:1}}
 #confirm .panel{max-width:360px;margin:auto;display:grid;gap:12px;text-align:center}
 #confirm h3{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px}
 #confirm p{margin:0;color:var(--lichen-dim)}
@@ -812,6 +818,15 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
   </form>
 </section>
 
+<section class="screen" id="charter" hidden>
+  <div class="panel">
+    <h3>Back at the wharf</h3>
+    <p id="chText">The charter's tied up for the night.</p>
+    <button class="btn primary" id="chBook"></button>
+    <button class="btn" id="chHome">Head home to Mossback</button>
+  </div>
+</section>
+
 <section class="screen" id="confirm" hidden>
   <div class="panel">
     <h3>Reset everything?</h3>
@@ -1134,7 +1149,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.13a';
+const VERSION='v1.14a';
 /* Backroads Fishing — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -7287,7 +7302,7 @@ function renderSeaPick(list){const s=G.sea,rack=document.createElement('div');ra
       card.append(body);}
     rack.append(card);}
   const note=document.createElement('p');note.className='tb-cond';note.textContent=`${wellText()} \u00b7 it holds ${WELL_MAX}`;list.append(rack,note);}
-function update(dt){boatMove(dt);updateSeaLife(dt);
+function update(dt){boatMove(dt);updateSeaLife(dt);charterNight();
   tickChatter(dt);updateFlock(dt);updateCritters(dt);updatePlane(dt);
   tickClock(dt);
   G.spawnT-=dt;if(G.spawnT<=0){spawnTick(false);G.spawnT=6;}
@@ -7501,7 +7516,7 @@ addEventListener('blur',()=>{G.input.reel=false;if(G.charging)G.charging=false;i
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(G.mode==='play'&&!G.paused)pauseGame();}});
 
 // ---------------- SCREENS ----------------
-const SCREENS=['map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle','notice','statsAsk','statsView'];
+const SCREENS=['charter','map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle','notice','statsAsk','statsView'];
 function show(id){for(const s of SCREENS)$('#'+s).hidden=s!==id;}
 function open(id){G.stack.push(currentScreen());show(id);render_(id);if(id==='map')$('#map').scrollTop=0;SFX.ui();}
 function currentScreen(){return SCREENS.find(s=>!$('#'+s).hidden)||null;}
@@ -8039,6 +8054,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.14','Fixes',['North Lake: the charter now ends at 8 PM. The screen fades to black at the wharf and you can book tomorrow for another 500 coins (it runs out at first light with an empty live well) or head home to Mossback Pond','Time-of-day quests now show their hours, like \u201cCatch an Arctic Grayling at dawn (5\u20138 AM)\u201d, and a fish caught outside them says so']],
   ['v1.13','Fixes',['Fish sizes now run up toward the real world records. Most fish are the same as before, but about 1 in 60 grows past the old top size (a little more often the more respect you have), and the bigger it gets the rarer it is, up toward the IGFA all-tackle record for its species. Arapaima, Nile perch, vundu, goliath tigerfish and spiny dogfish were bigger than their real records, so their everyday sizes are scaled down a little','Reeling a bobber no longer flings the bait out away from you. The line drags it along behind the bobber, and it sinks back down when you stop','Pelican Point Pier: the pilings carry a real crust of barnacles at the tide line and a fuzzy coat of growth below, and the turtle grass has flat, round-tipped blades. Seagrass on the slope no longer hangs in the water','Crabs: blue crabs now live on the sand at Pelican Point Pier, and the rock crabs on the North Lake banks are redrawn. They scuttle sideways, pick at the bottom with their claws, swivel their eyes, and raise their claws when your lure or a fish comes close. A blue crab now and then swims up off the bottom with its paddles. Rock crabs are now on the sand too, and gather round the lobster traps','North Lake: switching back to the herring rod after kite trolling now has the captain come off the troll and find you a school, and he no longer trails a drifting school without ever getting over it. The \u201crunning up on the bait\u201d and DROP hints no longer flicker back and forth']],
   ['v1.12','Fixes',['The Shop and Quests buttons fade while your lure or fish is behind them, so a long cast on a short screen doesn\u2019t disappear under them','When you land the right fish for a quest but it doesn\u2019t count (wrong time of day, or too small), the catch card now says why','The undercut bank at the far end of Willow Creek is redrawn: a grassy, root-bound lip of sod over a dark hollow, with long grass hanging over the edge','The map’s place pictures fill in about twice as fast. They show the scenery and season without fish']],
   ['v1.11','Fixes',['If you share play stats, a session cut short when your phone closes the game is no longer lost. It\u2019s saved and sent the next time you open the game']],
@@ -8293,6 +8309,22 @@ function travel(id){if(!locOK(id))return;if(G.fight){toast('Land your fish first
   resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}SFX.ui();
   if(G.mode==='play'){resume();toast(LOCS[id].name,Lt.dawn&&id!==prevLoc?'The charter leaves the wharf at first light':LOCS[id].tag);}else{G.stack=[];show('menu');renderMenu();}}
 
+// The North Lake charter fishes by daylight: at 8 PM (or any time it is night on the boat, e.g. after resting) the screen
+// fades to black at the wharf. Book tomorrow pays the fee again and runs out at 5 AM like a new trip (the live well
+// doesn't keep overnight); Head home goes back to Mossback Pond. It waits for a fish on the line or a catch card.
+function charterNight(){if(S.loc!=='pei'||G.fight||G.pending||!$('#charter').hidden)return;const h=(S.minutes/60)%24;if(h>=5&&h<20)return;
+  G.paused=true;G.input.reel=false;G.charging=false;const Lt=LOCS.pei,b=$('#chBook'),need=Lt.fee-S.coins;
+  b.innerHTML=need>0?`Book tomorrow \u00b7 need ${need.toLocaleString()} more coins`:`<span>Book tomorrow</span><span style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px">\u00b7 <span class="coin"></span> ${Lt.fee}</span>`;
+  b.disabled=need>0;$('#charter').hidden=false;save();}
+$('#chBook').onclick=()=>{const Lt=LOCS.pei;if(S.coins<Lt.fee)return;S.coins-=Lt.fee;SFX.coin();
+  // the next dawn, the same way travel() starts a charter
+  const m0=S.minutes;let t2=300;if(t2<=m0)t2+=1440;if((m0<300&&t2>=300)||t2>=1740)questDawn();if(t2>=1440)newDay();S.minutes=300;if(Math.random()<.6){S.weather=rollWeather();S.wtimer=rand(160,340);}
+  // a fresh trip: new water, an empty well, the boat running out to find bait (keep the lure you had before the charter)
+  const keep=SEA_KEEP;G.sea=null;G.seaX=seaStart();G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.net=null;G.cam=0;G.pan=null;ROPE.pts=null;
+  resize();repopulate();if(keep)SEA_KEEP=keep;for(const f of G.fish){f.alpha=1;f.fz=0;}
+  $('#charter').hidden=true;save();updateHUD(true);resume();toast(Lt.name,'The charter leaves the wharf at first light');};
+$('#chHome').onclick=()=>{$('#charter').hidden=true;G.paused=false;travel('pond');updateHUD(true);};
+
 function elx(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
 
 // ---------------- QUESTS ----------------
@@ -8301,6 +8333,8 @@ function elx(tag,cls,text){const e=document.createElement(tag);if(cls)e.classNam
 const QUEST_N=3;
 const QTYPES={catch:3,when:2,size:1.5,lure:1.5,spot:1,variety:1};
 const QWHEN={dawn:'at dawn',day:'in the daytime',dusk:'at dusk',night:'at night'};
+// the hours each part of the day covers (period()), shown on time quests so 'at dawn' isn't a guess against the clock
+const QHRS={dawn:'5\u20138 AM',day:'8 AM\u20135 PM',dusk:'5\u20138 PM',night:'8 PM\u20135 AM'};
 function qLocs(){return LOC_ORDER.filter(id=>locOK(id));}
 function qSpecies(){const ls=qLocs();return SPECIES.filter(sp=>!sp.legend&&!sp.netOnly&&sp.rar>=2.5&&(sp.locs||['pond']).some(l=>ls.includes(l)));}
 function qPick(a){return a[Math.floor(Math.random()*a.length)];}
@@ -8334,7 +8368,7 @@ function questCatch(sp,len){const Q=ensureQuests(),hits=[];
     else if(q.type==='lure')hit=S.lure===q.lure;
     else if(q.type==='variety'&&!q.kinds.includes(sp.id)){q.kinds.push(sp.id);hit=true;}
     // the right fish that misses the quest's condition: say why, so it doesn't look like the quest is broken
-    if(!hit){if(q.type==='when'&&sp.id===q.sp)hits.push({q,miss:`Not ${QWHEN[q.per]}, so it doesn\u2019t count for the quest`});
+    if(!hit){if(q.type==='when'&&sp.id===q.sp)hits.push({q,miss:`Not ${QWHEN[q.per]} (${QHRS[q.per]}), so it doesn\u2019t count for the quest`});
       else if(q.type==='size'&&sp.id===q.sp)hits.push({q,miss:`The quest needs one over ${fLen(q.len,0)}`});continue;}
     q.got++;
     if(q.got>=q.n){q.done=true;G.sess.quests++;S.coins+=q.reward;S.stats.earned+=q.reward;Q.total=(Q.total||0)+1;}
@@ -8345,7 +8379,7 @@ function qTitle(q){const sp=SPMAP[q.sp];
   switch(q.type){
     case'catch':return q.n>1?`Catch ${q.n} ${sp.name}`:`Catch ${an(sp.name)} ${sp.name}`;
     case'size':return`Land ${an(sp.name)} ${sp.name} over ${fLen(q.len,0)}`;
-    case'when':return`Catch ${q.n>1?q.n:an(sp.name)} ${sp.name} ${QWHEN[q.per]}`;
+    case'when':return`Catch ${q.n>1?q.n:an(sp.name)} ${sp.name} ${QWHEN[q.per]} (${QHRS[q.per]})`;
     case'spot':return`Catch ${q.n} fish at ${LOCS[q.loc].name}`;
     case'lure':return q.lure==='worm'?`Catch ${q.n} fish on worms`:`Catch ${q.n} fish on a ${LURES[q.lure].name}`;
     case'variety':return`Catch ${q.n} different kinds of fish`;}
