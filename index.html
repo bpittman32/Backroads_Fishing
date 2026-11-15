@@ -95,7 +95,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 #questBtn{position:fixed;z-index:5;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 160px);display:flex;flex-direction:column;align-items:center;gap:3px;
   width:60px;padding:9px 0 7px;border-radius:16px;background:var(--panel);border:1px solid rgba(140,198,216,.5);font-family:var(--f-display);font-size:14px;letter-spacing:.03em;color:var(--sky);box-shadow:0 4px 0 rgba(0,0,0,.3);}
 #questBtn:active{transform:translateY(2px)}
-#shopBtn,#questBtn{transition:opacity .25s}#shopBtn.behind,#questBtn.behind{opacity:.22}
+#shopBtn,#questBtn{transition:opacity .2s,visibility .2s}#shopBtn.casting,#questBtn.casting{opacity:0;visibility:hidden;pointer-events:none}
 #questBtn .scroll{width:20px;height:22px;margin-top:3px;border-radius:3px;background:repeating-linear-gradient(transparent 0 5px,rgba(12,25,21,.55) 5px 7px) 4px 5px/12px 13px no-repeat,var(--sky)}
 #questBtn .qdot{position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:var(--danger,#e65a3d);border:2px solid #0c1915}
 .season-line b{display:block;font-family:var(--f-display);font-weight:400;font-size:20px}.season-line span{font-size:13px;color:var(--lichen-dim)}
@@ -1175,7 +1175,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.15a';
+const VERSION='v1.16a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -7386,15 +7386,11 @@ function frame(now){audioIdle();const gap=frameGap(now);if(gap&&now-lastDraw<gap
   updateAmbient(dt);updateCam(dt);uiFade(now);render();REAL.frameEnd();requestAnimationFrame(frame);
 }
 
-// The Shop and Quests buttons sit over the top right of the scene. On shorter screens the water line runs behind them,
-// so a long cast could land where you can't see it. While the lure, the bobber or a hooked fish is behind one, it fades.
-let uiFadeAt=0;
-function uiFade(now){if(now-uiFadeAt<150)return;uiFadeAt=now;const L=G.lure,pts=[];
-  if(G.mode==='play'&&L.state!=='ready'){pts.push([L.x,L.y]);if(G.bob)pts.push([G.bob.x,SURF]);if(G.fight&&G.fight.f)pts.push([G.fight.f.x,G.fight.f.y]);}
-  const camY=G.camY||0,sc=SC||1;
-  for(const id of['shopBtn','questBtn']){const el=document.getElementById(id);if(!el)continue;let hide=false;
-    if(pts.length&&!el.hidden){const r=el.getBoundingClientRect(),m=14;hide=pts.some(([x,y])=>{const sx=(x-G.cam)*sc,sy=(y-camY)*sc;return sx>r.left-m&&sx<r.right+m&&sy>r.top-m&&sy<r.bottom+m;});}
-    el.classList.toggle('behind',hide);}}
+// The Shop and Quests buttons sit over the top right of the scene, where a cast flies. They only show while you're reeled
+// in: from the moment CAST is held (or a fly line is false casting) until the line is back in, they're out of the way.
+let uiCasting=null;
+function uiFade(now){const L=G.lure,on=G.mode==='play'&&(G.charging||!!G.fc||L.state!=='ready'||!!G.net);if(on===uiCasting)return;uiCasting=on;
+  for(const id of['shopBtn','questBtn']){const el=document.getElementById(id);if(el)el.classList.toggle('casting',on);}}
 // ---------------- HUD & CONTROLS ----------------
 let lastHud='';
 function updateHUD(force){
@@ -8095,6 +8091,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.16','Out of the way',['The Shop and Quests buttons only show while you\u2019re reeled in. They step out of the way as you cast and come back when the line is in']],
   ['v1.15','A new name',['The game is now called Snag & Brag. Same game, same save: your fish, coins and records are all still here. If you added it to your home screen, the icon name updates the next time it loads (on some phones you may need to re-add it)','A new title on the main screen: a hand-carved wooden sign hanging on ropes','Your angler got a makeover: longer legs, lace-up work boots, arms that really hold the rod, a stubbled face, a woven straw hat, and more detail on every shirt. Switch on your Polarized Shades and he wears them','Fly casting works like every other rod now: hold CAST, let go at the power you want, and your angler false casts a few times (more for a long cast) before he lays the line out','A game left open in the background now picks up new versions when you come back to it','The crescent moon no longer shows a dark ball beside it at dawn and dusk']],
   ['v1.14','Fixes',['North Lake: the charter now ends at 8 PM. The screen fades to black at the wharf and you can book tomorrow for another 500 coins (it runs out at first light with an empty live well) or head home to Mossback Pond','Time-of-day quests now show their hours, like \u201cCatch an Arctic Grayling at dawn (5\u20138 AM)\u201d, and a fish caught outside them says so']],
   ['v1.13','Fixes',['Fish sizes now run up toward the real world records. Most fish are the same as before, but about 1 in 60 grows past the old top size (a little more often the more respect you have), and the bigger it gets the rarer it is, up toward the IGFA all-tackle record for its species. Arapaima, Nile perch, vundu, goliath tigerfish and spiny dogfish were bigger than their real records, so their everyday sizes are scaled down a little','Reeling a bobber no longer flings the bait out away from you. The line drags it along behind the bobber, and it sinks back down when you stop','Pelican Point Pier: the pilings carry a real crust of barnacles at the tide line and a fuzzy coat of growth below, and the turtle grass has flat, round-tipped blades. Seagrass on the slope no longer hangs in the water','Crabs: blue crabs now live on the sand at Pelican Point Pier, and the rock crabs on the North Lake banks are redrawn. They scuttle sideways, pick at the bottom with their claws, swivel their eyes, and raise their claws when your lure or a fish comes close. A blue crab now and then swims up off the bottom with its paddles. Rock crabs are now on the sand too, and gather round the lobster traps','North Lake: switching back to the herring rod after kite trolling now has the captain come off the troll and find you a school, and he no longer trails a drifting school without ever getting over it. The \u201crunning up on the bait\u201d and DROP hints no longer flicker back and forth']],
