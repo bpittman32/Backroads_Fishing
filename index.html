@@ -1175,7 +1175,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.16a';
+const VERSION='v1.17a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -2039,7 +2039,7 @@ function drawSabikiString(c,dk,L){const st=L.string||[],D=col=>rgbStr(mix(col,'#
 // The string comes over the rail: everything on it is logged and goes into the well while there's room.
 function landString(){const L=G.lure,st=L.string||[];L.string=[];if(!st.length)return;const s=G.sea,now=[];let well=0,back=0;const names={},firsts=[];
   for(const o of st){const sp=SPMAP[o.sp];names[sp.name]=(names[sp.name]||0)+1;if(!S.log[sp.id]){S.log[sp.id]={n:0,best:0,bestW:0};firsts.push(sp.name);}const r=S.log[sp.id];r.n++;
-    if(o.len>r.best){r.best=o.len;r.bestW=SHAPES[sp.shape].k*Math.pow(o.len,3);}S.stats.caught++;G.sess.fish++;questCatch(sp,o.len);
+    if(o.len>r.best){r.best=o.len;r.bestW=SHAPES[sp.shape].k*Math.pow(o.len,3);}S.stats.caught++;G.sess.bait=(G.sess.bait||0)+1;questCatch(sp,o.len);  // bait for the well: counted apart from the fish you land
     if(s&&s.well.length<WELL_MAX){s.well.push({sp:sp.id,len:o.len});well++;}else back++;}
   const xp=st.length*3+firsts.length*40;setTimeout(()=>gainXP(xp),5200);save();SFX.coin();vib([30,30,30]);splash(DOCKX+24,.6);updateHUD(true);
   const kinds=Object.entries(names).map(([n,k])=>`${k} ${n.replace(/^Atlantic /,'').toLowerCase()}`),title=`Swung aboard ${kinds.join(' and ')}`;
@@ -7574,12 +7574,12 @@ function devInfo(){const ua=navigator.userAgent||'',w=Math.min(screen.width,scre
   const ios=/iPhone|iPod/.test(ua),ipad=/iPad/.test(ua)||(/Macintosh/.test(ua)&&touch),and=/Android/.test(ua),fire=/Silk|KF[A-Z]{2}/.test(ua);
   const kind=ios?'iPhone':ipad?'iPad':fire?'Fire tablet':and?(w>=600?'Android tablet':'Android phone'):touch?'Touch device':'Computer';
   return{device:kind,screen:`${screen.width}x${screen.height}`,app:!!(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true};}
-G.sess={min:0,locs:{},fish:0,casts:0,hooked:0,lost:0,quests:0,lv0:null};
+G.sess={min:0,locs:{},fish:0,bait:0,casts:0,hooked:0,lost:0,quests:0,lv0:null};
 function sessionPayload(){const d=devInfo(),locs={};for(const k in G.sess.locs)locs[k]=Math.round(G.sess.locs[k]*10)/10;
   const visited=[...new Set(Object.keys(S.landedL||{}).map(k=>k.split('|')[1]).concat([S.loc]))].join(',');
   return{p_id:sbPid(),p_version:VERSION,p_device:d.device,p_screen:d.screen,p_app:d.app,p_minutes:Math.round(G.sess.min*10)/10,p_locs:locs,p_fish:G.sess.fish,
     p_level:lvlInfo().l,p_name:(S.name||'').slice(0,20),p_respect:S.respect||0,p_species:SPECIES.filter(sp=>S.log[sp.id]).length,p_visited:visited,
-    p_lv_start:G.sess.lv0==null?lvlInfo().l:G.sess.lv0,p_quit_loc:S.loc,p_casts:G.sess.casts,p_hooked:G.sess.hooked,p_lost:G.sess.lost,p_quests:G.sess.quests};}
+    p_lv_start:G.sess.lv0==null?lvlInfo().l:G.sess.lv0,p_quit_loc:S.loc,p_casts:G.sess.casts,p_hooked:G.sess.hooked,p_lost:G.sess.lost,p_quests:G.sess.quests,p_bait:G.sess.bait||0};}
 function statsLog(kind,data){S.statsSent=(S.statsSent||[]).slice(-7);S.statsSent.push({kind,at:Date.now(),data});save();}
 function statsPost(path,body){try{fetch(SB_URL+path,{method:'POST',keepalive:true,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>{});}catch(e){}}
 // Sessions are queued on the phone and resent until the server says it has them, the same way personal bests are.
@@ -7591,7 +7591,7 @@ function sessRecord(){const b=sessionPayload();b.p_at=new Date().toISOString();b
 function keepOpenSession(){if(!G.sess)return;if(statsOn()&&G.sess.min>=.5)S.sessOpen=sessRecord();else if(S.sessOpen&&!G.sess.min)S.sessOpen=null;}
 function queueSession(b){S.sessQ=(S.sessQ||[]).filter(x=>x.p_key!==b.p_key).concat([b]).slice(-20);}
 function sendSession(){if(!statsOn()||G.sess.min<.5)return;const b=sessRecord();queueSession(b);statsLog('Play session',b);
-  G.sess={min:0,locs:{},fish:0,casts:0,hooked:0,lost:0,quests:0,lv0:null,key:newSessKey()};S.sessOpen=null;save();flushSessions();}
+  G.sess={min:0,locs:{},fish:0,bait:0,casts:0,hooked:0,lost:0,quests:0,lv0:null,key:newSessKey()};S.sessOpen=null;save();flushSessions();}
 function flushSessions(){clearTimeout(flushSessions.t);if(!statsOn()||flushSessions.busy||!(S.sessQ&&S.sessQ.length))return;const b=S.sessQ[0];flushSessions.busy=true;
   const done=ok=>{flushSessions.busy=false;if(ok){S.sessQ=(S.sessQ||[]).filter(x=>x.p_key!==b.p_key);save();flushSessions();}else flushSessions.t=setTimeout(flushSessions,60000);};
   try{fetch(SB_URL+'/rest/v1/rpc/log_session',{method:'POST',keepalive:true,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(b)})
@@ -8091,6 +8091,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.17','Bait isn\u2019t a catch',['Herring and mackerel jigged up on the sabiki for the charter\u2019s bait well no longer count toward your fish caught in play stats']],
   ['v1.16','Out of the way',['The Shop and Quests buttons only show while you\u2019re reeled in. They step out of the way as you cast and come back when the line is in']],
   ['v1.15','A new name',['The game is now called Snag & Brag. Same game, same save: your fish, coins and records are all still here. If you added it to your home screen, the icon name updates the next time it loads (on some phones you may need to re-add it)','A new title on the main screen: a hand-carved wooden sign hanging on ropes','Your angler got a makeover: longer legs, lace-up work boots, arms that really hold the rod, a stubbled face, a woven straw hat, and more detail on every shirt. Switch on your Polarized Shades and he wears them','Fly casting works like every other rod now: hold CAST, let go at the power you want, and your angler false casts a few times (more for a long cast) before he lays the line out','A game left open in the background now picks up new versions when you come back to it','The crescent moon no longer shows a dark ball beside it at dawn and dusk']],
   ['v1.14','Fixes',['North Lake: the charter now ends at 8 PM. The screen fades to black at the wharf and you can book tomorrow for another 500 coins (it runs out at first light with an empty live well) or head home to Mossback Pond','Time-of-day quests now show their hours, like \u201cCatch an Arctic Grayling at dawn (5\u20138 AM)\u201d, and a fish caught outside them says so']],
