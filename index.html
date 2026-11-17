@@ -1175,7 +1175,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.17a';
+const VERSION='v1.18a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1906,10 +1906,11 @@ function tunaBust(f,dt){const B=f.bust;B.t+=dt;const u=Math.min(1,B.t/B.T);f.x+=
 function startBusts(dt){if(!G.sea||period()==='night')return;const sx=G.seaX||0;
   // A giant near a herring cloud now and then charges it: straight through, mouth open, and out the other side.
   for(const f of G.fish){if(!f.sp.giant||f.bust||f.charge||f.state!=='wander'||f.alpha<.9||G.lure.fish===f)continue;
-    const c=(G.sea.clouds||[]).find(c=>Math.abs(bcX(c)-f.x)<520);if(c&&Math.random()<dt*.05){const dir=Math.sign(bcX(c)-f.x)||1;f.charge={c,t:0,dir,ate:0,tried:false,ty:c.y+rand(-c.r*.2,c.r*.2)};}}
+    const c=(G.sea.clouds||[]).find(c=>Math.abs(bcX(c)-f.x)<520);if(c&&Math.random()<dt*.01){const dir=Math.sign(bcX(c)-f.x)||1;f.charge={c,t:0,dir,ate:0,tried:false,ty:c.y+rand(-c.r*.2,c.r*.2)};}}
   for(const f of G.fish){if(!f.sp.giant||f.bust||f.state!=='wander'||f.alpha<.9||f.y>SURF+80||G.lure.fish===f)continue;
     const onChum=G.sea.chum>.3&&G.sea.chunks.some(k=>Math.abs(k.x-f.x)<50);if(!onChum)continue;
-    if(Math.random()<dt*.08){const br=Math.random()<.1;f.bust={k:br?'breach':'roll',t:0,T:br?1.1:1.5};SFX.thrash();
+    if(Math.random()<dt*.007){const br=Math.random()<.04;  // now and then, not constantly: most of the time they feed below
+f.bust={k:br?'breach':'roll',t:0,T:br?1.1:1.5};SFX.thrash();
       for(const o of G.fish)if(o!==f&&!o.sp.giant&&o.state!=='fight'&&SEA_BAIT.has(o.sp.id)&&dist(o.x,o.y,f.x,f.y)<90)flee(o,3);}}}
 // ---- Herring clouds ----
 // Herring move in big loose clouds, not a pond's handful of fish. Each cloud is many small fish drawn cheaply (no full
@@ -1983,8 +1984,8 @@ function tunaCharge(f,dt){const C=f.charge,c=C.c,cx=bcX(c);C.t+=dt;const tx=cx+C
     (G.sea.gulps=G.sea.gulps||[]).push({x:px,y:py,f,t:0,m:p.m});if(f.y<SURF+40)ripple(hx,.6);break;}}
   const L=G.lure;if(!C.tried&&L.state==='water'&&!L.fish&&!L.kite&&!L.bare&&LURES[S.lure].sea&&S.lure!=='sabiki'&&Math.hypot(L.x-hx,L.y-hy)<26){C.tried=true;
     let near=0;for(const p of c.pts)if(Math.hypot(cx+p.x-L.x,c.y+p.y-L.y)<35)near++;
-    if(Math.random()<(S.lure==='tunalive'?.85:.45)*2/(2+near)){f.charge=null;f.pitch=0;L.fish=f;startFight(f,false);toast(near?'It picked yours out of the herring!':'It charged through and took your bait!','The circle hook turned into the corner of its jaw');return;}}
-  if(c.y<SURF+45&&Math.abs(f.x-cx)<c.r*.6&&!C.boil&&Math.random()<dt*2){C.boil=true;f.charge=null;f.pitch=0;f.bust={k:Math.random()<.15?'breach':'roll',t:0,T:1.3};SFX.thrash();return;}
+    if(Math.random()<(S.lure==='tunalive'?.45:.22)*2/(2+near)){f.charge=null;f.pitch=0;L.fish=f;startFight(f,false);toast(near?'It picked yours out of the herring!':'It charged through and took your bait!','The circle hook turned into the corner of its jaw');return;}}
+  if(c.y<SURF+45&&Math.abs(f.x-cx)<c.r*.6&&!C.boil&&Math.random()<dt*2){C.boil=true;f.charge=null;f.pitch=0;f.bust={k:Math.random()<.06?'breach':'roll',t:0,T:1.3};SFX.thrash();return;}
   if(Math.abs(dx)<20||C.t>6){f.charge=null;f.pitch=0;if(C.ate){setLeave(f);f.fast=true;}else newWanderTarget(f);}}
 // The bait rod in a cloud: the herring hit the sabiki on their own. Leave it down and more come on; there's no hook to set.
 // ---- The sabiki string ----
@@ -2740,7 +2741,7 @@ function cast(){spookAtBoat();
   const L=G.lure,t=tip(),p=G.power;
   L.rockLuck=rand(.4,1.6);L.onRock=null;
   if(kiteOn()){L.state='water';G.sess.casts++;L.bare=false;L.fish=null;L.kite=true;L.x=Math.min(WX-40,DOCKX+340+rand(0,80));landLure();L.y=SURF+1;SFX.plip();return;}
-  L.state='flying';G.sess.casts++;L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
+  L.state='flying';L.sk=null;L.leash=null;L.swimAng=null;L.ldr=null;G.sess.casts++;L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
   if(curSetup().fly){L.fd=.7+p*.5;L.bl=G.fcLen?G.fcLen*.6:30+p*90;}
   SFX.cast();
 }
@@ -2761,12 +2762,14 @@ function twitch(){
   if(curSetup().fly){stripFly();return;}
 
   if(L.vert){L.y=Math.max(SURF+1,L.y-9);L.dropping=false;L.lastTwitch=G.t;L.jig=.25;refreshControls();return;}
-  L.x=Math.max(DOCKX+14,L.x-8);if(!lu.float)L.y=Math.max(SURF+1,L.y-10);L.lastTwitch=G.t;L.jig=.25;
+  L.x=Math.max(DOCKX+14,L.x-8);if(!lu.float)L.y=Math.max(SURF+1,L.y-10);L.lastTwitch=G.t;L.jig=.25;if(L.sk){L.sk.x=Math.max(DOCKX+14,L.sk.x-8);L.sk.y=bottomAt(L.sk.x)-3;}
   if(lu.float||L.y<SURF+6){SFX.pop();ripple(L.x,1);}else SFX.plip();
   if(L.fish&&L.fish.state==='nibble'&&isBait()&&Math.random()<.3*(1-.7*farZ(L.fish.x)))spook(L.fish,'Spooked it!');
 }
 // Where the bait settles on its rig if nothing takes it; above that it's still falling.
 function baitRestY(){const L=G.lure,bot=bottomAt(L.x)-3;if(!isBait())return bot;const r=rig();if(r.type==='bobber')return Math.min(bot,warpY(SURF+r.depth*pxPerFt()));
+  if((r.type==='carolina'||r.type==='threeway')&&!LURES[S.lure].sea&&L.sk)return leashSwims()&&L.sk.down?L.y:bottomAt(L.x)-2;
+  if(r.type==='carolina'&&!LURES[S.lure].sea){const lp=r.leader/12*pxPerFt()*.85;return Math.max(bot-rigLift(r,Math.max(4,bot-SURF-6)),Math.min(bot,bottomAt(L.x-lp)-3-carolinaDrop(r)));}
   if(['carolina','dropshot','threeway'].includes(r.type))return bot-rigLift(r,Math.max(4,bot-SURF-6));return bot;}
 function onFall(){const L=G.lure,lu=LURES[S.lure];if(L.state!=='water'||G.input.reel||L.moving||lu.float)return false;if(isBait()&&rig().type==='bobber')return false;return L.y<baitRestY()-2;}
 function mouthOf(f){const r=f.L*.5,p=f.pitch||0;return[f.x+f.face*Math.cos(p)*r,f.y+Math.sin(p)*r];}
@@ -2786,7 +2789,9 @@ function updateLure(dt){G.lure.ox=G.lure.x;G.lure.oy=G.lure.y;
     // bait sinks back under the bobber. The line only ever pulls the bait toward the bobber, so it can't fling out
     // away from you. In a current the bait drifts too, a little slower than the bobber on top. A slip bobber lets line
     // slide through until the bait reaches the set depth; it lies flat until then.
-    const r=rig();if(!G.bob)G.bob={x:L.x,th:0,out:0,tilt:0};const B=G.bob,ppf=pxPerFt(),floor=bottomAt(B.x)-3,full=Math.max(4,Math.min(warpY(SURF+r.depth*ppf)-SURF,floor-SURF-1));
+    const r=rig();if(!G.bob)G.bob={x:L.x,th:0,out:0,tilt:0};const B=G.bob,ppf=pxPerFt(),floor=bottomAt(B.x)-3,fullT=Math.max(4,Math.min(warpY(SURF+r.depth*ppf)-SURF,floor-SURF-1));
+    // over shallower water the bait comes up at a steady rate, not in one jump
+    B.fl=B.fl==null?fullT:B.fl+clamp(fullT-B.fl,-90*dt,300*dt);const full=B.fl;
     if(G.input.reel){const sp=curReel().speed;B.x-=sp*dt;L.moving=true;reelClick(dt);if(Math.random()<dt*6)ripple(B.x,.3);}
     if(r.bob==='slip'){if(!G.input.reel)B.out=Math.min(full,B.out+Math.max(45,sinkRate()*1.5)*dt);else B.out=Math.min(B.out,full);}else B.out=full;
     if(LOC().current)B.x+=currentAt(B.x,SURF+2)*dt;
@@ -2813,8 +2818,18 @@ function updateLure(dt){G.lure.ox=G.lure.x;G.lure.oy=G.lure.y;
     // A tuna bait drifts back in the slick part way down, where the chunks sink through, not on the bottom.
     if(LURES[S.lure].sea)ty=Math.min(bot,SURF+(bot-SURF)*.4);
     else if(bottomRig)ty=bot-rigLift(r,room);
-    if(G.input.reel){const sp=curReel().speed*(L.bare?1.3:1);L.x-=sp*dt;L.moving=true;reelClick(dt);
-      if(r.type==='bobber'||bottomRig){L.y+=(ty-L.y)*Math.min(1,dt*2);if(r.type==='bobber'&&Math.random()<dt*6)ripple(L.x,.3);}else L.y-=sp*riseRate()*dt;}
+    // Carolina over a drop-off: the egg sinker goes to the bottom under it, a leader's length back. If that's deeper than
+    // the leader lets the bait sit, the bait comes down to it, and if the bottom under the bait is in the way (a ledge
+    // over a hole), the sinker drags the bait back over the lip after it.
+    // Carolina rig: the egg sinker is one point that's tracked the whole time, never jumped. It falls first, straight down
+    // from where it went in; the bait trails it on the leader at its own pace. Reeling pulls the sinker back to you along
+    // the bottom and up the bank, the bait following behind it.
+    let caro=false;
+    if((r.type==='carolina'||r.type==='threeway')&&!LURES[S.lure].sea){if(!L.sk)L.sk={x:L.x,y:L.y+1,down:false};caro=true;carolinaLeash(L,r,dt);
+      if(L.sk.x<DOCKX+14){retrieve();return;}}
+    if(caro){}
+    else if(G.input.reel){const sp=curReel().speed*(L.bare?1.3:1);dragAlong(L,sp*dt);L.moving=true;reelClick(dt);
+      if(r.type==='bobber'||bottomRig){L.y+=(ty-L.y)*Math.min(1,dt*2);L.y=Math.min(L.y,bottomAt(L.x)-3);if(r.type==='bobber'&&Math.random()<dt*6)ripple(L.x,.3);}else L.y-=sp*riseRate()*dt;}
     else{if(L.y<ty)L.y=Math.min(ty,L.y+sinkRate()*dt);else L.y=Math.max(ty,L.y-40*dt);}
     if(LOC().current&&!(L.fish&&L.fish.state==='bite')){const held=['carolina','dropshot','threeway'].includes(r.type)&&L.y>=bot-14;L.x+=currentAt(L.x,L.y)*dt*(held?.1:r.type==='bobber'?1:.85);}
     L.y=clamp(L.y,SURF+1,bot);if(snagCheck(dt,bot,['egg','bank','teardrop'].includes(rigSinker())))return;if(L.x<DOCKX+12)retrieve();return;
@@ -3150,7 +3165,7 @@ function updateFight(dt){if(S.dev&&G.fight)G.fight.f.devT=true;
     else{// Cranking lifts the fish off the bottom along the line; a run lets it dive back down. Heavy fish and bottom fish lift slowly.
       const lifting=reelPull>0&&F.phase!=='run';
       // With a lot of line out, cranking mostly gains line rather than depth. A fish you stop lifting settles back down.
-      const reach=G.sea?clamp(1-lineOut(F)/3000,.15,1):1;F.lift=clamp((F.lift||0)+(lifting?dt*.32*(sp.deep?.6:1)*(F.sounded?.7:1)*reach/Math.max(.7,F.heft||1):F.near==='net'&&!reeling?-dt*.4:F.phase==='run'&&F.dir>0?-dt*.3*(F.sounded?.3+.7*F.stamina:1):0),0,F.sounded?1:.85);
+      const reach=G.sea?clamp(1-lineOut(F)/3000,.15,1):1;F.lift=clamp((F.lift||0)+(lifting?dt*.32*(sp.deep?.6:1)*(F.sounded?.7:1)*reach/Math.max(.7,F.heft||1):F.phase==='run'&&F.dir>0?-dt*.3*(F.sounded?.3+.7*F.stamina:1):0),0,F.sounded?1:.85);
       const k=F.sounded?1:clamp((f.x-DOCKX)/180,0,1);const want=lerp(SURF+10,lerp(F.ty,SURF+10,F.lift),k);f.y+=(want-f.y)*dt*1.4;}
     // Near the shore a hooked fish is being dragged up at the surface, so don't push it back out over shallow banks.
     f.y=clamp(f.y,SURF+4,Math.max(SURF+4,fishFloor(f,.45)-3));if(f.x>DOCKX+70)pushFromBank(f);if(F.lx<WX-12)F.lx=f.x;
@@ -4833,6 +4848,48 @@ function rigIcon(id){const cv=document.createElement('canvas');cv.width=cv.heigh
 // How far above the bottom the bait rides on a bottom rig once the sinker is down.
 function rigLift(r,room){const ppf=pxPerFt();return Math.min(r.leader/12*ppf*(r.type==='carolina'?(isLive()?.6:.35):r.type==='dropshot'?1:.25),room);}
 // While the rig is still sinking, the sinker is only that far below the bait; it settles onto the bottom when the rig does.
+// Carolina rig on the bottom. The egg sinker stays where it settled. A bait that can't swim (a worm, cut bait, dough...)
+// sinks the last bit a little faster than the line and lies on the bottom, the leader lying along the bottom to the
+// sinker. A swimming live bait (minnow, live bait, shrimp) swims about above the sinker as far as the leader lets it.
+// The leader is a leash: the bait never gets further from the sinker than its length, and a fish running with the bait
+// drags the sinker along.
+// Rig and line behaviour, in one place (values tuned by Ben with sliders, Nov 16).
+const RT_DEF={lineSlack:1.16,lineSink:4,linePull:40,lineTight:100,sinkerFall:1,baitSink:2,baitSettle:22,baitEase:0,leaderSink:17,reelRide:.2,swim:1};  // Ben's tuning, Nov 16
+const RT=Object.assign({},RT_DEF);
+function leashSwims(){return !G.lure.bare&&(S.lure==='minnow'||S.lure==='livebait'||S.lure==='shrimp');}
+// Reeling a bait that's on the bottom drags it along the bottom's own surface at reel speed, so up a bank it climbs
+// steadily instead of leaping; off the bottom it just comes straight in.
+function dragAlong(L,dist){let left=dist;
+  // small steps toward you; where the bottom comes up under the bait it rides up with it, and that climb counts as distance
+  for(let i=0;i<160&&left>0&&L.x>DOCKX+12;i++){const nx=L.x-.5,ny=Math.min(L.y,bottomAt(nx)-3),seg=Math.hypot(.5,ny-L.y);if(seg>left){const k=left/seg;L.x-=.5*k;L.y+=(ny-L.y)*k;break;}L.x=nx;L.y=ny;left-=seg;}}
+function carolinaLeash(L,r,dt){const sk=L.sk,three=r.type==='threeway',lead=r.leader/12*pxPerFt(),biting=L.fish&&L.fish.state==='bite',own=LURES[S.lure].sink,reel=G.input.reel&&!biting;
+  if(reel){// reeling: the line pulls the sinker toward you, along the bottom and up the bank; still falling, it falls slower
+    const sp=curReel().speed*(L.bare?1.3:1);L.moving=true;reelClick(dt);
+    // on the bottom it's dragged along the bottom's own surface at reel speed, so up a steep bank it climbs, not leaps
+    if(sk.down){let left=sp*dt;for(let i=0;i<120&&left>0&&sk.x>DOCKX+13;i++){const nx=sk.x-.5,dy=bottomAt(nx)-bottomAt(sk.x),seg=Math.hypot(.5,dy);if(seg>left){sk.x-=.5*left/seg;break;}sk.x=nx;left-=seg;}sk.y=bottomAt(sk.x)-3;}
+    else{sk.x=Math.max(DOCKX+13,sk.x-sp*dt);const fl=bottomAt(sk.x)-3;sk.y=Math.min(fl,sk.y+sinkRate()*.35*dt);if(sk.y>=fl)sk.down=true;}
+    // the bait follows behind on the leader, riding a little up off the bottom
+    const ride=bottomAt(L.x)-2-lead*RT.reelRide;if(L.y<ride)L.y=Math.min(ride,L.y+own*dt);else L.y+=(ride-L.y)*Math.min(1,dt*2);}
+  // the sinker on its own: falls fast (bait plus egg sinker) until it hits the bottom, then stays there
+  else if(!sk.down){const fl=bottomAt(sk.x)-3;sk.y=Math.min(fl,sk.y+sinkRate()*RT.sinkerFall*dt);if(sk.y>=fl)sk.down=true;}else sk.y=bottomAt(sk.x)-3;
+  const A=three?{x:sk.x,y:sk.y-9}:sk;  // what the leader is tied to
+  if(!biting&&!reel){
+    if(leashSwims()&&sk.down){let w=L.leash;
+      if(!w||w.t<=0||Math.hypot(w.x-L.x,w.y-L.y)<3){const a=-Math.PI*rand(.08,.92),d=lead*rand(.4,.95),x=A.x+Math.cos(a)*d;
+        w=L.leash={x,y:clamp(A.y+Math.sin(a)*d,SURF+6,bottomAt(x)-4),t:rand(1.5,4)};}
+      // swims in little bursts, the way a hooked minnow does, turning to face where it's going
+      w.t-=dt;const dx=w.x-L.x,dy=w.y-L.y,dd=Math.hypot(dx,dy)||1,v=Math.min(dd,(7+13*Math.max(0,Math.sin(G.t*4.2)))*RT.swim*dt);L.x+=dx/dd*v;L.y+=dy/dd*v;
+      const want=Math.atan2(dy*.6,dx),cur=L.swimAng??want,da=Math.atan2(Math.sin(want-cur),Math.cos(want-cur));L.swimAng=cur+da*Math.min(1,dt*3);}
+    else{// on its own the bait sinks slowly, slower still for the last bit once the sinker is down, and comes to rest
+      const fl=bottomAt(L.x)-2;L.y=Math.min(fl,L.y+(sk.down?Math.min(own*RT.baitSink,RT.baitSettle):own*RT.baitSink)*dt);
+      // resting on the bottom it ends up lying out at nearly the full leader, easing out away from you
+      if(sk.down&&L.y>=fl-1){const sd=Math.sign(L.x-A.x)||1,want=lead*.95,gap=Math.hypot(L.x-A.x,L.y-A.y);if(gap<want)L.x+=sd*Math.min(want-gap,RT.baitEase*dt);}}}
+  // the leader is a leash: the falling sinker pulls the bait down after it; a fish running with the bait drags the sinker
+  const A2=three?{x:sk.x,y:sk.y-9}:sk,dx=L.x-A2.x,dy=L.y-A2.y,d=Math.hypot(dx,dy);
+  if(d>lead){const k=(d-lead)/d;if(biting){sk.x+=dx*k;sk.y=Math.min(sk.y,bottomAt(sk.x)-3);}else{L.x-=dx*k;L.y-=dy*k;}}
+  L.y=Math.min(L.y,bottomAt(L.x)-2);}
+// Carolina rig: how far the egg sinker hangs below the bait on a tight leader (it sits a leader's length back toward you).
+function carolinaDrop(r){const lead=r.leader/12*pxPerFt(),lp=lead*.85;return Math.max(rigLift(r,1e9)+3,Math.sqrt(lead*lead-lp*lp));}
 function sinkerY(r,ly,bx){const b=bottomAt(bx)-3,bl=bottomAt(G.lure.x);return Math.min(b,ly+rigLift(r,Math.max(4,bl-SURF-6))+3);}
 function rigGeom(lx,ly){const r=rig(),ppf=pxPerFt(),L=G.lure,biting=L.fish&&L.fish.state==='bite';
   switch(r.type){
@@ -4840,12 +4897,32 @@ function rigGeom(lx,ly){const r=rig(),ppf=pxPerFt(),L=G.lure,biting=L.fish&&L.fi
       const by=SURF+(under?8+Math.sin(G.t*9)*1.5:lay?-1.2:0)+(G.bobJig>0?Math.sin(G.t*45)*(r.bob==='fixed'?2.2:1.1):0)+Math.sin(G.t*2)*.5;
       const d=Math.hypot(bx-lx,by+2-ly),sf=d>8?Math.min(r.shot/12*ppf,d-4)/d:0,shot=rigSinker()==='split'&&sf>0?[lx+(bx-lx)*sf,ly+(by+2-ly)*sf]:null;
       return{anchor:[bx,by],segs:[[[bx,by+2],[lx,ly]]],bob:[bx,by,r.bob,lay?1:under?.3:B.tilt],shot,ang:Math.atan2(by+2-ly,bx-lx)};}
-    case'carolina':{const lp=r.leader/12*ppf*.85,sx=lx-lp,sy=sinkerY(r,ly,sx);return{anchor:[sx,sy],segs:[[[sx,sy],[sx+5,sy-1],[lx,ly]]],sink:[sx,sy,'egg'],swiv:[sx+5,sy-1],ang:Math.atan2(sy-1-ly,sx+5-lx)};}
+    // Carolina and three-way: the sinker is tracked on its own (it falls first and stays put); the bait hangs off a leader.
+    // Carolina: egg sinker on the main line, swivel just past it, leader to the bait. Three-way: bank sinker on a short
+    // dropper below the three-way swivel; the main line ties to the swivel and the leader runs from it to the bait.
+    case'carolina':case'threeway':{if(!L.sk&&L.state==='water'&&!LURES[S.lure].sea){L.sk={x:lx,y:ly+1,down:false};L.ldr=null;}  // splashdown: they go in together
+      const three=r.type==='threeway',lp=r.leader/12*ppf*.85,sk=L.sk,sx=sk?sk.x:lx-lp,sy=sk?sk.y:Math.min(bottomAt(sx)-3,ly+carolinaDrop(r));
+      const slack=!!sk&&sk.down&&!G.input.reel&&!biting;let wx,wy;
+      if(three){wx=sx+(slack?3:0);wy=sy-(slack?6:9);}  // the dropper stands up under a tight line and slumps a little when slack
+      else{const d0=Math.hypot(lx-sx,ly-sy)||1;wx=sx+(lx-sx)/d0*5;wy=sy+(ly-sy)/d0*5;}  // the swivel just past the sinker toward the bait: no sideways jog
+      const bd=Math.hypot(lx-wx,ly-wy)||1,ux=(lx-wx)/bd,uy=(ly-wy)/bd,pts=[];
+      // falling, the leader bows a little with the water's drag instead of standing dead straight
+      const bow=sk&&!sk.down&&!G.input.reel?Math.min(7,bd*.08):0;
+      for(let k=0;k<=8;k++){const u=k/8,b=bow*Math.sin(Math.PI*u),x=lerp(wx,lx,u)-uy*b,fl=bottomAt(x)-1.5;let y=lerp(wy,ly,u)+ux*b;if(slack&&k>0&&k<8)y=lerp(y,fl,Math.min(1,Math.sin(Math.PI*u)*1.4));pts.push([x,Math.min(y,fl)]);}
+      pts[0]=[wx,wy];pts[8]=[lx,ly];
+      // the leader remembers where it was: slack, each bit of it sinks toward the bottom at a few px a second at most
+      {const now=G.t,ddt=clamp(now-(L.ldrT??now),0,.05);L.ldrT=now;const Q=L.ldr;
+        if(Q&&Q.length===9)for(let k=1;k<8;k++){const q=Q[k],tg=pts[k],dy=tg[1]-q[1];q[0]+=(tg[0]-q[0])*Math.min(1,ddt*(slack?2:20));q[1]+=slack&&dy>0?Math.min(dy,RT.leaderSink*ddt):dy*Math.min(1,ddt*20);pts[k]=[q[0],Math.min(q[1],bottomAt(q[0])-1.5)];}
+        L.ldr=pts.map(p=>[p[0],p[1]]);}
+      const pr=pts[7],swim=slack&&leashSwims()&&L.swimAng!=null,ang=swim?L.swimAng:Math.atan2(pr[1]-ly,pr[0]-lx);
+      if(three)return{anchor:[wx,wy],segs:[[[wx,wy],[sx,sy]],pts],sink:[sx,sy,'bank'],swiv:[wx,wy],ang};
+      return{anchor:[sx,sy],segs:[[[sx,sy],[wx,wy]],pts],sink:[sx,sy,'egg'],swiv:[wx,wy],ang};}
     case'dropshot':{const bot=sinkerY(r,ly,lx+2);return{anchor:[lx,ly],segs:[[[lx,ly],[lx+1,bot]]],sink:[lx+1,bot,'teardrop'],ang:Math.PI};}
-    case'threeway':{const lp=r.leader/12*ppf*.8,wx=lx-lp,dy0=sinkerY(r,ly,wx-2),wy=dy0-9,dx=wx-2,dy=dy0;return{anchor:[wx,wy],segs:[[[wx,wy],[dx,dy]],[[wx,wy],[lx,ly]]],sink:[dx,dy,'bank'],swiv:[wx,wy],ang:Math.atan2(wy-ly,wx-lx)};}
     default:return null;}}
 const ROPE={pts:null,k:1.1,t:0};
-function stepRope(ax,ay,bx,by,targetK,fixedLen){
+// calm: slack line in the water sinks toward its curve at a few px a second at most (gravity against water drag), so it
+// settles slowly behind a sinking rig instead of dropping into place. Reeling tightens it at the normal rate.
+function stepRope(ax,ay,bx,by,targetK,fixedLen,calm=false,steady=false){
   const N=18,dt=clamp(G.t-ROPE.t,0,.05);ROPE.t=G.t;let P=ROPE.pts;
   if(!P||P.length!==N+1||Math.hypot(P[N][0]-bx,P[N][1]-by)>160){P=ROPE.pts=[];for(let i=0;i<=N;i++)P.push([lerp(ax,bx,i/N),lerp(ay,by,i/N)]);ROPE.k=targetK;}
   // slack eases in slowly and is taken up quickly, like a real line
@@ -4855,7 +4932,11 @@ function stepRope(ax,ay,bx,by,targetK,fixedLen){
   const follow=Math.min(1,dt*(targetK<=1.01?22:9));
   for(let i=0;i<=N;i++){const u=i/N;let tx=lerp(ax,bx,u),ty=lerp(ay,by,u)+4*sag*u*(1-u);
     if(ty>SURF){const below=ty-Math.max(SURF,lerp(ay,by,u));ty-=below*.45;const fl=bottomAt(tx)-1;if(ty>fl)ty=fl;}
-    const p=P[i];if(i===0||i===N){p[0]=tx;p[1]=ty;}else{p[0]+=(tx-p[0])*follow;p[1]+=(ty-p[1])*follow;}}
+    const p=P[i];if(i===0||i===N){p[0]=tx;p[1]=ty;}else{const dx=(tx-p[0])*follow,dy=(ty-p[1])*follow;
+      // the rig drags the line near it down with it; further back the line sinks on its own, slowly
+      if(calm&&p[1]>SURF){const pull=Math.pow(u,1.6),hs=(RT.lineSink*1.5+RT.linePull*pull)*dt;p[0]+=clamp(dx,-hs,hs);p[1]+=dy>0?Math.min(dy,(RT.lineSink+RT.linePull*pull)*dt):dy;}
+      else if(steady){const m=Math.hypot(dx,dy),cap=RT.lineTight*dt;const k=m>cap?cap/m:1;p[0]+=dx*k;p[1]+=dy*k;}  // a rig's line comes tight smoothly, never snaps
+      else{p[0]+=dx;p[1]+=dy;}}}
   return P;
 }
 function drawLine(c){
@@ -4873,15 +4954,19 @@ function drawLine(c){
   if(L.kite&&L.state==='water'){drawKite(c,t,L,lineCol);drawLure(c,L.bare?'bare':S.lure,lx,ly,1,lureColor(),Math.PI);return;}
   const geo=L.state==='water'&&isBait()?rigGeom(lx,ly):null;const ax=geo?geo.anchor[0]:lx,ay=geo?geo.anchor[1]:ly;
   const taut=G.input.reel||(L.fish&&L.fish.state==='bite');
-  const tk=L.state==='flying'?1.03:G.fight?1+(1-G.fight.tension)*.2:taut?1:(geo&&geo.bob?1.14:1.1);
-  const P=stepRope(t.x,t.y,ax,ay,tk,L.state==='ready'?Math.max(4,Math.hypot(ax-t.x,ay-t.y)):null);
+  const caroRig0=geo&&['carolina','threeway'].includes(rig().type)&&!LURES[S.lure].sea,baitRig=L.state==='water'&&isBait()&&!LURES[S.lure].sea&&!L.vert&&!L.kite;
+  const tk=L.state==='flying'?1.03:G.fight?1+(1-G.fight.tension)*.2:taut?1:(geo&&geo.bob?1.14:caroRig0?RT.lineSlack:1.1);
+  // any bait rig: slack line settles slowly behind the rig, and comes tight smoothly when you reel
+  const P=stepRope(t.x,t.y,ax,ay,tk,L.state==='ready'?Math.max(4,Math.hypot(ax-t.x,ay-t.y)):null,baitRig&&!taut&&!(geo&&geo.bob),baitRig);
   const flyL=!!curSetup().fly;if(flyL&&L.state==='water'){const n=P.length;for(let i=0;i<n*.8;i++)P[i][1]=Math.min(P[i][1],SURF+.5);}
   c.strokeStyle=flyL?(darkness()>.5?'rgba(238,226,160,.55)':'rgba(246,232,150,.85)'):lineCol;c.lineWidth=flyL?1.1:.7;c.lineJoin='round';c.beginPath();c.moveTo(P[0][0],P[0][1]);
   for(let i=1;i<P.length-1;i++){const mx=(P[i][0]+P[i+1][0])/2,my=(P[i][1]+P[i+1][1])/2;c.quadraticCurveTo(P[i][0],P[i][1],mx,my);}c.lineTo(ax,ay);c.stroke();
   const cx=P[P.length-3][0],cy=P[P.length-3][1];
   if(L.state==='hooked')return;
   const lu=LURES[S.lure];let ang;
-  if(geo){c.strokeStyle=lineCol;c.lineWidth=.6;for(const sg of geo.segs){c.beginPath();sg.forEach((pt,i)=>i?c.lineTo(pt[0],pt[1]):c.moveTo(pt[0],pt[1]));c.stroke();}
+  if(geo){c.strokeStyle=lineCol;c.lineWidth=.6;c.lineJoin='round';for(const sg of geo.segs){c.beginPath();c.moveTo(sg[0][0],sg[0][1]);
+      if(sg.length>3){for(let i=1;i<sg.length-1;i++)c.quadraticCurveTo(sg[i][0],sg[i][1],(sg[i][0]+sg[i+1][0])/2,(sg[i][1]+sg[i+1][1])/2);c.lineTo(sg[sg.length-1][0],sg[sg.length-1][1]);}
+      else for(let i=1;i<sg.length;i++)c.lineTo(sg[i][0],sg[i][1]);c.stroke();}
     if(geo.sink)drawSinker(c,geo.sink[0],geo.sink[1],geo.sink[2]);if(geo.swiv)drawSwivel(c,geo.swiv[0],geo.swiv[1]);if(geo.shot)drawSinker(c,geo.shot[0],geo.shot[1],'split');
     if(geo.bob){drawBobber(c,geo.bob[0],geo.bob[1],geo.bob[2],1.5,geo.bob[3]||0);if(L.fish&&L.fish.state==='bite'&&Math.random()<.2)ripple(geo.bob[0],.35);}
     ang=geo.ang;}
@@ -7237,7 +7322,9 @@ function wellText(){const h=wellN('herring'),m=wellN('atlmackerel');return h||m?
 // Tuna take a lively mackerel best, live herring nearly as well, and a frozen herring drifting in the slick less often.
 // Giants are fussy: most that come to a bait circle it and swim off. A lively mackerel gets taken most often, frozen herring
 // least, and a bait skipping on the surface under a kite gets hit more than one hanging in the slick.
-function tunaTake(){return .028*(G.lure.kite?3:1)*(S.lure==='tunalive'?(G.sea&&G.sea.bait==='atlmackerel'?1.4:1.2):.7);}
+// The chance a giant that has come to look takes the bait. Real charters chum for hours for a few hook-ups a day: here a
+// take comes every several minutes on a good slick, not within the first minute.
+function tunaTake(){return .02*(G.lure.kite?3:1)*(S.lure==='tunalive'?(G.sea&&G.sea.bait==='atlmackerel'?1.4:1.2):.7);}
 function seaAppeal(sp){if(!sp.giant)return 1;return(G.lure.kite?1.5:1)*(S.lure==='tunalive'?(G.sea&&G.sea.bait==='atlmackerel'?1.25:1.1):.5);}
 // Kite fishing, the North Lake way: the boat slow-trolls and a kite flown off the stern holds the bait out past the wake,
 // skipping on the surface. The fishing line runs up to a release clip on the kite line and drops to the bait; a tuna
@@ -7280,21 +7367,20 @@ function drawWake(c,dk){const s=G.sea;const cv=s?Math.max(s.cv||0,s.pv||0,G.figh
   if(Math.random()<.3)G.parts.push({k:'drop',x:x0+rand(2,30),y:SURF,vx:rand(5,30),vy:rand(-40,-15),life:rand(.3,.6),r:rand(.8,1.6)});}
 // The fight at sea. The captain backs down on a giant once it has a lot of line out, so the angler can gain it back.
 // A fish running past a pot rope with the drag tight gets the line sawn through; loose, the line slides over the rope.
-// A fish lifted into a herring net fouls the line in the mesh. And the angler's arms tire (less in the fighting chair).
+// Lobster pot ropes can cut the line (the herring nets are scenery: they don't foul a fight). The angler's arms tire
+// (less in the fighting chair).
 function seaFight(F,dt){const f=F.f,s=G.sea,out=lineOut(F);
   if(f.sp.giant){const want=out>1100&&!(F.phase==='run'&&F.dir<0)?(out>3000?34:22):out<500?0:s.cv>1?14:0;s.cv+=(want-s.cv)*Math.min(1,dt*.6);if(s.cv>.5)seaShift(s.cv*dt);}
   if(s.rig==='tuna130')s.arms=clamp(s.arms+(G.input.reel?-dt*.011*(.3+F.tension)*(s.chair?.55:1):dt*.012),0,1);
-  const {pots,nets}=seaGearIn(f.x-40,f.x+40),sx=G.seaX||0;let near=null;
+  const {pots}=seaGearIn(f.x-40,f.x+40),sx=G.seaX||0;let near=null;
   if(f.x-DOCKX>180)for(const p of pots)if(potRopeNear(p,f,sx)){near='pot';break;}
-  // Right at the boat the mate and captain keep the line clear of pot ropes and nets; out away from it, it's up to the angler.
-  if(!near&&f.x-DOCKX>180)for(const n of nets)if(f.x>n.a-sx&&f.x<n.b-sx&&f.y<SURF+n.drop*3.281*pxPerFt()+4){near='net';break;}
+  // Right at the boat the mate and captain keep the line clear of pot ropes; out away from it, it's up to the angler.
   F.near=near;
   // A fish running out across a pot rope pulls the line over it. Let it go and the line slides over; crank against the run,
   // or have the drag too tight to slip, and the rope saws through. Reeling a fish back in past a rope is fine: the line
   // comes up and over it.
   if(near==='pot'){const rl=G.input.reel&&F.phase==='run'&&F.dir>0,tight=F.tension>.9;if(rl||tight)F.potWhy=rl?'reel':'tight';F.potT=rl?(F.potT||0)+dt*1.6:tight?(F.potT||0)+dt*(F.tension-.8)*4:Math.max(0,(F.potT||0)-dt*.5);
     if(F.potT>.8){snap(F.potWhy==='reel'?'You were cranking while it ran across a lobster pot rope. Let it run, and reel once it stops':'The drag was too tight for the line to slide over the pot rope','Cut off on a pot rope!');return true;}}else F.potT=Math.max(0,(F.potT||0)-dt);
-  if(near==='net'){F.netT=(F.netT||0)+dt;if(F.netT>3){lostFish('It went into a herring net','The line fouled in the mesh. Don\u2019t lift a fish that\u2019s under a net');return true;}}else F.netT=Math.max(0,(F.netT||0)-dt*2);
   return false;}
 // Where a pot's gear is at the fish's depth, matching drawSeaGear: the buoy rope curves down from the buoy to the first
 // trap, and a groundline runs along the bottom to the second. A fish touching either has the line across it.
@@ -7303,7 +7389,6 @@ function potRopeNear(p,f,sx){const bx=p.X-sx,by=SURF,px=bx+p.lean,pb=bottomAt(px
   return f.y>pb-18&&f.x>px-r&&f.x<qx+r;}
 function seaSay(F){const s=G.sea,big=F.f.sp.giant;
   if(F.near==='pot'){const out=F.phase==='run'&&F.dir>0;if(out&&G.input.reel){F.say='Stop reeling! It\u2019s running across a pot rope';F.sayK='hot';}else if(F.tension>.9){F.say='Too tight over the pot rope! Ease the drag';F.sayK='hot';}else if(out){F.say='It\u2019s running through the pot lines. Let it go';F.sayK='hot';}else{F.say='Bringing it up over a pot rope';F.sayK='rest';}}
-  else if(F.near==='net'){F.say='It\u2019s under the herring net! Don\u2019t lift it';F.sayK='hot';}
   else if(F.vert&&F.phase!=='run'&&F.f.y-SURF>30)F.say=`Crank it up \u00b7 ${Math.round((unwarpY(F.f.y)-SURF)/pxPerFt())} ft down`;
   else if(big&&F.sounded&&F.phase!=='run'&&F.f.y-SURF>(bottomAt(F.f.x)-SURF)*.55)F.say='It\u2019s deep under the boat. Reel while it rests to lift it';
   else if(big&&s.cv>8&&F.phase!=='run')F.say='The captain\u2019s backing down. Gain line!';
@@ -7496,8 +7581,8 @@ function hookDown(){
 function actionUp(){if(G.tapCast==='armed'){G.tapCast='free';return;}if(G.tapCast)return;releaseCast();}
 function releaseCast(){if(G.charging){G.charging=false;if(G.power<.06){G.flyFrom=null;return;}
     // fly rod: the power is picked; the angler false casts, back and forward over the water, then the last forward stroke is the cast
-    if(curSetup().fly&&G.lure.state==='ready'&&!netSel()){const t=tip(),fr=G.flyFrom||{x:t.x,y:t.y+14};G.flyFrom=null;// false casts before it goes out: one for a short cast, up to four for a long one, shooting more line each time
-      const n=1+Math.round(G.power*3),tgt=40+G.power*130;G.fc={ph:'back',s:0,len:40,T:.5,from:fr,sel:G.power,left:n,tgt,step:(tgt-40)/n};refreshControls();return;}if(netSel()&&G.lure.state==='ready')throwNet(G.power);else cast();refreshControls();}}
+    if(curSetup().fly&&G.lure.state==='ready'&&!netSel()){const t=tip(),fr=G.flyFrom||{x:t.x,y:t.y+14};G.flyFrom=null;// false casts before it goes out: one for a short cast, up to three for a long one, shooting a good length of line each time
+      const n=1+Math.round(G.power*2),tgt=40+G.power*130;G.fc={ph:'back',s:0,len:40,T:.5,from:fr,sel:G.power,left:n,tgt,step:(tgt-40)/n};refreshControls();return;}if(netSel()&&G.lure.state==='ready')throwNet(G.power);else cast();refreshControls();}}
 function holdBtn(el,down,up){
   el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}el.classList.add('down');down();});
   const end=e=>{if(!el.classList.contains('down'))return;el.classList.remove('down');up();};
@@ -8091,6 +8176,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: short, plain summaries of each version, newest first ----------
 const NOTES=[
+  ['v1.18','Rigs that lie right',['The Carolina rig sits like a real one. The egg sinker settles on the bottom and stays put (over a hole it drops in and pulls the bait over the edge after it). Worms and other baits that can\u2019t swim lie on the bottom with the leader and the slack line lying along the bottom too. Live minnows, live bait and shrimp swim about above the sinker on the leader like a leash The three-way rig works the same way: the bank sinker on its dropper hits bottom first, the bait trails off the three-way swivel on its leader','Bluefin calm down: they take a bait far less readily, so a tuna on takes some waiting, and they roll, breach and crash the herring much less often. Most of the time they feed below','Fly casting: fewer false casts (one to three) with more line shot on each one','Every bait rig reels in smoothly: a rig on the bottom is dragged along it and up the bank instead of jumping, the line comes tight smoothly instead of snapping, and slack line settles slowly behind the bait. A bobber reeled over shallower water lifts the bait steadily','Herring nets at North Lake Banks no longer foul a fish you\u2019re fighting; watch the lobster pot ropes instead']],
   ['v1.17','Bait isn\u2019t a catch',['Herring and mackerel jigged up on the sabiki for the charter\u2019s bait well no longer count toward your fish caught in play stats']],
   ['v1.16','Out of the way',['The Shop and Quests buttons only show while you\u2019re reeled in. They step out of the way as you cast and come back when the line is in']],
   ['v1.15','A new name',['The game is now called Snag & Brag. Same game, same save: your fish, coins and records are all still here. If you added it to your home screen, the icon name updates the next time it loads (on some phones you may need to re-add it)','A new title on the main screen: a hand-carved wooden sign hanging on ropes','Your angler got a makeover: longer legs, lace-up work boots, arms that really hold the rod, a stubbled face, a woven straw hat, and more detail on every shirt. Switch on your Polarized Shades and he wears them','Fly casting works like every other rod now: hold CAST, let go at the power you want, and your angler false casts a few times (more for a long cast) before he lays the line out','A game left open in the background now picks up new versions when you come back to it','The crescent moon no longer shows a dark ball beside it at dawn and dusk']],
