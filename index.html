@@ -1198,7 +1198,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.22a';
+const VERSION='v1.23a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -7711,7 +7711,7 @@ G.sess={min:0,locs:{},fish:0,bait:0,casts:0,hooked:0,lost:0,quests:0,lv0:null};
 function sessionPayload(){const d=devInfo(),locs={};for(const k in G.sess.locs)locs[k]=Math.round(G.sess.locs[k]*10)/10;
   const visited=[...new Set(Object.keys(S.landedL||{}).map(k=>k.split('|')[1]).concat([S.loc]))].join(',');
   return{p_id:sbPid(),p_version:VERSION,p_device:d.device,p_screen:d.screen,p_app:d.app,p_minutes:Math.round(G.sess.min*10)/10,p_locs:locs,p_fish:G.sess.fish,
-    p_level:lvlInfo().l,p_name:(S.name||'').slice(0,20),p_respect:S.respect||0,p_species:SPECIES.filter(sp=>S.log[sp.id]).length,p_visited:visited,
+    p_level:lvlInfo().l,p_name:(S.name||'').slice(0,20),p_respect:(G.tour?G.tour.respect:S.respect)||0,p_species:SPECIES.filter(sp=>S.log[sp.id]).length,p_visited:visited,
     p_lv_start:G.sess.lv0==null?lvlInfo().l:G.sess.lv0,p_quit_loc:S.loc,p_casts:G.sess.casts,p_hooked:G.sess.hooked,p_lost:G.sess.lost,p_quests:G.sess.quests,p_bait:G.sess.bait||0};}
 function statsLog(kind,data){S.statsSent=(S.statsSent||[]).slice(-7);S.statsSent.push({kind,at:Date.now(),data});save();}
 function statsPost(path,body){try{fetch(SB_URL+path,{method:'POST',keepalive:true,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(()=>{});}catch(e){}}
@@ -7833,17 +7833,17 @@ function paintTour(d){const b=$('#tourBody'),c=d&&d.cur;let h='';
 function tourEnter(ev){if(G.tour||!ev)return;if(new Date(ev.ends)<=Date.now()){toast('That tournament has ended');return;}
   if(!LOCS[ev.loc]||!SETUPS[ev.rod]||!SPMAP[ev.species]||!(ev.lures||[]).every(id=>LURES[id])){toast('Update the game to fish this one');return;}
   save();const bak=JSON.stringify(SEA_KEEP?Object.assign({},S,{lure:SEA_KEEP.lure}):S),T=JSON.parse(bak);
-  Object.assign(T,{loc:ev.loc,setup:ev.rod,setups:{[ev.rod]:{owned:true,lvl:0}},lures:{},lure:ev.lures[0],luck:0,respect:0,bait:{},notices:[],yday:tourYday(),minutes:tourMin(),wtimer:999});
+  Object.assign(T,{loc:ev.loc,setup:ev.rod,setups:{[ev.rod]:{owned:true,lvl:0}},lures:{},lure:ev.lures[0],hook:['h10','h4','h20'][clamp(SPMAP[ev.species].mouth|0,0,2)],luck:0,respect:0,bait:{},notices:[],yday:tourYday(),minutes:tourMin(),wtimer:999});
   for(const id of ev.lures)T.lures[id]=99;
   const own={willow:1,tin:1,l4:1,h4:1,h10:1,h20:1,none:1,net:1,dropnet:1,lantern:1,leader:1,shades:1};T.packs={};for(const id of PACKED){own[id]=1;T.packs[id]=99;}T.owned=own;
-  G.sea=null;SEA_KEEP=null;S=T;G.tour={ev,bak,joined:false,me:ev.me||null};S.weather=tourWx();
+  const rs=S.respect||0;G.sea=null;SEA_KEEP=null;S=T;G.tour={ev,bak,joined:false,me:ev.me||null,respect:rs};S.weather=tourWx();
   document.body.classList.add('tour');tourReset();
   G.mode='play';G.paused=false;G.stack=[];show(null);inGameUI(true);G.spawnT=6;updateHUD(true);refreshControls();
   toast(ev.name,`${SPMAP[ev.species].name} · ${SETUPS[ev.rod].short} only`);
   if(!S.dev)tourRpc('tourney_join',{p_tid:ev.tid,p_name:(S.name||'Angler').slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l}).then(()=>{if(G.tour&&G.tour.ev===ev)G.tour.joined=true;}).catch(()=>{});}
 function tourReset(){if(G.fight){G.fight.f.state='wander';endFight();}G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.net=null;G.cam=0;G.pan=null;G.schoolHint=null;G.dry=0;G.pending=null;G.hatch=null;ROPE.pts=null;
   if(LOC().ocean)G.seaX=seaStart();resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}}
-function tourLeave(){const T=G.tour;if(!T)return;G.tour=null;G.tcatch=null;S=JSON.parse(T.bak);S.dev=!!window.DEV_BUILD;S.tRun=new Date().toDateString()+'|'+T.ev.tid;
+function tourLeave(){const T=G.tour;if(!T)return;const sq=S.sessQ||[];G.tour=null;G.tcatch=null;S=JSON.parse(T.bak);for(const b of sq)queueSession(b);S.dev=!!window.DEV_BUILD;S.tRun=new Date().toDateString()+'|'+T.ev.tid;
   document.body.classList.remove('tour');tourReset();save();
   G.mode='menu';G.paused=false;G.stack=[];inGameUI(false);show('menu');renderMenu();updateHUD(true);refreshControls();}
 
@@ -7900,7 +7900,8 @@ function renderBoard(){
   const tb=$('#boardTabs'),chips=$('#boardSp'),list=$('#boardList');tb.innerHTML='';chips.innerHTML='';
   const locs=LOC_ORDER.filter(id=>locOK(id));const lt=locs.includes(G.boardLoc)?G.boardLoc:(locs.includes(S.loc)?S.loc:'pond');G.boardLoc=lt;
   tb.hidden=locs.length<2;for(const id of locs){const b=document.createElement('button');b.textContent=LOCS[id].name;b.setAttribute('aria-selected',lt===id);b.onclick=()=>{G.boardLoc=id;SFX.ui();renderBoard();};tb.append(b);}
-  const sps=SPECIES.filter(sp=>(sp.locs||['pond']).includes(lt)&&S.log[sp.id]);
+  // Bait from the sabiki (herring, mackerel) isn't fished for on a rod, so it has no board.
+  const sps=SPECIES.filter(sp=>(sp.locs||['pond']).includes(lt)&&S.log[sp.id]&&!SEA_BAIT.has(sp.id));
   if(!sps.length){list.innerHTML='<div class="board-msg">Catch a fish here to see who has the biggest one.</div>';return;}
   const cur=sps.some(sp=>sp.id===G.boardSp)?G.boardSp:sps[0].id;G.boardSp=cur;
   for(const sp of sps){const b=document.createElement('button');b.textContent=sp.name;b.setAttribute('aria-selected',sp.id===cur);b.onclick=()=>{G.boardSp=sp.id;SFX.ui();renderBoard();};chips.append(b);}
@@ -8329,6 +8330,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.23", "Bait off the board", ["Herring and mackerel no longer have leaderboards", "Fishing a tournament no longer shows your respect as 0 in the player stats", "Tournaments start you on the hook that fits the target fish"]],
   ["v1.22", "Second chances", ["Fish that miss the hook bite again after a few minutes, and spooked schools move on"]],
   ["v1.21", "Tournaments", ["Level 31 opens after you land 3 bluefin", "Weekly tournaments: one water, one target fish, one loaner rod, real time and weather", "Coins for the top 3, a trophy on the leaderboard for the winner, a ribbon for everyone who fishes"]],
   ["v1.20", "Steady water", ["Every angler has a number, shown by their name on the leaderboard and in your Log", "Fixed the tuna charter refusing its own bait if you’d last used the fly rod", "Fixed fish hooked deep shooting up toward the surface", "Fixed fish and bait jumping when the browser toolbar moves"]],
