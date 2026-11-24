@@ -95,6 +95,11 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 #questBtn{position:fixed;z-index:5;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 160px);display:flex;flex-direction:column;align-items:center;gap:3px;
   width:60px;padding:9px 0 7px;border-radius:16px;background:var(--panel);border:1px solid rgba(140,198,216,.5);font-family:var(--f-display);font-size:14px;letter-spacing:.03em;color:var(--sky);box-shadow:0 4px 0 rgba(0,0,0,.3);}
 #questBtn:active{transform:translateY(2px)}
+body.tour #shopBtn,body.tour #questBtn{display:none!important}
+.tour-ev h3{margin:2px 0 4px;font-family:var(--f-display);font-size:22px;color:var(--amber)}.tour-ev .blurb{margin:0 0 10px;opacity:.85}
+.tour-facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 12px;font-size:14px}.tour-facts dt{opacity:.6}.tour-facts dd{margin:0;font-weight:600}
+.tour-me{margin:0 0 12px;padding:10px 12px;border-radius:10px;background:rgba(242,169,59,.1);border:1px solid rgba(242,169,59,.3);font-size:14px}
+.tour-next,.tour-rules{font-size:13px;opacity:.75;margin:12px 0 0}.board-row .nm small.troph{font-size:11px;margin-left:4px}
 #shopBtn,#questBtn{transition:opacity .2s,visibility .2s}#shopBtn.casting,#questBtn.casting{opacity:0;visibility:hidden;pointer-events:none}
 #questBtn .scroll{width:20px;height:22px;margin-top:3px;border-radius:3px;background:repeating-linear-gradient(transparent 0 5px,rgba(12,25,21,.55) 5px 7px) 4px 5px/12px 13px no-repeat,var(--sky)}
 #questBtn .qdot{position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:var(--danger,#e65a3d);border:2px solid #0c1915}
@@ -198,7 +203,7 @@ html.short .signhang{left:30%;width:min(36vw,260px)}
 .tag{margin:0 auto;max-width:30ch;color:var(--lichen);opacity:.9;text-shadow:0 1px 4px rgba(0,0,0,.7)}
 .menu-btns{display:grid;gap:10px;grid-template-columns:1fr 1fr}
 .menu-btns .btn.big{grid-column:1/-1}
-.menu-btns #mBoard{grid-column:1/-1;justify-self:stretch;width:auto;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.menu-btns #mBoard,.menu-btns #mTour{grid-column:1/-1;justify-self:stretch;width:auto;display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
 .menu-links .linkish{white-space:nowrap}
 .menu-links{grid-column:1/-1;display:flex;justify-content:center;gap:24px}
 .menu-btns .btn:not(.big):nth-last-child(2):nth-child(even){grid-column:1/-1;justify-self:center;width:calc(50% - 5px)}
@@ -580,6 +585,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
     <nav class="menu-btns">
       <button class="btn big primary" id="mPlay">Go Fishing</button>
       <button class="btn" id="mBoard" hidden>🏆 Leaderboard</button>
+      <button class="btn" id="mTour" hidden>🏅 Tournament</button>
       <div class="menu-links"><button class="linkish" id="mSettings">Settings</button><button class="linkish" id="mHelp">How to Play</button><button class="linkish" id="mNotes">Dev notes</button></div>
       <button class="install-btn" id="mInstall" hidden>📲 Add to Home Screen</button>
     </nav>
@@ -702,7 +708,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 
 <section class="screen" id="notice" hidden>
   <div class="sheet tu-card">
-    <div class="eyebrow">Your account was updated</div>
+    <div class="eyebrow" id="ntEye">Your account was updated</div>
     <h2 id="ntTitle">Update</h2>
     <div class="nt-body" id="ntBody"></div>
     <button class="btn big primary" id="ntOk">Got it</button>
@@ -764,11 +770,27 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
   </div>
 </section>
 
+<section class="screen" id="tour" hidden>
+  <div class="sheet">
+    <header class="sheet-head"><button class="back" data-back>‹ Back</button><h2>Tournament</h2></header>
+    <div id="tourBody"></div>
+  </div>
+</section>
+<section class="screen" id="tcatch" hidden>
+  <div class="sheet tu-card">
+    <div class="eyebrow" id="tcEye">Tournament catch</div>
+    <h2 id="tcTitle"></h2>
+    <div class="nt-body" id="tcBody"></div>
+    <button class="btn big primary" id="tcOk">Release it</button>
+  </div>
+</section>
+
 <section class="screen" id="pause" hidden>
   <div class="sheet">
     <header class="sheet-head"><h2>Paused</h2></header>
     <button class="btn big primary" id="pResume">Resume</button>
     <button class="btn" id="pBoard" hidden>🏆 Leaderboard</button>
+    <button class="btn" id="pTour" hidden>🏅 Standings</button>
     <div class="pause-grid">
       <button class="btn" id="pSettings">Settings</button>
       <button class="btn" id="pHelp">How to Play</button>
@@ -1176,7 +1198,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.20a';
+const VERSION='v1.21a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1330,7 +1352,7 @@ function castFit(){const u=curSetup(),w=tackleWeight();if(w<u.cast[0])return{m:M
 // The fly rod casts flies only, and flies need the fly rod.
 // Does this lure go on this rod? With no rod named, it's the rod in your hands: at sea that's the charter's rod, not the
 // one you left on the bank (a fly rod picked before the trip made the charter's own baits read as "needs the fly rod").
-function lureOK(id,setup){const lu=LURES[id];if(!lu)return false;const su=setup!=null?SETUPS[setup]:curSetup();return su&&su.fly?!!lu.flyOnly:!lu.flyOnly;}
+function lureOK(id,setup){const lu=LURES[id];if(!lu)return false;if(G.tour&&!G.tour.ev.lures.includes(id))return false;const su=setup!=null?SETUPS[setup]:curSetup();return su&&su.fly?!!lu.flyOnly:!lu.flyOnly;}
 function fallbackLure(){const have=id=>{const c=S.lures[id];return c===-1||c>0;};return ALL_ORDER.find(id=>have(id)&&lureOK(id))||(curSetup().fly?S.lure:'worm');}
 function switchSetup(id){if(!setupOK(id)||id===S.setup)return;G.fc=null;G.charging=false;const o=S.setups[S.setup];if(o){o.lure=S.lure;o.hook=S.hook;o.rig=JSON.parse(JSON.stringify(S.rig||{type:'free'}));o.var=S.variant&&S.variant[S.lure]?{...S.variant[S.lure]}:null;}
   // Each rod comes back exactly as you left it: its own bait or lure, hook and rig. A rod you haven't set up yet gets a sensible default for it, never the other rod's tackle.
@@ -1639,7 +1661,7 @@ function adopt(o){const d=DEF();S=Object.assign(d,o||{});S.settings=Object.assig
 function load(){let o=null;try{const r=localStorage.getItem(KEY);if(r)o=JSON.parse(r);}catch(e){}adopt(o);S.dev=!!window.DEV_BUILD;if(S.bait)syncOwnBait(true);}
 // At sea S.lure holds the charter tackle; the save keeps the angler's own lure (SEA_KEEP) so nothing changes ashore.
 let SEA_KEEP=null;
-function save(){if(typeof keepOpenSession==='function')keepOpenSession();try{localStorage.setItem(KEY,JSON.stringify(SEA_KEEP?Object.assign({},S,{lure:SEA_KEEP.lure}):S));}catch(e){}if(typeof sbSync==='function'&&!sbBusy){clearTimeout(save.t);save.t=setTimeout(sbSync,1500);}}
+function save(){if(G.tour)return;if(typeof keepOpenSession==='function')keepOpenSession();try{localStorage.setItem(KEY,JSON.stringify(SEA_KEEP?Object.assign({},S,{lure:SEA_KEEP.lure}):S));}catch(e){}if(typeof sbSync==='function'&&!sbBusy){clearTimeout(save.t);save.t=setTimeout(sbSync,1500);}}
 
 // ---------------- AUDIO ----------------
 let AC=null,master=null,noiseBuf=null,rainSrc=null,rainGain=null,sndAt=0;
@@ -2651,7 +2673,7 @@ function drawBeds(c,dk,vx0,vx1){for(const b of G.beds||[]){if(b.x<vx0-20||b.x>vx
 const MIN_PER_SEC=1.25;
 function rollWeather(){const p=period();const fogW=(p==='night'||p==='dawn')?.3:.14;const r=Math.random();return r<fogW?'fog':r<fogW+.28?'rain':'clear';}
 function tickClock(dt){
-  const before=period(),m0=S.minutes;S.minutes=(S.minutes+dt*MIN_PER_SEC)%1440;if(S.minutes<m0)newDay();if(S.bait&&(G.bkT=(G.bkT||0)+dt)>3){G.bkT=0;if(syncOwnBait())updateHUD(true);}
+  const before=period(),m0=S.minutes;if(G.tour)tourTick(dt);else{S.minutes=(S.minutes+dt*MIN_PER_SEC)%1440;if(S.minutes<m0)newDay();}if(S.bait&&(G.bkT=(G.bkT||0)+dt)>3){G.bkT=0;if(syncOwnBait())updateHUD(true);}
   S.wtimer-=dt*MIN_PER_SEC;
   if(S.wtimer<=0){const old=S.weather;S.weather=rollWeather();S.wtimer=rand(160,340);if(old!==S.weather){toast({clear:'The sky clears',rain:'Rain rolls in',fog:'Fog settles on the water'}[S.weather],weatherSub());spawnTick(false);}}
   if(period()!==before&&period()==='night'&&nameIs('lucy'))setTimeout(()=>{if(G.mode==='play'&&S.settings.chatter!==false)say('Just one more cast…');},1800);
@@ -2690,9 +2712,13 @@ function tip(){
   else if(L.state==='water'&&G.input.reel)ang=-.8;
   return{x:hx+Math.cos(ang)*len,y:hy+Math.sin(ang)*len,hx,hy,ang};
 }
-const MAXLV=30;
+const MAXLV=31;
+// Level 31 is the tournament level: it takes the XP and three bluefin landed at North Lake Banks.
+const BLUEFIN_FOR_31=3;
+function bluefinLanded(){return(S.log&&S.log.bluefin&&S.log.bluefin.n)||0;}
+function lvCap(){return bluefinLanded()>=BLUEFIN_FOR_31?MAXLV:MAXLV-1;}
 function xpNeed(l){return Math.round(25*Math.pow(l,1.5));}
-function lvlInfo(xp=S.xp||0){let l=1,rem=xp;while(l<MAXLV&&rem>=xpNeed(l)){rem-=xpNeed(l);l++;}return{l,rem,need:l<MAXLV?xpNeed(l):0};}
+function lvlInfo(xp=S.xp||0){const cap=lvCap();let l=1,rem=xp;while(l<cap&&rem>=xpNeed(l)){rem-=xpNeed(l);l++;}const gated=l===cap&&cap<MAXLV;return{l,rem:gated?Math.min(rem,xpNeed(l)):rem,need:l<MAXLV?xpNeed(l):0,gated};}
 function skillT(){return Math.min(1,(lvlInfo().l-1)/14);}
 function castReach(){return(TW-DOCKX-56)*(1+skillT());} // TW = lake width unit, the same on any screen
 function bobCastMul(){if(!isBait())return 1;const r=rig();return r.type==='bobber'&&r.bob==='fixed'?clamp(1-.07*(r.depth-4),.84,1):1;}
@@ -2708,8 +2734,8 @@ function fWt(kg,precise){if(precise){if(!imp())return kg<1?(kg*1000).toFixed(1)+
 function fDist(m,d=0){return imp()?(m*3.281).toFixed(d)+' ft':m.toFixed(d)+' m';}
 function fTrophy(id){const t=TROPHY[id];if(!t)return'\u2014';return imp()?t.map(v=>Math.round(v/2.54)).join(' / ')+' in':t.join(' / ')+' cm';}
 function lvlSummary(){return`Casts reach ${fDist(castReach()/10)} \u00b7 hook sets up to ${Math.round(Math.min(.97,.92*hookSkill())*100)}%`;}
-function gainXP(n){const before=lvlInfo().l;S.xp=(S.xp||0)+n;const now=lvlInfo().l;updateLvChip();
-  if(now>before){G.lvMsg=[`Angler level ${now}`,lvlSummary()];if(!currentScreen())flushLv();}}
+function gainXP(n){if(G.tour)return;const before=S.lvSeen||lvlInfo().l;S.xp=(S.xp||0)+n;const now=lvlInfo().l;S.lvSeen=now;updateLvChip();
+  if(now>before){G.lvMsg=[`Angler level ${now}`,now===MAXLV?'Tournaments are open: find them on the main menu':lvlSummary()];if(!currentScreen())flushLv();}}
 function flushLv(){if(!G.lvMsg)return;const m=G.lvMsg;G.lvMsg=null;setTimeout(()=>{toast(m[0],m[1]);SFX.fanfare();G.lvFx=G.t;vib([40,60,40]);},500);}
 function updateLvChip(){if(!$('#log').hidden)renderLog();}
 function gearOn(id){return!!S.owned[id]&&S.settings[id]!==false;}
@@ -2733,7 +2759,7 @@ function missHook(f,why){
   toast(msg,sub);refreshControls();
   if(bait&&d<0&&!S.owned.h4){S.tips=S.tips||{};S.tips.small=(S.tips.small||0)+1;if(S.tips.small===2&&!S.tips.smallShown){S.tips.smallShown=true;save();setTimeout(()=>toast('Tip: try a #4 hook','Bigger mouths spit a small hook. Shop \u203a Hooks, 8 coins'),1900);}}
 }
-function useBait(){if(!isBait()||S.lure==='worm')return;if(LURES[S.lure].sea){seaUseBait();return;}if(LURES[S.lure].own){useOwnBait();return;}S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];const nm=LURES[S.lure].name;S.lure='worm';toast('Out of '+nm,'Switched back to worms');}save();updateHUD(true);}
+function useBait(){if(G.tour)return;if(!isBait()||S.lure==='worm')return;if(LURES[S.lure].sea){seaUseBait();return;}if(LURES[S.lure].own){useOwnBait();return;}S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];const nm=LURES[S.lure].name;S.lure='worm';toast('Out of '+nm,'Switched back to worms');}save();updateHUD(true);}
 function baitNoun(){if(S.lure==='seacut')return G.sea&&G.sea.cutSp==='herring'?'cut herring':'cut mackerel';if(S.lure==='tunalive')return G.sea&&G.sea.bait==='atlmackerel'?'mackerel':'herring';if(S.lure==='tunadead')return'herring';if(S.lure==='livebait'){const o=ownLive();return o?SPMAP[o.sp].name.toLowerCase():'baitfish';}if(S.lure==='cutbait')return'cut bait';return{worm:'worm',cricket:'cricket',minnow:'minnow',liver:'liver',dough:'dough ball',corn:'corn',shrimp:'shrimp'}[S.lure]||'bait';}
 function stealTurtle(f){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10);f.wise=true;SFX.lose();toast(`A turtle stole your ${bn}`,'They\u2019re sneaky like that');G.lure.fish=null;refreshControls();}
 function stealCheck(f){
@@ -3214,9 +3240,9 @@ function landTurtle(){const f=G.fight.f,sp=f.sp;f.dead=true;splash(DOCKX+20,1);u
     const cv=$('#tuCanvas'),x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cv.width,cv.height);x.translate(cv.width*.47,cv.height*.6);x.scale(6.5,6.5);drawFish(x,sp,60,1,1,1,false);
     show('turtle');SFX.coin();},700);}
 // Changes made to someone's save (refunds, new systems) wait on a card until they tap Got it.
-function queueNotice(title,lines){(S.notices=S.notices||[]).push({title,lines});save();}
-function showNotices(){if(G.mode!=='play')return;if(!(S.notices&&S.notices.length)){if(S.settings.stats===undefined&&sbOn()&&!window.__statsAnswered){if(G.tut||!$('#tut').hidden||currentScreen()){setTimeout(showNotices,1500);return;}renderStatsAsk();show('statsAsk');}return;}if(G.tut||!$('#tut').hidden||currentScreen()){setTimeout(showNotices,1500);return;}const n=S.notices[0];$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');show('notice');SFX.ui();}
-$('#ntOk').onclick=()=>{if(S.notices)S.notices.shift();save();if(S.notices&&S.notices.length){const n=S.notices[0];$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');SFX.ui();}else{resume();setTimeout(showNotices,400);}};
+function queueNotice(title,lines,eye){(S.notices=S.notices||[]).push(eye?{title,lines,eye}:{title,lines});save();}
+function showNotices(){if(G.mode!=='play')return;if(!(S.notices&&S.notices.length)){if(S.settings.stats===undefined&&sbOn()&&!window.__statsAnswered){if(G.tut||!$('#tut').hidden||currentScreen()){setTimeout(showNotices,1500);return;}renderStatsAsk();show('statsAsk');}return;}if(G.tut||!$('#tut').hidden||currentScreen()){setTimeout(showNotices,1500);return;}const n=S.notices[0];$('#ntEye').textContent=n.eye||'Your account was updated';$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');show('notice');SFX.ui();}
+$('#ntOk').onclick=()=>{if(S.notices)S.notices.shift();save();if(S.notices&&S.notices.length){const n=S.notices[0];$('#ntEye').textContent=n.eye||'Your account was updated';$('#ntTitle').textContent=n.title;$('#ntBody').innerHTML=n.lines.map(l=>`<p>${esc(l)}</p>`).join('');SFX.ui();}else{resume();setTimeout(showNotices,400);}};
 $('#tuGo').onclick=()=>{gainXP(G.turtleXp||20);G.turtleXp=0;resume();toast('Back in the water','It paddled off slow and steady');};
 function endFight(){G.input.reel=false;G.padEnd&&G.padEnd();$('#bReel').classList.remove('down');G.fight=null;G.lure.state='ready';G.lure.fish=null;$('#fightHud').hidden=true;G.input.tilt=0;refreshControls();}
 // ---------------- DRAG ----------------
@@ -3244,7 +3270,7 @@ function snap(why,title){chatter('snap',.7);
   const sub=breakOff('snap');f.state='wander';flee(f,12);G.sess.lost++;endFight();toast(title||(why?'Line twist! It snapped':'Line snapped!'),adv?adv+'. '+sub:sub);save();updateHUD(true);
 }
 function lostFish(msg,sub){G.sess.lost++;chatter('lost',.55);if(S.lure!=='worm'&&isBait())useBait();const f=G.fight.f;f.state='wander';flee(f,10);SFX.lose();endFight();toast(msg,sub);}
-function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}const qHits=questCatch(G.fight.f.sp,G.fight.f.len);{const F0=G.fight,f0=F0.f,big0=medalFor(f0.sp.id,f0.len)>=1||f0.sp.legend;chatter(big0?'big':'catch',big0?.85:.3);}
+function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}if(G.tour){tourLand();return;}const qHits=questCatch(G.fight.f.sp,G.fight.f.len);{const F0=G.fight,f0=F0.f,big0=medalFor(f0.sp.id,f0.len)>=1||f0.sp.legend;chatter(big0?'big':'catch',big0?.85:.3);}
   useBait();
   const F=G.fight,f=F.f,sp=f.sp;
   f.dead=true;splash(DOCKX+20,1);
@@ -7641,9 +7667,9 @@ addEventListener('blur',()=>{G.input.reel=false;if(G.charging)G.charging=false;i
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(G.mode==='play'&&!G.paused)pauseGame();}});
 
 // ---------------- SCREENS ----------------
-const SCREENS=['charter','map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle','notice','statsAsk','statsView'];
+const SCREENS=['charter','map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle','notice','statsAsk','statsView','tour','tcatch'];
 function show(id){for(const s of SCREENS)$('#'+s).hidden=s!==id;}
-function open(id){G.stack.push(currentScreen());show(id);render_(id);if(id==='map')$('#map').scrollTop=0;SFX.ui();}
+function open(id){if(G.tour&&['shop','map','quests','charter'].includes(id)){toast('Not during the tournament');return;}G.stack.push(currentScreen());show(id);render_(id);if(id==='map')$('#map').scrollTop=0;SFX.ui();}
 function currentScreen(){return SCREENS.find(s=>!$('#'+s).hidden)||null;}
 function back(){const prev=G.stack.pop();if(prev){show(prev);render_(prev);}else if(G.mode==='play')resume();else show('menu');SFX.ui();}
 // ---------- online leaderboard (Supabase): each player's biggest of each species ----------
@@ -7738,7 +7764,7 @@ function sbSyncLoc(){if(G.sbLocOff||!S.landedL)return false;S.sbSentL=S.sbSentL|
   sbBusy=true;sbFetch('/rest/v1/rpc/submit_loc_best',{method:'POST',body:JSON.stringify({p_id:sbPid(),p_name:S.name.slice(0,20),p_species:id,p_loc:loc,p_len:+len.toFixed(2),p_lb:+Math.min(99999,lb).toFixed(3),p_look:lookStr(),p_lv:lvlInfo().l})})
     .then(()=>{S.sbSentL[k]=len;if(G.sbWatch===k){G.sbWatch=null;toast(`Leaderboard: your ${sp.name} is up at ${(LOCS[loc]||{}).name||loc}`);}save();for(const c in sbCache)if(c.startsWith(id))delete sbCache[c];sbBusy=false;setTimeout(sbSync,300);})
     .catch(err=>{sbBusy=false;sbFail(err,'L'+k,true);setTimeout(sbSync,300);});return true;}
-function sbSync(){if(!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;if(G.sbRetryAt&&Date.now()<G.sbRetryAt){clearTimeout(sbSync.t);sbSync.t=setTimeout(sbSync,G.sbRetryAt-Date.now()+50);return;}S.sbSent=S.sbSent||{};if(sbSyncLoc())return;
+function sbSync(){if(G.tour||!sbOn()||sbBusy||!S.name||!S.landed||S.dev)return;if(G.sbRetryAt&&Date.now()<G.sbRetryAt){clearTimeout(sbSync.t);sbSync.t=setTimeout(sbSync,G.sbRetryAt-Date.now()+50);return;}S.sbSent=S.sbSent||{};if(sbSyncLoc())return;
   const id=Object.keys(S.landed).find(k=>SPMAP[k]&&S.landed[k]>(S.sbSent[k]||0)&&!(G.sbSkip||{})[k]);
   if(!id){// nothing new to send: if the name, outfit or level changed since the board last saw them, update this angler's rows
     const prof=[S.name.slice(0,20),lookStr(),lvlInfo().l].join('|');if(S.sbProf===prof||!Object.keys(S.sbSent).length)return;
@@ -7758,6 +7784,111 @@ function anglerIcon(str){const [h,sh,rd]=String(str||'').split('.'),lk={hat:LOOK
   drawAnglerBody(x,0,0,0,lk,false);
   drawAnglerArm(x,0,0,9,-20,0,lk);
   return c;}
+// ---------------- TOURNAMENTS ----------------
+// Weekly events live on the server (tourney_now / _join / _catch / _claim). Fishing one swaps S for a loaner copy:
+// the event's water, its one rod at stock level, only its baits (never run out), no luck, respect or gadgets, the real
+// local clock and weather seeded by UTC date so every angler fishes the same sky. save() and the leaderboards stay off
+// while G.tour is set, so the normal save in localStorage is never touched; leaving puts the saved copy back.
+// Only prizes cross over (claimed outside the event): coins, a ribbon each, and a trophy count the board shows.
+const TOUR_LV=31,TOUR_Q='mossback-tour-q';
+function tourOpen(){return sbOn()&&lvlInfo().l>=TOUR_LV;}
+function tourRpc(fn,body){return sbFetch('/rest/v1/rpc/'+fn,{method:'POST',body:JSON.stringify(Object.assign({p_id:sbPid()},body||{}))});}
+function tourMin(){const d=new Date();return d.getHours()*60+d.getMinutes()+d.getSeconds()/60;}
+// Tournaments fish the real season (northern), winter as late fall so the water isn't locked up.
+function tourYday(){const m=new Date().getMonth(),k=m>=2&&m<=4?0:m>=5&&m<=7?1:2;return k*SEASON_DAYS+(k===2?5:3);}
+function tourHash(t){let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619);}h^=h>>>15;h=Math.imul(h,2246822507);h^=h>>>13;return(h>>>0)/4294967296;}
+function tourWx(){const d=new Date(),r=tourHash(d.toISOString().slice(0,10)+'|'+Math.floor(d.getUTCHours()/3)+'|'+G.tour.ev.tid);return r<.2?'fog':r<.48?'rain':'clear';}
+function tourTick(dt){const T=G.tour;S.minutes=tourMin();S.wtimer=999;
+  const w=tourWx();if(w!==S.weather){S.weather=w;toast({clear:'The sky clears',rain:'Rain rolls in',fog:'Fog settles on the water'}[w],weatherSub());spawnTick(false);}
+  for(const id of T.ev.lures)if(!(S.lures[id]>50))S.lures[id]=99;if(!T.ev.lures.includes(S.lure))S.lure=T.ev.lures[0];
+  if(T.q&&!T.busy&&(T.qT=(T.qT||0)+dt)>30){T.qT=0;tourSend(null);}}
+function tourEnds(iso){const ms=new Date(iso)-Date.now();if(ms<=0)return'ended';const h=Math.floor(ms/36e5),d=Math.floor(h/24);
+  const at=new Date(iso).toLocaleString([], {weekday:'long',hour:'numeric',minute:'2-digit'});return d>=1?`${at} (${d} day${d>1?'s':''} left)`:`${at} (${h>=1?h+' h':Math.max(1,Math.round(ms/6e4))+' min'} left)`;}
+function ordinal(n){const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);}
+function tourFish(r,sp){return r&&r.len_cm!=null?`${fLen(+r.len_cm)} ${sp?sp.name:''}`.trim():null;}
+function lureNames(ids){return ids.map(id=>LURES[id]?LURES[id].name:id).join(', ');}
+
+function renderTour(){const b=$('#tourBody');if(!G.tourNow)b.innerHTML='<div class="board-msg">Checking the tournament desk…</div>';else paintTour(G.tourNow);
+  tourRpc('tourney_now').then(d=>{G.tourNow=d;if(!$('#tour').hidden)paintTour(d);if(!G.tour)tourClaim(d);})
+    .catch(e=>{if(!G.tourNow)b.innerHTML=`<div class="board-msg">Couldn’t reach the tournament desk (${esc(String(e.message||e).slice(0,60))}). Check your connection and try again.</div>`;});}
+function paintTour(d){const b=$('#tourBody'),c=d&&d.cur;let h='';
+  if(!c)h+='<div class="board-msg">No tournament is running right now.</div>';
+  else{const sp=SPMAP[c.species],me=c.me,n=Math.max(c.entrants||0,me?me.rank:0);
+    h+=`<div class="tour-ev"><h3>${esc(c.name)}</h3><p class="blurb">${esc(c.blurb||'')}</p>
+      <dl class="tour-facts"><dt>Water</dt><dd>${esc(LOCS[c.loc]?LOCS[c.loc].name:c.loc)}</dd><dt>Target</dt><dd>${esc(sp?sp.name:c.species)}, biggest by length</dd>
+      <dt>Rod</dt><dd>${esc(SETUPS[c.rod]?SETUPS[c.rod].name:c.rod)} (loaner)</dd><dt>Baits</dt><dd>${esc(lureNames(c.lures||[]))}</dd><dt>Ends</dt><dd>${esc(tourEnds(c.ends))}</dd><dt>Anglers</dt><dd>${c.entrants||0}</dd></dl>
+      <div class="tour-me">${S.dev?'Dev build: you can fish it, but catches aren’t sent. ':''}${me?(me.len_cm!=null?`You’re <b>${ordinal(me.rank)}</b> of ${n} with a ${esc(tourFish(me,sp))} (${me.fish} weighed in).`:'You’re entered but haven’t weighed in a fish yet.'):'You haven’t entered this one yet.'}</div>
+      <button class="btn big primary" id="tourGo">${G.tour?'Back to fishing':'Fish the tournament'}</button></div>`;
+    const rows=c.top||[];h+='<span class="label" style="display:block;margin-top:14px">Standings</span><div class="board-list">'+(rows.filter(r=>r.len_cm!=null).length?rows.filter(r=>r.len_cm!=null).map(r=>`<div class="board-row ${['gold','silver','bronze'][r.rank-1]||''}${r.player_id===S.pid?' me':''}"><span class="rk">${r.rank}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.tag?`<small class="tag">#${+r.tag}</small>`:''}${r.player_id===S.pid?' (you)':''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)} \u00b7 ${r.fish} fish</span></div>`).join(''):'<div class="board-msg">No fish weighed in yet. The first one leads.</div>')+'</div>';}
+  if(d&&d.next){const sp=SPMAP[d.next.species];h+=`<p class="tour-next">Next: <b>${esc(d.next.name)}</b>, ${esc(sp?sp.name:d.next.species)} at ${esc(LOCS[d.next.loc]?LOCS[d.next.loc].name:d.next.loc)}, starts ${esc(new Date(d.next.starts).toLocaleString([], {weekday:'long',hour:'numeric',minute:'2-digit'}))}.</p>`;}
+  h+='<p class="tour-rules">Real clock and weather, a loaner rod and only the listed baits. The biggest single fish by length wins. Top 3 win 5,000, 2,500 and 1,000 coins, the winner gets a trophy by their name on the leaderboard, and everyone who fishes gets a ribbon. Nothing caught here counts toward your Log, XP or the regular leaderboards.</p>';
+  b.innerHTML=h;b.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));
+  const go=$('#tourGo');if(go)go.onclick=()=>{if(G.tour){resume();return;}tourEnter(c);};}
+
+function tourEnter(ev){if(G.tour||!ev)return;if(new Date(ev.ends)<=Date.now()){toast('That tournament has ended');return;}
+  if(!LOCS[ev.loc]||!SETUPS[ev.rod]||!SPMAP[ev.species]||!(ev.lures||[]).every(id=>LURES[id])){toast('Update the game to fish this one');return;}
+  save();const bak=JSON.stringify(SEA_KEEP?Object.assign({},S,{lure:SEA_KEEP.lure}):S),T=JSON.parse(bak);
+  Object.assign(T,{loc:ev.loc,setup:ev.rod,setups:{[ev.rod]:{owned:true,lvl:0}},lures:{},lure:ev.lures[0],luck:0,respect:0,bait:{},notices:[],yday:tourYday(),minutes:tourMin(),wtimer:999});
+  for(const id of ev.lures)T.lures[id]=99;
+  const own={willow:1,tin:1,l4:1,h4:1,h10:1,h20:1,none:1,net:1,dropnet:1,lantern:1,leader:1,shades:1};T.packs={};for(const id of PACKED){own[id]=1;T.packs[id]=99;}T.owned=own;
+  G.sea=null;SEA_KEEP=null;S=T;G.tour={ev,bak,joined:false,me:ev.me||null};S.weather=tourWx();
+  document.body.classList.add('tour');tourReset();
+  G.mode='play';G.paused=false;G.stack=[];show(null);inGameUI(true);G.spawnT=6;updateHUD(true);refreshControls();
+  toast(ev.name,`${SPMAP[ev.species].name} · ${SETUPS[ev.rod].short} only`);
+  if(!S.dev)tourRpc('tourney_join',{p_tid:ev.tid,p_name:(S.name||'Angler').slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l}).then(()=>{if(G.tour&&G.tour.ev===ev)G.tour.joined=true;}).catch(()=>{});}
+function tourReset(){if(G.fight){G.fight.f.state='wander';endFight();}G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.net=null;G.cam=0;G.pan=null;G.schoolHint=null;G.dry=0;G.pending=null;G.hatch=null;ROPE.pts=null;
+  if(LOC().ocean)G.seaX=seaStart();resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}}
+function tourLeave(){const T=G.tour;if(!T)return;G.tour=null;G.tcatch=null;S=JSON.parse(T.bak);S.dev=!!window.DEV_BUILD;S.tRun=new Date().toDateString()+'|'+T.ev.tid;
+  document.body.classList.remove('tour');tourReset();save();
+  G.mode='menu';G.paused=false;G.stack=[];inGameUI(false);show('menu');renderMenu();updateHUD(true);refreshControls();}
+
+function tourLand(){const F=G.fight,f=F.f,sp=f.sp,T=G.tour;f.dead=true;splash(DOCKX+20,1);
+  const kg=SHAPES[sp.shape].k*Math.pow(f.len,3),hit=sp.id===T.ev.species;endFight();SFX.fanfare();vib([60,40,60,40,120]);
+  const c={sp,len:f.len,kg,hit,state:!hit?'off':S.dev?'dev':'send'};G.tcatch=c;
+  if(c.state==='send'){const q={tid:T.ev.tid,sp:sp.id,len:+f.len.toFixed(2),lb:+(kg*2.2046).toFixed(3)};if(!T.q||q.len>T.q.len)T.q=q;try{localStorage.setItem(TOUR_Q,JSON.stringify(T.q));}catch(e){}tourSend(c);}
+  setTimeout(showTourCatch,650);}
+// Sends the biggest unsent fish (kept in localStorage too, so a dropped connection or a closed app doesn't lose it).
+function tourSend(c){const T=G.tour;if(!T||!T.q||T.busy)return;const q=T.q;T.busy=true;
+  (T.joined?Promise.resolve():tourRpc('tourney_join',{p_tid:q.tid,p_name:(S.name||'Angler').slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l}).then(()=>{T.joined=true;}))
+    .then(()=>tourRpc('tourney_catch',{p_tid:q.tid,p_species:q.sp,p_len:q.len,p_lb:q.lb}))
+    .then(r=>{T.busy=false;if(T.q===q){T.q=null;try{localStorage.removeItem(TOUR_Q);}catch(e){}}T.me=r;if(c){c.state='ok';c.res=r;}if(c&&G.tcatch===c)renderTourCatch();})
+    .catch(e=>{T.busy=false;const m=String(e.message||e);if(/^4\d\d/.test(m)&&!/not entered/.test(m)){if(T.q===q){T.q=null;try{localStorage.removeItem(TOUR_Q);}catch(e2){}}}if(c){c.state='err';c.err=m;}if(c&&G.tcatch===c)renderTourCatch();});}
+function showTourCatch(){if(!G.tcatch||!G.tour)return;G.paused=true;show('tcatch');renderTourCatch();}
+function renderTourCatch(){const c=G.tcatch,T=G.tour;if(!c||!T)return;const tsp=SPMAP[T.ev.species];
+  $('#tcEye').textContent=c.hit?'Tournament catch':'Not the target';$('#tcTitle').textContent=c.sp.name;
+  const L=[`${fLen(c.len)} · ${fWt(c.kg)}`];
+  if(!c.hit)L.push(`Only ${tsp.name} count in this tournament.`);
+  else if(c.state==='dev')L.push('Dev build: catches aren’t sent to the tournament.');
+  else if(c.state==='send')L.push('Sending it to the weigh-in…');
+  else if(c.state==='err')L.push(`The weigh-in didn’t get it (${c.err.slice(0,70)}). Your biggest unsent fish keeps trying while you fish.`);
+  else if(c.res){const r=c.res,n=Math.max((T.ev.entrants||0),r.rank);L.push(+r.len_cm<=c.len+.005?'Your new best in this tournament.':`Your best is still ${fLen(+r.len_cm)}.`);L.push(`You’re ${ordinal(r.rank)} of ${n}.`);}
+  $('#tcBody').innerHTML=L.map(l=>`<p>${esc(l)}</p>`).join('');}
+$('#tcOk').onclick=()=>{G.tcatch=null;SFX.ui();resume();};
+$('#mTour').onclick=()=>{audio();if(!S.name)askName(()=>open('tour'));else open('tour');};
+$('#pTour').onclick=()=>open('tour');
+
+// Prizes: each finished, unclaimed event pays once (the server marks it claimed), then a card explains it.
+function tourClaim(d){if(G.tour||S.dev||!d||!d.results||!d.results.length)return;
+  for(const r of d.results)tourRpc('tourney_claim',{p_tid:r.tid}).then(x=>{if(!x||x.already||G.tour)return;
+    const t=S.tours=S.tours||{n:0,wins:0,hist:[]},sp=SPMAP[r.species],won=x.rank===1&&x.len_cm!=null;t.n++;if(won)t.wins++;S.coins+=x.coins||0;
+    t.hist.unshift({tid:r.tid,name:r.name,rank:x.len_cm!=null?x.rank:null,of:x.entrants,len:x.len_cm,coins:x.coins||0});t.hist=t.hist.slice(0,30);
+    const L=[];if(x.len_cm==null)L.push('No fish weighed in this time.');
+    else L.push(`You finished ${ordinal(x.rank)} of ${x.entrants} with a ${fLen(+x.len_cm)} ${sp?sp.name:''}.`.replace(' .','.'));
+    if(won)L.push(`You won! ${x.coins.toLocaleString()} coins and a trophy by your name on the leaderboard.`);else if(x.coins)L.push(`Prize: ${x.coins.toLocaleString()} coins.`);
+    L.push(`You earned a ribbon for fishing it. Ribbons: ${t.n}.`);
+    queueNotice(r.name,L,'Tournament results');updateHUD(true);if(!$('#menu').hidden)renderMenu();if(G.mode==='play')setTimeout(showNotices,400);}).catch(()=>{});}
+// Once a day on opening the game: where you stand, or word of a new event you haven't entered.
+function tourBoot(){if(G.tour||!tourOpen()||!navigator.onLine)return;
+  tourRpc('tourney_now').then(d=>{if(G.tour||!d)return;G.tourNow=d;tourClaim(d);const c=d.cur;if(!c)return;const today=new Date().toDateString(),sp=SPMAP[c.species];
+    if(c.me&&S.tRun!==today+'|'+c.tid){S.tRun=today+'|'+c.tid;const me=c.me,lead=(c.top||[])[0],n=Math.max(c.entrants||0,me.rank);
+      const L=[me.len_cm!=null?`You’re ${ordinal(me.rank)} of ${n} with a ${tourFish(me,sp)}.`:'You haven’t weighed in a fish yet.'];
+      if(lead&&lead.len_cm!=null&&lead.player_id!==S.pid)L.push(`Leading: ${lead.player}${lead.tag?' #'+lead.tag:''} with ${fLen(+lead.len_cm)}.`);
+      L.push(`Ends ${tourEnds(c.ends)}.`);queueNotice(c.name,L,'Tournament standing');}
+    else if(!c.me&&S.tSeen!==c.tid){S.tSeen=c.tid;queueNotice(c.name,[`${sp?sp.name:c.species} at ${LOCS[c.loc]?LOCS[c.loc].name:c.loc}, ${SETUPS[c.rod]?SETUPS[c.rod].name:c.rod} only.`,`Ends ${tourEnds(c.ends)}. Find it under Tournament on the main menu.`],'Tournament this week');}
+    save();}).catch(()=>{});
+  // a fish caught but never sent (app closed mid-send): try it once more while the event is still open
+  try{const q=JSON.parse(localStorage.getItem(TOUR_Q)||'null');if(q&&!S.dev)tourRpc('tourney_catch',{p_tid:q.tid,p_species:q.sp,p_len:q.len,p_lb:q.lb}).then(()=>localStorage.removeItem(TOUR_Q)).catch(e=>{if(/^4\d\d/.test(String(e.message||e)))localStorage.removeItem(TOUR_Q);});}catch(e){}}
+
 function renderBoard(){
   {const L=S.landedL||{},T=S.sbSentL||{},wait=Object.keys(L).filter(k=>SPMAP[k.split('|')[0]]&&L[k]>(T[k]||0)).length;
    $('#boardSync').textContent=S.dev?'This is the dev build, so your catches aren\u2019t sent.':wait?`${wait} of your bests ${wait===1?'is':'are'} waiting to send${G.sbErr?' \u2014 last try: '+G.sbErr.slice(0,80):''}.`:'All your bests are on the board.';}
@@ -7774,23 +7905,23 @@ function renderBoard(){
     rows=rows.slice().sort((a,b)=>(+b.lb)-(+a.lb)||(+b.len_cm)-(+a.len_cm));const key=r=>(+r.lb).toFixed(3)+'|'+(+r.len_cm).toFixed(2);
     const rk=rows.map(r=>1+rows.filter(o=>(+o.lb)>(+r.lb)+1e-9||(Math.abs(o.lb-r.lb)<1e-9&&(+o.len_cm)>(+r.len_cm)+1e-9)).length),tied=rows.map(r=>rows.filter(o=>key(o)===key(r)).length>1);
     const pid=S.pid,cls=['gold','silver','bronze'];
-    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.tag?`<small class="tag">#${+r.tag}</small>`:''}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
+    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.tag?`<small class="tag">#${+r.tag}</small>`:''}${+r.wins>0?`<small class="troph" title="Tournament wins">🏆${+r.wins>1?+r.wins:''}</small>`:''}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
       +(()=>{const lk=cur+'|'+lt,mine=(S.landedL||{})[lk];return pid&&!rows.some(r=>r.player_id===pid)&&mine?`<div class="board-msg">Your best here is ${fLen(mine,2)}${(S.sbSentL||{})[lk]>=mine?'':` (not sent yet${G.sbErr?': '+esc(G.sbErr.slice(0,80)):''})`}.</div>`:'';})();
     list.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));};
   const ck=cur+'|'+lt,c=sbCache[ck];if(c&&Date.now()-c.t<60000){show(c.rows);return;}
   list.innerHTML='<div class="board-msg">Checking the board\u2026</div>';
   // Each location has its own board. Until loc_bests is set up, fall back to the old table filtered to this location.
-  const q=`select=player,player_id,tag,len_cm,lb,loc,look,lv&species=eq.${cur}&loc=eq.${lt}&order=lb.desc,len_cm.desc,caught_at.asc&limit=10`;
+  const q=`select=player,player_id,tag,wins,len_cm,lb,loc,look,lv&species=eq.${cur}&loc=eq.${lt}&order=lb.desc,len_cm.desc,caught_at.asc&limit=10`;
   sbFetch('/rest/v1/loc_bests?'+q).catch(()=>sbFetch('/rest/v1/bests?'+q))
     .then(rows=>{sbCache[ck]={t:Date.now(),rows};show(rows);})
     .catch(err=>{const why=err&&err.name==='AbortError'?'timed out':String(err&&err.message||err);if(G.boardSp===cur&&!$('#board').hidden)list.innerHTML=`<div class="board-msg">Couldn\u2019t reach the leaderboard. Check your connection and try again in a bit.<br><small style="opacity:.6">(${esc(why)})</small></div>`;});
 }
-function render_(id){if(id==='shop')renderShop();if(id==='log')renderLog();if(id==='settings')renderSettings();if(id==='menu')renderMenu();if(id==='lurePick')renderLurePick();if(id==='map')renderMap();if(id==='quests')renderQuests();if(id==='board')renderBoard();if(id==='notes')renderNotes();if(id==='lureInfo')renderLureInfo();if(id==='install')renderInstall();if(id==='statsView')renderStatsView();}
+function render_(id){if(id==='shop')renderShop();if(id==='log')renderLog();if(id==='settings')renderSettings();if(id==='menu')renderMenu();if(id==='lurePick')renderLurePick();if(id==='map')renderMap();if(id==='quests')renderQuests();if(id==='board')renderBoard();if(id==='notes')renderNotes();if(id==='lureInfo')renderLureInfo();if(id==='install')renderInstall();if(id==='statsView')renderStatsView();if(id==='tour')renderTour();}
 document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',back));
 function inGameUI(on){$('#hud').hidden=!on;$('#controls').hidden=!on;$('#shopBtn').hidden=!on;$('#questBtn').hidden=!on;if(!on)$('#fightHud').hidden=true;}
 
 function renderMenu(){const n=SPECIES.filter(sp=>S.log[sp.id]).length;$('#mPlay').textContent=S.started?'Continue Fishing':'Go Fishing';
-  $('#menuStats').innerHTML=`<span>At <b>${LOC().name}</b></span><span>Level <b>${lvlInfo().l}</b></span><span><b>${S.coins}</b> coins</span><span><b>${n}/${SPECIES.length}</b> species</span>`;}
+  $('#mTour').hidden=!tourOpen();$('#menuStats').innerHTML=`<span>At <b>${LOC().name}</b></span><span>Level <b>${lvlInfo().l}</b></span><span><b>${S.coins}</b> coins</span><span><b>${n}/${SPECIES.length}</b> species</span>`;}
 $('#mPlay').onclick=()=>{audio();if(!S.name)askName(()=>startGame());else startGame();};
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let nameThen=null;
@@ -7877,16 +8008,16 @@ function startGame(){
   if(!S.tutDone)setTimeout(()=>{if(G.mode==='play'&&!currentScreen())tutStart();},700);
   if(G.refundMsg){const r=G.refundMsg;G.refundMsg=0;setTimeout(()=>toast('Rods are now complete setups',`Refunded ${r} coins for your old rods, reels and line`),2600);}
 }
-function pauseGame(){if(G.mode!=='play')return;G.paused=true;G.input.reel=false;G.charging=false;$('#bReel').classList.remove('down');$('#bAction').classList.remove('down');G.stack=[];show('pause');save();}
+function pauseGame(){if(G.mode!=='play')return;$('#pQuit').textContent=G.tour?'Leave tournament':'Save & Quit';$('#pTour').hidden=!G.tour;G.paused=true;G.input.reel=false;G.charging=false;$('#bReel').classList.remove('down');$('#bAction').classList.remove('down');G.stack=[];show('pause');save();}
 function resume(){if(G.pending&&G.mode==='play'){G.stack=[];showCatch();return;}G.paused=G.tut!=null;G.stack=[];show(null);updateHUD(true);refreshControls();flushLv();}
 $('#pauseBtn').onclick=pauseGame;
-$('#clockChip').onclick=()=>{if(G.mode!=='play'||G.fight)return;if(G.tut!=null)return;pauseGame();G.stack=[];open('map');G.stack=[];};
+$('#clockChip').onclick=()=>{if(G.mode!=='play'||G.fight)return;if(G.tour){toast('Tournament time','The clock and weather are real time. Leave from the pause menu.');return;}if(G.tut!=null)return;pauseGame();G.stack=[];open('map');G.stack=[];};
 $('#shopBtn').onclick=()=>{if(G.mode!=='play'||G.fight)return;G.paused=true;G.input.reel=false;G.charging=false;$('#bReel').classList.remove('down');G.stack=[];open('shop');G.stack=[];};
 $('#questBtn').onclick=()=>{if(G.mode!=='play'||G.fight)return;G.paused=true;G.input.reel=false;G.charging=false;$('#bReel').classList.remove('down');G.stack=[];open('quests');G.stack=[];};
 $('#pResume').onclick=()=>{SFX.ui();resume();};
 
 $('#pHelp').onclick=()=>open('help');$('#pSettings').onclick=()=>open('settings');
-$('#pQuit').onclick=()=>{save();if(G.fight){G.fight.f.state='wander';endFight();}G.lure.state='ready';G.lure.fish=null;G.mode='menu';G.paused=false;G.stack=[];inGameUI(false);show('menu');renderMenu();};
+$('#pQuit').onclick=()=>{if(G.tour){tourLeave();return;}save();if(G.fight){G.fight.f.state='wander';endFight();}G.lure.state='ready';G.lure.fish=null;G.mode='menu';G.paused=false;G.stack=[];inGameUI(false);show('menu');renderMenu();};
 document.querySelectorAll('#restBtns button').forEach(b=>b.onclick=()=>{
   const h=+b.dataset.h;if(G.fight){G.fight.f.state='wander';endFight();}retrieve();
   {const m0=S.minutes;let t2=h*60;if(t2<=m0)t2+=1440;if((m0<300&&t2>=300)||t2>=1740)questDawn();if(t2>=1440)newDay();}
@@ -8075,9 +8206,9 @@ function renderLog(){
   const n=SPECIES.filter(sp=>S.log[sp.id]).length;
   const li=lvlInfo(),pct=li.need?li.rem/li.need*100:100,best=SPECIES.filter(sp=>S.log[sp.id]).sort((a,b)=>S.log[b.id].best-S.log[a.id].best)[0];
   const st=(k,v,w)=>`<div${w?' class="wide"':''}><span>${k}</span><b>${v}</b></div>`;
-  $('#logSum').innerHTML=`<div class="ang-name"><b>${esc(S.name||'Unnamed angler')}${S.tag?` <small id="myTag" style="font-weight:600;opacity:.55;font-size:11px;margin-left:5px">#${S.tag}</small>`:'<small id="myTag" style="font-weight:600;opacity:.55;font-size:11px;margin-left:5px"></small>'}</b><button class="btn small" id="renameBtn" type="button">${S.name?'Rename':'Set name'}</button></div><div class="ang-top"><div class="ang-lv">Lv ${li.l}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${li.need?`${li.rem} / ${li.need} XP to level ${li.l+1}`:'Max level'}</span></div></div>
+  $('#logSum').innerHTML=`<div class="ang-name"><b>${esc(S.name||'Unnamed angler')}${S.tag?` <small id="myTag" style="font-weight:600;opacity:.55;font-size:11px;margin-left:5px">#${S.tag}</small>`:'<small id="myTag" style="font-weight:600;opacity:.55;font-size:11px;margin-left:5px"></small>'}</b><button class="btn small" id="renameBtn" type="button">${S.name?'Rename':'Set name'}</button></div><div class="ang-top"><div class="ang-lv">Lv ${li.l}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${li.gated&&li.rem>=li.need?`Level ${li.l+1}: land ${BLUEFIN_FOR_31} bluefin (${bluefinLanded()} of ${BLUEFIN_FOR_31})`:li.need?`${li.rem} / ${li.need} XP to level ${li.l+1}${li.gated?` \u00b7 and ${BLUEFIN_FOR_31} bluefin (${bluefinLanded()})`:''}`:'Max level'}</span></div></div>
     <div class="ang-grid">${st('Cast reach',fDist(castReach()*curSetup().reach/10))}${st('Hook set (matched)',Math.round(Math.min(.97,.92*hookSkill())*100)+'%')}${st('Cast accuracy','\u00b1'+Math.round(lerp(18,3,skillT()))+'%')}${st('Species',n+' / '+SPECIES.length)}
-    ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Respect',`${rankName()} \u00b7 ${S.respect||0}`)}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
+    ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Respect',`${rankName()} \u00b7 ${S.respect||0}`)}${st('Quests done',(S.quests&&S.quests.total)||0)}${S.tours&&S.tours.n?st('Tournaments',`${S.tours.n} \u{1F397}\uFE0F${S.tours.wins?' \u00b7 '+S.tours.wins+' \u{1F3C6}':''}`):''}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
     <div class="ang-gear">${curSetup().name} (${TIERS[curTier()].name}) \u00b7 ${lineLabel(S.setup)}</div>
     <div class="ang-kit"><span class="label">Gear</span>${['finder','shades','lantern','leader','whistle'].map(id=>{const it=GEAR.gear[id];return`<div class="row"><div><b>${it.name}</b><p>${it.desc}</p></div>${S.owned[id]?`<button class="tog" role="switch" data-kit="${id}" aria-label="${it.name}" aria-checked="${gearOn(id)}"></button>`:`<span class="kit-shop"><span class="coin"></span>${it.price} in shop</span>`}</div>`;}).join('')}</div>`;
   $('#renameBtn').onclick=()=>askName(null);sbTag(t=>{const m=$('#myTag');if(m)m.textContent='#'+t;});
@@ -8193,6 +8324,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.21", "Tournaments", ["Level 31 opens after you land 3 bluefin", "Weekly tournaments: one water, one target fish, one loaner rod, real time and weather", "Coins for the top 3, a trophy on the leaderboard for the winner, a ribbon for everyone who fishes"]],
   ["v1.20", "Steady water", ["Every angler has a number, shown by their name on the leaderboard and in your Log", "Fixed the tuna charter refusing its own bait if you’d last used the fly rod", "Fixed fish hooked deep shooting up toward the surface", "Fixed fish and bait jumping when the browser toolbar moves"]],
   ["v1.19", "Quicker tuna", ["Bluefin find your bait and bite sooner", "Shorter dev notes"]],
   ["v1.18", "Rigs and tuna", ["Fixed Carolina and three-way rig bait mechanics", "All bait rigs reel in smoothly instead of jumping", "Bluefin are less eager to bite and splash less", "Herring nets no longer snag a fight", "Fewer false casts with the fly rod"]],
@@ -8442,7 +8574,7 @@ function renderMap(){
       b.onclick=()=>{if(lv<Lc.lv||S.coins<Lc.fee)return;S.coins-=Lc.fee;S.unlocked[id]=true;save();SFX.coin();toast(`${Lc.name} unlocked`,`${Lc.feeName} bought`);renderMap();updateHUD(true);};d.append(b);}
     else if(!here){const b=document.createElement('button');b.className='btn primary';b.textContent=`Travel to ${Lc.name}`;if(Lc.perTrip&&Lc.fee){b.innerHTML=`${Lc.feeName} \u00b7 <span class="coin"></span> ${Lc.fee} \u2192 Go`;b.disabled=S.coins<Lc.fee;}b.onclick=()=>travel(id);d.append(b);}
     box.append(d);}}
-function travel(id){if(!locOK(id))return;if(G.fight){toast('Land your fish first');return;}if(G.pending){showCatch();return;}
+function travel(id){if(G.tour||!locOK(id))return;if(G.fight){toast('Land your fish first');return;}if(G.pending){showCatch();return;}
   const Lt=LOCS[id];if(Lt.perTrip&&id!==S.loc){if(S.coins<Lt.fee){toast(`You need ${Lt.fee} coins`,`${Lt.feeName} costs ${Lt.fee} coins a trip`);return;}S.coins-=Lt.fee;SFX.coin();}
   const prevLoc=S.loc;S.loc=id;G.logTab=id;save();G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.net=null;G.cam=0;G.pan=null;G.schoolHint=null;G.dry=0;ROPE.pts=null;
   if(Lt.ocean)G.seaX=seaStart();
@@ -8763,6 +8895,7 @@ function start(data){
   recoverSessions();
   resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}ensureQuests();updateQuestBtn();
   show('menu');renderMenu();inGameUI(false);updateHUD(true);refreshControls();
+  setTimeout(tourBoot,2500);
   requestAnimationFrame(frame);
 }
 // When the layout really does change (first load, turning the phone), everything in the water keeps its place relative
