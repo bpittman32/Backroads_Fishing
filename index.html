@@ -220,6 +220,7 @@ html.short .signhang{left:30%;width:min(36vw,260px)}
 .board-row .av{grid-row:span 2;width:44px;height:56px;border-radius:10px;background:linear-gradient(#9cc4d4,#5f8f6a);overflow:hidden;display:flex;align-items:flex-end;justify-content:center}
 .board-av{width:44px;height:56px}
 .board-row .nm small{font-weight:600;opacity:.65;font-size:12px}
+.board-row .nm small.tag{font-size:10px;opacity:.5;margin-left:3px;letter-spacing:.02em}
 .board-row .sub{grid-column:3/5;font-size:12px;opacity:.7}
 .board-row.me{border-color:var(--lichen);box-shadow:0 0 0 1px var(--lichen) inset}
 .board-row.gold .rk{color:#f2c14e}.board-row.silver .rk{color:#cfd6dc}.board-row.bronze .rk{color:#d89a64}
@@ -1175,7 +1176,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.19a';
+const VERSION='v1.20a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1327,7 +1328,9 @@ function tackleWeight(id=S.lure){const lu=LURES[id];if(!lu)return 1;if(lu.bait){
   const base={dryfly:.2,popbug:.4,nymph:.3,bugger:.6,ghost:.5,spinner:2,spoon:3,popper:2.5,crank:3,jig:2.5,fly:.5,frog:4.5,mouse:2.2,plastic:2,spinnerbait:3,buzz:3.5,jerk:2.2,lipless:3,grub:1.2,cjig:.6,swim:4.5,prop:3}[id]||2;return base*({small:.7,reg:1,large:1.4}[lureVar(id).size]||1);}
 function castFit(){const u=curSetup(),w=tackleWeight();if(w<u.cast[0])return{m:Math.max(.45,Math.pow(w/u.cast[0],.7)),why:'light'};if(w>u.cast[1])return{m:Math.max(.5,Math.pow(u.cast[1]/w,.8)),why:'heavy'};return{m:1,why:''};}
 // The fly rod casts flies only, and flies need the fly rod.
-function lureOK(id,setup=S.setup){const lu=LURES[id];if(!lu)return false;return SETUPS[setup]&&SETUPS[setup].fly?!!lu.flyOnly:!lu.flyOnly;}
+// Does this lure go on this rod? With no rod named, it's the rod in your hands: at sea that's the charter's rod, not the
+// one you left on the bank (a fly rod picked before the trip made the charter's own baits read as "needs the fly rod").
+function lureOK(id,setup){const lu=LURES[id];if(!lu)return false;const su=setup!=null?SETUPS[setup]:curSetup();return su&&su.fly?!!lu.flyOnly:!lu.flyOnly;}
 function fallbackLure(){const have=id=>{const c=S.lures[id];return c===-1||c>0;};return ALL_ORDER.find(id=>have(id)&&lureOK(id))||(curSetup().fly?S.lure:'worm');}
 function switchSetup(id){if(!setupOK(id)||id===S.setup)return;G.fc=null;G.charging=false;const o=S.setups[S.setup];if(o){o.lure=S.lure;o.hook=S.hook;o.rig=JSON.parse(JSON.stringify(S.rig||{type:'free'}));o.var=S.variant&&S.variant[S.lure]?{...S.variant[S.lure]}:null;}
   // Each rod comes back exactly as you left it: its own bait or lure, hook and rig. A rod you haven't set up yet gets a sensible default for it, never the other rod's tackle.
@@ -2366,7 +2369,13 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   // Tablets: scale the buttons, menus and cards with the screen (phones stay at 1). The canvas scales on its own via SC.
   const land0=CW>CH*1.15;UI=clamp(land0?CH/560:CW/500,1,1.7);document.documentElement.classList.toggle('short',land0&&CH/UI<620);document.documentElement.style.setProperty('--ui',UI.toFixed(3));
   cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);cv.style.width=CW+'px';cv.style.height=CH+'px';
-  const land=CW>CH*1.15;G.land=land;SC=land?Math.max(Math.min(CW/400,CH/470),CW/800):Math.min(CW/400,CH/560);W=CW/SC;TW=Math.min(W,400);WX=Math.round(Math.max(TW*2,W));if(typeof S!=='undefined'&&S&&LOCS[S.loc]&&LOCS[S.loc].ocean)WX+=Math.round(W*2.5);H=CH/SC;SURF=Math.round(H*(land?.34:.31));
+  const land=CW>CH*1.15;G.land=land;
+  // The water is laid out from a steady height. A browser's toolbar sliding in and out changes only the page height,
+  // and if the surface and bottom moved with it the fish and bait would jump up and down the water. So while the width
+  // stays the same, keep the tallest height seen (the toolbar just covers the bottom for a moment); a real change of
+  // width or orientation lays it out afresh.
+  const lkey=CW+(land?'L':'P');let LCH=CH;if(G.layKey===lkey&&G.layCH&&CH<G.layCH&&CH>G.layCH*.7)LCH=G.layCH;G.layKey=lkey;G.layCH=LCH;
+  SC=land?Math.max(Math.min(CW/400,LCH/470),CW/800):Math.min(CW/400,LCH/560);W=CW/SC;TW=Math.min(W,400);WX=Math.round(Math.max(TW*2,W));if(typeof S!=='undefined'&&S&&LOCS[S.loc]&&LOCS[S.loc].ocean)WX+=Math.round(W*2.5);H=LCH/SC;SURF=Math.round(H*(land?.34:.31));
   GROUND=H-Math.max(land?34:60,(land?64:150)/SC);if(GROUND-SURF<150)GROUND=SURF+150;
   darkC.width=Math.ceil(CW/2);darkC.height=Math.ceil(CH/2);
   const r=seeded(LOC().seed),Lc=LOC(),creek=!!Lc.rocky||!!Lc.boulders;
@@ -3054,7 +3063,7 @@ function startFight(f,gut){G.sess.hooked++;if(S.dev||f.devMade)f.devT=true;setTi
   for(const o of G.fish)if(o!==f&&o.state==='follow'){flee(o,3);}
   if(G.lure.kite){G.lure.kite=false;splash(f.x,1.6);vib(90);}f.state='fight';f.mouthHold=false;G.lure.state='hooked';SFX.hook();vib(70);
   const [a,b]=bandRange(f.sp,f.x);
-  G.fight={f,tension:.35,stamina:1,dir:1,phase:'rest',phaseT:rand(1.2,1.8),thrash:0,thrashT:rand(.4,.9),over:0,slack:0,ty:fightTy(f.sp,f.x),t:0,say:'',gut:!!gut};{const h=heftOf(f),lb=fishLb(f);G.fight.heft=h.m;G.fight.heftR=h.R;G.fight.lbTire=Math.max(1,Math.sqrt(lb/15));G.fight.lbDrag=Math.max(1,Math.pow(lb/20,.6));}
+  G.fight={f,tension:.35,stamina:1,dir:1,phase:'rest',phaseT:rand(1.2,1.8),thrash:0,thrashT:rand(.4,.9),over:0,slack:0,ty:f.y,t:0,say:'',gut:!!gut};  // the fight starts at the depth it was hooked; later runs pick their own{const h=heftOf(f),lb=fishLb(f);G.fight.heft=h.m;G.fight.heftR=h.R;G.fight.lbTire=Math.max(1,Math.sqrt(lb/15));G.fight.lbDrag=Math.max(1,Math.pow(lb/20,.6));}
   // Hooked on the bottom straight under the boat: the fight is a lift, cranking it up through the water to the surface.
   if(G.sea&&G.lure.vert&&!f.sp.giant)Object.assign(G.fight,{vert:true,sounded:true,lift:0});
   if(f.sp.snag&&!gut){const T=timberNear(f);if(T&&timDist(f,T)<12*pxPerFt()){const sz=clamp((f.len-f.sp.len[0])/Math.max(1,f.sp.len[1]-f.sp.len[0]),0,1);Object.assign(G.fight,{tim:T,phase:'bolt',phaseT:rand(1.1,1.5)*(.8+.5*sz)*BOLT_SLOW,tim0:timDist(f,T)/pxPerFt()});}}
@@ -3095,7 +3104,8 @@ function fightTy(sp,x){if(sp.giant){const b=bottomAt(x);return rand(lerp(SURF+10
 function nextPhase(F){
   const sp=F.f.sp,tired=.35+.65*F.stamina;
   if(F.phase==='rest'){
-    if(sp.jumps&&Math.random()<sp.jumps*(.4+.6*F.stamina)){F.phase='surge';F.phaseT=.75;SFX.thrash();vib(25);}
+    // a jumper only rushes up to leap from fairly shallow water; hooked deep it runs instead, and leaps once you've worked it up
+    if(sp.jumps&&F.f.y<SURF+110&&Math.random()<sp.jumps*(.4+.6*F.stamina)){F.phase='surge';F.phaseT=.75;SFX.thrash();vib(25);}
     else{F.phase='tell';F.phaseT=sp.erratic?.35:.55;SFX.thrash();vib(25);}}
   else if(F.phase==='surge'){F.phase='air';F.phaseT=rand(.75,.95);F.airDur=F.phaseT;F.airT=0;F.airSlack=0;F.airX0=F.f.x;F.airDx=rand(-30,30);splash(F.f.x,1.1);vib(40);}
   else if(F.phase==='air'){splash(F.f.x,1.4);vib(60);if(F.airSlack>.3&&!F.gut&&Math.random()<.55)F.thrown=true;F.phase='rest';F.phaseT=rand(1,1.8);}
@@ -3163,12 +3173,13 @@ function updateFight(dt){if(S.dev&&G.fight)G.fight.f.devT=true;
     if(charge&&F.lx<DOCKX+95&&!reeling){F.phase='rest';F.phaseT=rand(.6,1.2);F.dir=1;}
     // In tight water the far bank stops a run. Pulling into the roots and rocks there can wrap the line.
     if(LOC().tight&&F.lx>WX-24){F.lx=WX-24;if(F.slip||running&&F.dir>0){F.wrap=(F.wrap||0)+dt;if(F.wrap>1.2&&Math.random()<dt*2){F.wrap=0;snap('Turn it before it reaches the bank','Wrapped in the roots! It snapped');return;}}}else F.wrap=Math.max(0,(F.wrap||0)-dt);f.x=clamp(F.lx,DOCKX+10,G.sea?1e6:WX-12);
-    if(F.phase==='surge')f.y+=(SURF+4-f.y)*Math.min(1,dt*5);
+    if(F.phase==='surge')f.y+=Math.max((SURF+4-f.y)*Math.min(1,dt*5),-220*dt);
     else{// Cranking lifts the fish off the bottom along the line; a run lets it dive back down. Heavy fish and bottom fish lift slowly.
       const lifting=reelPull>0&&F.phase!=='run';
       // With a lot of line out, cranking mostly gains line rather than depth. A fish you stop lifting settles back down.
       const reach=G.sea?clamp(1-lineOut(F)/3000,.15,1):1;F.lift=clamp((F.lift||0)+(lifting?dt*.32*(sp.deep?.6:1)*(F.sounded?.7:1)*reach/Math.max(.7,F.heft||1):F.phase==='run'&&F.dir>0?-dt*.3*(F.sounded?.3+.7*F.stamina:1):0),0,F.sounded?1:.85);
-      const k=F.sounded?1:clamp((f.x-DOCKX)/180,0,1);const want=lerp(SURF+10,lerp(F.ty,SURF+10,F.lift),k);f.y+=(want-f.y)*dt*1.4;}
+      // a hooked fish climbs or dives like a fish swimming, never in a snap
+      const k=F.sounded?1:clamp((f.x-DOCKX)/180,0,1);const want=lerp(SURF+10,lerp(F.ty,SURF+10,F.lift),k),vmax=45*dt;f.y+=clamp((want-f.y)*dt*1.4,-vmax,vmax);}
     // Near the shore a hooked fish is being dragged up at the surface, so don't push it back out over shallow banks.
     f.y=clamp(f.y,SURF+4,Math.max(SURF+4,fishFloor(f,.45)-3));if(f.x>DOCKX+70)pushFromBank(f);if(F.lx<WX-12)F.lx=f.x;
     f.face=reelPull>swim&&!running?-1:F.dir;
@@ -7640,6 +7651,10 @@ function back(){const prev=G.stack.pop();if(prev){show(prev);render_(prev);}else
 // and call submit_best(), which keeps a catch only when it beats that player's best for the species.
 const SB_URL='https://ihctnwgpcnjbjsxcvgyg.supabase.co',SB_KEY='sb_publishable_ZO8hj5a-GLz0RVA9Do9syQ_XALYglUa';
 function sbOn(){return!!(SB_URL&&SB_KEY);}
+// Your angler number: a permanent number the leaderboard shows beside your name, so two anglers with the same name can be
+// told apart. Asked for once from the server and kept in the save.
+function sbTag(then){if(S.tag){then&&then(S.tag);return;}if(!navigator.onLine)return;
+  sbFetch('/rest/v1/rpc/my_tag',{method:'POST',body:JSON.stringify({p_id:sbPid()})}).then(t=>{if(+t>0){S.tag=+t;save();then&&then(S.tag);}}).catch(()=>{});}
 function sbPid(){if(!S.pid){S.pid=crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const r=Math.random()*16|0;return(ch==='x'?r:(r&3|8)).toString(16);});save();}return S.pid;}
 // A successful call to a function that returns nothing comes back empty (204). Read it as text, since Safari's
 // json() throws on an empty body, which once made every successful leaderboard send look like a failure.
@@ -7759,13 +7774,13 @@ function renderBoard(){
     rows=rows.slice().sort((a,b)=>(+b.lb)-(+a.lb)||(+b.len_cm)-(+a.len_cm));const key=r=>(+r.lb).toFixed(3)+'|'+(+r.len_cm).toFixed(2);
     const rk=rows.map(r=>1+rows.filter(o=>(+o.lb)>(+r.lb)+1e-9||(Math.abs(o.lb-r.lb)<1e-9&&(+o.len_cm)>(+r.len_cm)+1e-9)).length),tied=rows.map(r=>rows.filter(o=>key(o)===key(r)).length>1);
     const pid=S.pid,cls=['gold','silver','bronze'];
-    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
+    list.innerHTML=rows.map((r,i)=>`<div class="board-row ${cls[rk[i]-1]||''}${r.player_id===pid?' me':''}"><span class="rk">${tied[i]?'<small>T</small>':''}${rk[i]}</span><span class="av" data-look="${esc(r.look||'')}"></span><span class="nm">${esc(r.player)}${r.tag?`<small class="tag">#${+r.tag}</small>`:''}${r.player_id===pid?' (you)':''}${r.lv?` <small>Lv ${+r.lv}</small>`:''}</span><span class="sz">${fLen(+r.len_cm,2)}</span><span class="sub">${fWt(+r.lb/2.2046,true)}${tied[i]?' \u00b7 tied':''} \u00b7 ${esc((LOCS[r.loc]||{}).name||r.loc)}</span></div>`).join('')
       +(()=>{const lk=cur+'|'+lt,mine=(S.landedL||{})[lk];return pid&&!rows.some(r=>r.player_id===pid)&&mine?`<div class="board-msg">Your best here is ${fLen(mine,2)}${(S.sbSentL||{})[lk]>=mine?'':` (not sent yet${G.sbErr?': '+esc(G.sbErr.slice(0,80)):''})`}.</div>`:'';})();
     list.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));};
   const ck=cur+'|'+lt,c=sbCache[ck];if(c&&Date.now()-c.t<60000){show(c.rows);return;}
   list.innerHTML='<div class="board-msg">Checking the board\u2026</div>';
   // Each location has its own board. Until loc_bests is set up, fall back to the old table filtered to this location.
-  const q=`select=player,player_id,len_cm,lb,loc,look,lv&species=eq.${cur}&loc=eq.${lt}&order=lb.desc,len_cm.desc,caught_at.asc&limit=10`;
+  const q=`select=player,player_id,tag,len_cm,lb,loc,look,lv&species=eq.${cur}&loc=eq.${lt}&order=lb.desc,len_cm.desc,caught_at.asc&limit=10`;
   sbFetch('/rest/v1/loc_bests?'+q).catch(()=>sbFetch('/rest/v1/bests?'+q))
     .then(rows=>{sbCache[ck]={t:Date.now(),rows};show(rows);})
     .catch(err=>{const why=err&&err.name==='AbortError'?'timed out':String(err&&err.message||err);if(G.boardSp===cur&&!$('#board').hidden)list.innerHTML=`<div class="board-msg">Couldn\u2019t reach the leaderboard. Check your connection and try again in a bit.<br><small style="opacity:.6">(${esc(why)})</small></div>`;});
@@ -8060,12 +8075,12 @@ function renderLog(){
   const n=SPECIES.filter(sp=>S.log[sp.id]).length;
   const li=lvlInfo(),pct=li.need?li.rem/li.need*100:100,best=SPECIES.filter(sp=>S.log[sp.id]).sort((a,b)=>S.log[b.id].best-S.log[a.id].best)[0];
   const st=(k,v,w)=>`<div${w?' class="wide"':''}><span>${k}</span><b>${v}</b></div>`;
-  $('#logSum').innerHTML=`<div class="ang-name"><b>${esc(S.name||'Unnamed angler')}</b><button class="btn small" id="renameBtn" type="button">${S.name?'Rename':'Set name'}</button></div><div class="ang-top"><div class="ang-lv">Lv ${li.l}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${li.need?`${li.rem} / ${li.need} XP to level ${li.l+1}`:'Max level'}</span></div></div>
+  $('#logSum').innerHTML=`<div class="ang-name"><b>${esc(S.name||'Unnamed angler')}${S.tag?` <small id="myTag" style="font-weight:600;opacity:.55;font-size:11px;margin-left:5px">#${S.tag}</small>`:'<small id="myTag" style="font-weight:600;opacity:.55;font-size:11px;margin-left:5px"></small>'}</b><button class="btn small" id="renameBtn" type="button">${S.name?'Rename':'Set name'}</button></div><div class="ang-top"><div class="ang-lv">Lv ${li.l}</div><div class="ang-xp"><div class="bar"><i style="width:${pct}%"></i></div><span>${li.need?`${li.rem} / ${li.need} XP to level ${li.l+1}`:'Max level'}</span></div></div>
     <div class="ang-grid">${st('Cast reach',fDist(castReach()*curSetup().reach/10))}${st('Hook set (matched)',Math.round(Math.min(.97,.92*hookSkill())*100)+'%')}${st('Cast accuracy','\u00b1'+Math.round(lerp(18,3,skillT()))+'%')}${st('Species',n+' / '+SPECIES.length)}
     ${st('Fish caught',S.stats.caught)}${st('Released',S.stats.released)}${st('Lines snapped',S.stats.snapped)}${st('Coins earned',S.stats.earned)}${st('Rare-fish luck','+'+Math.round(effLuck()*100)+'%'+(gearOn('whistle')?' (whistle +8%)':''))}${st('Respect',`${rankName()} \u00b7 ${S.respect||0}`)}${st('Quests done',(S.quests&&S.quests.total)||0)}${st('Trophies',(()=>{const t=trophyCounts();return`${t[2]} gold \u00b7 ${t[1]} silver \u00b7 ${t[0]} bronze`;})(),1)}${st('Biggest',best?`${best.name} ${fLen(S.log[best.id].best)}`:'\u2014')}</div>
     <div class="ang-gear">${curSetup().name} (${TIERS[curTier()].name}) \u00b7 ${lineLabel(S.setup)}</div>
     <div class="ang-kit"><span class="label">Gear</span>${['finder','shades','lantern','leader','whistle'].map(id=>{const it=GEAR.gear[id];return`<div class="row"><div><b>${it.name}</b><p>${it.desc}</p></div>${S.owned[id]?`<button class="tog" role="switch" data-kit="${id}" aria-label="${it.name}" aria-checked="${gearOn(id)}"></button>`:`<span class="kit-shop"><span class="coin"></span>${it.price} in shop</span>`}</div>`;}).join('')}</div>`;
-  $('#renameBtn').onclick=()=>askName(null);
+  $('#renameBtn').onclick=()=>askName(null);sbTag(t=>{const m=$('#myTag');if(m)m.textContent='#'+t;});
   $('#logSum').querySelectorAll('[data-kit]').forEach(b=>b.onclick=()=>{const id=b.dataset.kit;S.settings[id]=!gearOn(id);save();SFX.ui();renderLog();renderSettings();});
   const grid=$('#logGrid');grid.innerHTML='';
   let tb=$('#logTabs');if(!tb){tb=document.createElement('div');tb.className='tabs';tb.id='logTabs';grid.before(tb);}tb.innerHTML='';
@@ -8178,6 +8193,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.20", "Steady water", ["Every angler has a number, shown by their name on the leaderboard and in your Log", "Fixed the tuna charter refusing its own bait if you’d last used the fly rod", "Fixed fish hooked deep shooting up toward the surface", "Fixed fish and bait jumping when the browser toolbar moves"]],
   ["v1.19", "Quicker tuna", ["Bluefin find your bait and bite sooner", "Shorter dev notes"]],
   ["v1.18", "Rigs and tuna", ["Fixed Carolina and three-way rig bait mechanics", "All bait rigs reel in smoothly instead of jumping", "Bluefin are less eager to bite and splash less", "Herring nets no longer snag a fight", "Fewer false casts with the fly rod"]],
   ["v1.17", "Bait isn’t a catch", ["Sabiki bait no longer counts as fish caught"]],
@@ -8749,7 +8765,15 @@ function start(data){
   show('menu');renderMenu();inGameUI(false);updateHUD(true);refreshControls();
   requestAnimationFrame(frame);
 }
-addEventListener('resize',()=>{const wx0=WX;resize();if(WX!==wx0){for(const f of G.fish){f.x=clamp(f.x,DOCKX+30,WX-15);f.y=clamp(f.y,SURF+6,Math.max(SURF+8,bottomAt(f.x)-8));newWanderTarget(f);}if(G.lure.state==='water'&&G.lure.x>WX-20)G.lure.x=WX-20;if(G.beds){for(const b of G.beds)if(b.guard&&b.guard.state!=='fight'){b.guard.bed=null;b.guard.state='wander';}G.beds=[];updateNests();}}});
+// When the layout really does change (first load, turning the phone), everything in the water keeps its place relative
+// to the surface and bottom: each depth is scaled to the new water, so nothing jumps up or down.
+function remapDepths(s0,d0){const s1=SURF,d1=GROUND-SURF;if(!d0||(Math.abs(s1-s0)<.01&&Math.abs(d1-d0)<.01))return;const k=d1/d0,ry=y=>y>=s0?s1+(y-s0)*k:y+(s1-s0);
+  for(const f of G.fish){f.y=ry(f.y);if(f.ty!=null)f.ty=ry(f.ty);}
+  const L=G.lure;if(L){L.y=ry(L.y);if(L.py!=null)L.py=ry(L.py);if(L.y0!=null)L.y0=ry(L.y0);if(L.sk)L.sk.y=ry(L.sk.y);if(L.leash)L.leash.y=ry(L.leash.y);if(L.ldr)for(const q of L.ldr)q[1]=ry(q[1]);}
+  if(G.bob){if(G.bob.y!=null)G.bob.y=ry(G.bob.y);if(G.bob.out!=null)G.bob.out*=k;if(G.bob.fl!=null)G.bob.fl*=k;}
+  if(ROPE.pts)for(const q of ROPE.pts)q[1]=ry(q[1]);
+  if(G.sea)for(const a of[G.sea.chunks,G.sea.clouds])if(a)for(const o of a)if(o&&o.y!=null)o.y=ry(o.y);}
+addEventListener('resize',()=>{const wx0=WX,s0=SURF,d0=GROUND-SURF;resize();remapDepths(s0,d0);if(WX!==wx0){for(const f of G.fish){f.x=clamp(f.x,DOCKX+30,WX-15);f.y=clamp(f.y,SURF+6,Math.max(SURF+8,bottomAt(f.x)-8));newWanderTarget(f);}if(G.lure.state==='water'&&G.lure.x>WX-20)G.lure.x=WX-20;if(G.beds){for(const b of G.beds)if(b.guard&&b.guard.state!=='fight'){b.guard.bed=null;b.guard.state='wander';}G.beds=[];updateNests();}}});
 setInterval(()=>{if(G.mode==='play')save();},15000);
 window.claude?.hot?.snapshot?.(()=>({S}));
 window.claude?.hot?.ready?window.claude.hot.ready(start):start(window.claude?.hot?.data??{});
