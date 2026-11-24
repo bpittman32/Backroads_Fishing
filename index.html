@@ -1198,7 +1198,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.21a';
+const VERSION='v1.22a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -2618,7 +2618,9 @@ function popTarget(){return Math.round(clamp(WX/38,12,26)*(typeof S!=='undefined
 function schoolSize(sp){const [a,b]=sp.school;return Math.min(sp.bigSchool?14:9,a+Math.floor(Math.random()*(b-a+1)));}
 function spawnTick(initial){
   if(typeof turtleTick==='function'&&G.mode!=='menu')turtleTick(initial);
-  for(const f of G.fish){if(f.state==='fight'||f.state==='leave')continue;if(G.lure.fish===f)continue;if(!initial&&!f.school&&!f.bed&&!f.swarm&&Math.random()<(f.sp.turtle?.008:.04))setLeave(f);}
+  for(const f of G.fish){if(f.state==='fight'||f.state==='leave')continue;if(G.lure.fish===f)continue;if(!initial&&!f.school&&!f.bed&&!f.swarm&&Math.random()<(f.sp.turtle?.008:.04))setLeave(f);
+    // a school that has gone wary moves on, so fresh fish can come in
+    else if(!initial&&f.school&&!f.bed&&f.school.m.every(m=>m.dead||m.wise)&&Math.random()<.04)setLeave(f);}
   for(const f of G.fish)if(f.state==='leave'&&f.school)for(const m of f.school.m)if(m.state!=='fight'&&m.state!=='leave'&&G.lure.fish!==m){m.state='leave';m.exit=f.exit;}
   const alive=G.fish.filter(f=>f.state!=='leave'&&!f.swarm).length;
   const reach0=DOCKX+34+(TW-DOCKX-56);let flip=G.fish.filter(f=>f.x<reach0&&f.state!=='leave').length<alive*.5;
@@ -2939,6 +2941,9 @@ function fishSocial(dt){
     if(prey.school)for(const m of prey.school.m)if(m!==prey&&!m.dead&&calm(m.state)&&dist(m.x,m.y,p.x,p.y)<160)fleeFrom(m,p,rand(1.4,2.4));
     fleeFrom(prey,p,2.4);}
 }
+// A fish stung by the hook stays off the bait for a while, then forgets: a few minutes for the aggressive predators, longer for
+// the shy ones (trout, carp).
+function wiseFor(sp){return sp.wary?rand(300,480):PREDATORS.has(sp.id)?rand(120,240):rand(180,360);}
 function flee(f,cool=8){f.state='flee';f.timer=2;f.cool=cool;const L=G.lure;const away=Math.sign(f.x-(L.x||f.x))||1;f.tx=clamp(f.x+away*120,fxMin(),WX-10);const [a,b]=bandRange(f.sp,f.tx);f.ty=rand(a,b);if(L.fish===f)L.fish=null;}
 function spook(f,msg){flee(f,8);f.wise=true;if(msg)toast(msg);SFX.lose();refreshControls();}
 function checkNotice(f,dt){
@@ -2976,7 +2981,7 @@ function aimAt(f,L,gap){
 }
 function updateFish(f,dt){
   const sp=f.sp,L=G.lure;
-  f.wig+=dt*(f.hang&&f.breath!=null&&f.y<SURF+f.L*.22?.6:5+Math.hypot(f.vx,f.vy)*.09);if(f.state!=='leave'){if(f.fz==null)f.fz=1-f.alpha;f.fz=Math.max(0,f.fz-dt*.5);f.alpha=1-f.fz;}f.cool=Math.max(0,f.cool-dt);
+  f.wig+=dt*(f.hang&&f.breath!=null&&f.y<SURF+f.L*.22?.6:5+Math.hypot(f.vx,f.vy)*.09);if(f.state!=='leave'){if(f.fz==null)f.fz=1-f.alpha;f.fz=Math.max(0,f.fz-dt*.5);f.alpha=1-f.fz;}f.cool=Math.max(0,f.cool-dt);if(f.wise){if(f.wiseT==null)f.wiseT=wiseFor(f.sp);if((f.wiseT-=dt)<=0){f.wise=false;f.wiseT=null;}}
   if(f.state==='fight')return;
   if(f.bust){tunaBust(f,dt);return;}
   if(f.charge){tunaCharge(f,dt);return;}
@@ -8324,6 +8329,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.22", "Second chances", ["Fish that miss the hook bite again after a few minutes, and spooked schools move on"]],
   ["v1.21", "Tournaments", ["Level 31 opens after you land 3 bluefin", "Weekly tournaments: one water, one target fish, one loaner rod, real time and weather", "Coins for the top 3, a trophy on the leaderboard for the winner, a ribbon for everyone who fishes"]],
   ["v1.20", "Steady water", ["Every angler has a number, shown by their name on the leaderboard and in your Log", "Fixed the tuna charter refusing its own bait if you’d last used the fly rod", "Fixed fish hooked deep shooting up toward the surface", "Fixed fish and bait jumping when the browser toolbar moves"]],
   ["v1.19", "Quicker tuna", ["Bluefin find your bait and bite sooner", "Shorter dev notes"]],
