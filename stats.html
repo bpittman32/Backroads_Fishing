@@ -67,6 +67,13 @@ details summary{cursor:pointer}
 .prog{height:6px;background:var(--grid);border-radius:3px;overflow:hidden;min-width:60px}.prog div{height:100%;background:var(--accent);border-radius:3px}
 .cap{color:var(--accent);font-weight:600}
 td .sm{display:block;font-size:11px;color:var(--muted)}
+.ins{list-style:none;margin:4px 0 0;padding:0}.ins li{padding:8px 0 8px 12px;border-top:1px solid var(--line);border-left:3px solid var(--muted);margin-bottom:2px;font-size:14px}
+.ins li:first-child{border-top:0}.ins li span{display:block;color:var(--text2);font-size:13px}.ins li.hi{border-left-color:var(--bad)}.ins li.mid{border-left-color:var(--accent)}.ins li.low{border-left-color:var(--s1)}
+.feed{list-style:none;margin:0;padding:0;font-size:13px;max-height:420px;overflow-y:auto}.feed li{padding:5px 0;border-top:1px solid var(--line)}
+.rb{display:inline-block;width:38px;height:6px;background:var(--grid);border-radius:3px;margin-right:6px;vertical-align:middle;overflow:hidden}.rb i{display:block;height:100%;background:var(--good)}
+#who{padding:5px 10px;border-radius:999px;font-size:13px;max-width:180px}
+h2 small{font-weight:400;font-size:12px}
+.tw td:first-child{min-width:118px}
 </style>
 </head>
 <body>
@@ -90,11 +97,18 @@ td .sm{display:block;font-size:11px;color:var(--muted)}
 
 <script>
 const SB_URL='https://ihctnwgpcnjbjsxcvgyg.supabase.co',SB_KEY='sb_publishable_ZO8hj5a-GLz0RVA9Do9syQ_XALYglUa';
-const PLACES={pond:'Mossback Pond',creek:'Willow Creek',lake:'Big Rock Lake',bayou:'Tupelo Bayou',river:'Iron Ferry River',alpine:'Highline Lake',amazon:'Carter’s Adventure',pier:'Pelican Point Pier',congo:'Boyoma Falls',pei:'North Lake Banks'};
-const PLACE_ORDER=Object.keys(PLACES);
-// Fish names and the places they live, copied from the game (v1.09a). Update when species are added.
-const SPN={"bluegill":["Bluegill",["pond","lake","bayou"]],"pumpkinseed":["Pumpkinseed",["pond"]],"perch":["Yellow Perch",["pond","lake"]],"crappie":["Black Crappie",["pond","lake"]],"bass":["Largemouth Bass",["pond","bayou"]],"trout":["Rainbow Trout",["pond"]],"catfish":["Channel Catfish",["pond","river"]],"pickerel":["Chain Pickerel",["pond"]],"carp":["Common Carp",["pond","river"]],"brownbull":["Brown Bullhead",["pond"]],"blackbull":["Black Bullhead",["pond"]],"eel":["American Eel",["pond"]],"bowfin":["Bowfin",["pond"]],"smallmouth":["Smallmouth Bass",["creek","lake","river"]],"brook":["Brook Trout",["creek","alpine"]],"brown":["Brown Trout",["creek"]],"rockbass":["Rock Bass",["creek"]],"fallfish":["Fallfish",["creek"]],"chub":["Creek Chub",["creek"]],"sucker":["White Sucker",["creek","river"]],"undercut":["The Undercut",["creek"]],"walleye":["Walleye",["lake","river"]],"pike":["Northern Pike",["lake","river"]],"whitebass":["White Bass",["lake","river"]],"drum":["Freshwater Drum",["river"]],"tigermuskie":["Tiger Muskie",["lake"]],"flathead":["The Ferryman",["river"]],"piranha":["Red-bellied Piranha",["amazon"]],"peacock":["Peacock Bass",["amazon"]],"arowana":["Silver Arowana",["amazon"]],"pacu":["Pacu",["amazon"]],"oscar":["Oscar",["amazon"]],"redtail":["Redtail Catfish",["amazon"]],"arapaima":["Arapaima",["amazon"]],"spottedgar":["Spotted Gar",["bayou"]],"warmouth":["Warmouth",["bayou"]],"redear":["Redear Sunfish",["bayou"]],"flier":["Flier",["bayou"]],"bluecat":["Blue Catfish",["bayou"]],"alligatorgar":["Alligator Gar",["bayou"]],"cutthroat":["Cutthroat Trout",["alpine"]],"grayling":["Arctic Grayling",["alpine"]],"golden":["Golden Trout",["alpine"]],"whitefish":["Mountain Whitefish",["alpine"]],"laketrout":["Lake Trout",["alpine"]],"mackinaw":["Old Mackinaw",["alpine"]],"redfish":["Redfish",["pier"]],"seatrout":["Speckled Trout",["pier"]],"sheepshead":["Sheepshead",["pier"]],"flounder":["Southern Flounder",["pier"]],"mackerel":["Spanish Mackerel",["pier"]],"pompano":["Florida Pompano",["pier"]],"hardhead":["Hardhead Catfish",["pier"]],"shad":["Gizzard Shad",["river","bayou"]],"pinfish":["Pinfish",["pier"]],"mullet":["Striped Mullet",["pier"]],"sprat":["Royal Sprat",["congo"]],"butterflyfish":["African Butterflyfish",["congo"]],"redbreast":["Redbreast Tilapia",["congo"]],"distichodus":["Six-barred Distichodus",["congo"]],"nembwe":["Nembwe",["congo"]],"africanpike":["African Pike",["congo"]],"tigerfish":["African Tigerfish",["congo"]],"nileperch":["Nile Perch",["congo"]],"vundu":["Vundu",["congo"]],"goliath":["Goliath Tigerfish",["congo"]],"tarpon":["Tarpon",["pier"]],"herring":["Atlantic Herring",["pei"]],"atlmackerel":["Atlantic Mackerel",["pei"]],"cod":["Atlantic Cod",["pei"]],"dogfish":["Spiny Dogfish",["pei"]],"bluefin":["Atlantic Bluefin Tuna",["pei"]],"painted":["Eastern Painted Turtle",["pond"]],"musk":["Common Musk Turtle",["pond"]],"snapper":["Common Snapping Turtle",["pond"]],"softshell":["Spiny Softshell",["pond"]],"gatorsnap":["Alligator Snapping Turtle",["pond"]],"yellowspot":["Yellow-spotted River Turtle",["pond"]]};
-const spName=id=>(SPN[id]||[id])[0];
+// Names copied from the game (species, places, baits, rods, gear). Regenerate when content is added.
+const META={"sp":[["bluegill","Bluegill",["pond","lake","bayou"],[12,25],10,0,0,0,0],["pumpkinseed","Pumpkinseed",["pond"],[10,22],8,0,0,0,0],["perch","Yellow Perch",["pond","lake"],[15,36],8,0,0,0,0],["crappie","Black Crappie",["pond","lake"],[15,38],6,0,0,0,0],["bass","Largemouth Bass",["pond","bayou"],[25,62],6,0,0,0,0],["trout","Rainbow Trout",["pond"],[25,55],5,0,0,0,0],["catfish","Channel Catfish",["pond","river"],[35,82],6,0,0,0,0],["pickerel","Chain Pickerel",["pond"],[35,66],3.5,0,0,0,0],["carp","Common Carp",["pond","river"],[45,95],4,0,0,0,0],["brownbull","Brown Bullhead",["pond"],[18,38],7,0,0,0,0],["blackbull","Black Bullhead",["pond"],[18,32],6,0,0,0,0],["eel","American Eel",["pond"],[45,110],2.5,0,0,0,0],["bowfin","Bowfin",["pond"],[55,90],0.5,1,0,0,0],["smallmouth","Smallmouth Bass",["creek","lake","river"],[25,55],6,0,0,0,0],["brook","Brook Trout",["creek","alpine"],[15,35],8,0,0,0,0],["brown","Brown Trout",["creek"],[25,60],4,0,0,0,0],["rockbass","Rock Bass",["creek"],[15,28],7,0,0,0,0],["fallfish","Fallfish",["creek"],[15,40],6,0,0,0,0],["chub","Creek Chub",["creek"],[10,25],6,0,0,0,0],["sucker","White Sucker",["creek","river"],[25,50],6,0,0,0,0],["undercut","The Undercut",["creek"],[70,85],0.45,1,0,0,0],["walleye","Walleye",["lake","river"],[30,70],6,0,0,0,0],["pike","Northern Pike",["lake","river"],[50,110],4,0,0,0,0],["whitebass","White Bass",["lake","river"],[25,45],4.5,0,0,0,0],["drum","Freshwater Drum",["river"],[30,70],6,0,0,0,0],["tigermuskie","Tiger Muskie",["lake"],[90,125],0.45,1,0,0,0],["flathead","The Ferryman",["river"],[85,120],0.45,1,0,0,0],["piranha","Red-bellied Piranha",["amazon"],[15,32],10,0,0,0,0],["peacock","Peacock Bass",["amazon"],[30,70],7,0,0,0,0],["arowana","Silver Arowana",["amazon"],[50,90],5,0,0,0,0],["pacu","Pacu",["amazon"],[30,65],6,0,0,0,0],["oscar","Oscar",["amazon"],[15,35],7,0,0,0,0],["redtail","Redtail Catfish",["amazon"],[50,110],5,0,0,0,0],["arapaima","Arapaima",["amazon"],[128,212.7],1.4,1,0,0,0],["spottedgar","Spotted Gar",["bayou"],[45,88],7,0,0,0,0],["warmouth","Warmouth",["bayou"],[12,28],7,0,0,0,0],["redear","Redear Sunfish",["bayou"],[15,30],8,0,0,0,0],["flier","Flier",["bayou"],[10,20],7,0,0,0,0],["bluecat","Blue Catfish",["bayou"],[45,112],5,0,0,0,0],["alligatorgar","Alligator Gar",["bayou"],[150,240],0.45,1,0,0,0],["cutthroat","Cutthroat Trout",["alpine"],[25,56],9,0,0,0,0],["grayling","Arctic Grayling",["alpine"],[25,45],7,0,0,0,0],["golden","Golden Trout",["alpine"],[20,45],2.5,0,0,0,0],["whitefish","Mountain Whitefish",["alpine"],[25,50],7,0,0,0,0],["laketrout","Lake Trout",["alpine"],[40,88],6,0,0,0,0],["mackinaw","Old Mackinaw",["alpine"],[100,125],0.45,1,0,0,0],["redfish","Redfish",["pier"],[35,95],7,0,0,0,0],["seatrout","Speckled Trout",["pier"],[30,66],8,0,0,0,0],["sheepshead","Sheepshead",["pier"],[30,60],7,0,0,0,0],["flounder","Southern Flounder",["pier"],[30,66],6,0,0,0,0],["mackerel","Spanish Mackerel",["pier"],[30,70],6,0,0,0,0],["pompano","Florida Pompano",["pier"],[25,50],5,0,0,0,0],["hardhead","Hardhead Catfish",["pier"],[20,45],9,0,0,0,0],["shad","Gizzard Shad",["river","bayou"],[8,32],9,0,0,0,0],["pinfish","Pinfish",["pier"],[10,25],10,0,0,0,0],["mullet","Striped Mullet",["pier"],[10,45],8,0,0,0,0],["sprat","Royal Sprat",["congo"],[5,10],5,0,0,0,0],["butterflyfish","African Butterflyfish",["congo"],[6,13],3,0,0,0,0],["redbreast","Redbreast Tilapia",["congo"],[14,40],6,0,0,0,0],["distichodus","Six-barred Distichodus",["congo"],[20,70],4,0,0,0,0],["nembwe","Nembwe",["congo"],[18,50],4,0,0,0,0],["africanpike","African Pike",["congo"],[20,55],3.5,0,0,0,0],["tigerfish","African Tigerfish",["congo"],[30,90],3,0,0,0,0],["nileperch","Nile Perch",["congo"],[54,171.5],1.6,0,0,0,0],["vundu","Vundu",["congo"],[52,130.4],2,0,0,0,0],["goliath","Goliath Tigerfish",["congo"],[97,131.6],0.4,1,0,0,0],["tarpon","Tarpon",["pier"],[140,210],0.45,1,0,0,0],["blackbass","Papuan Black Bass",["bayou"],[30,100],6,0,0,0,0],["herring","Atlantic Herring",["pei"],[20,38],0,0,0,0,1],["atlmackerel","Atlantic Mackerel",["pei"],[25,45],0,0,0,0,1],["cod","Atlantic Cod",["pei"],[45,120],5,0,0,0,0],["dogfish","Spiny Dogfish",["pei"],[52,95.2],3,0,0,0,0],["bluefin","Atlantic Bluefin Tuna",["pei"],[190,310],2,0,1,1,0]],"lu":{"worm":"Nightcrawler","cricket":"Live Crickets","minnow":"Live Minnows","livebait":"Live Bait","cutbait":"Cut Bait","sabiki":"Sabiki Rig","tunalive":"Live Bait","seacut":"Cut Bait","tunadead":"Frozen Herring","liver":"Chicken Livers","dough":"Carp Dough Balls","corn":"Sweet Corn","spinner":"Brass Spinner","popper":"Pond Popper","jig":"Crayfish Jig","fly":"Moth Fly","mouse":"Deer-Hair Mouse","frog":"Topwater Frog","crank":"Shad Crankbait","spoon":"Casting Spoon","plastic":"Plastic Worm","spinnerbait":"Spinnerbait","buzz":"Buzzbait","jerk":"Suspending Jerkbait","lipless":"Lipless Rattlebait","grub":"Curly-tail Grub","cjig":"Marabou Crappie Jig","swim":"Paddle-tail Swimbait","dryfly":"Dry Fly","popbug":"Popping Bug","nymph":"Bead-head Nymph","bugger":"Woolly Bugger","ghost":"Grey Ghost Streamer","shrimp":"Live Shrimp","prop":"Prop Bait"},"rod":{"medium":"All-Round Spinning","ultra":"Ultralight Spinning","heavy":"Heavy Baitcaster","cat":"Catfish Rod","fly":"Fly Rod","pier":"Surf & Pier Rod","seajig":"Charter Bait Rod","seabottom":"Charter Bottom Rod","tuna130":"130-Class Tuna Rod"},"gear":{"willow":"Willow Rod","carbon":"Carbon Rod","heart":"Heartwood Rod","tin":"Tin Reel","swift":"Swift Reel","tourney":"Tournament Reel","l4":"4 lb Mono","l8":"8 lb Mono","l14":"14 lb Fluoro","l25":"25 lb Braid","shades":"Polarized Shades","lantern":"Brass Lantern","finder":"Fish Finder","net":"Landing Net","dropnet":"Pier Drop Net","leader":"Wire Bite Leader","castnet":"Cast Net","cooler":"Bait Cooler","bucket":"Bait Bucket","whistle":"Fish Whistle","h10":"#10 Hook","h4":"#4 Hook","h20":"2/0 Hook","none":"No Weight","split":"Split Shot","egg":"Egg Sinker","teardrop":"Teardrop Sinker","bank":"Bank Sinker","fixed":"Fixed Bobber","slip":"Slip Bobber","swivel":"Barrel Swivels"},"loc":{"pond":["Mossback Pond",1],"creek":["Willow Creek",5],"lake":["Big Rock Lake",10],"river":["Iron Ferry River",15],"amazon":["Carter\u2019s Adventure",20],"bayou":["Tupelo Bayou",12],"alpine":["Highline Lake",18],"pier":["Pelican Point Pier",24],"congo":["Boyoma Falls",27],"pei":["North Lake Banks",30]},"maxlv":31,"ver":"v1.23a"};
+const SPM={};for(const [id,name,locs,len,rar,legend,giant,rel,bait] of META.sp)SPM[id]={id,name,locs,len,rar,legend,giant,rel,bait};
+const PLACES=Object.fromEntries(Object.entries(META.loc).map(([k,v])=>[k,v[0]])),PLACE_ORDER=Object.keys(PLACES);
+const spName=id=>(SPM[id]||{name:id}).name,plName=id=>PLACES[id]||id||'–',luName=id=>META.lu[id]||id||'–',rodName=id=>META.rod[id]||id||'–';
+const PERN={dawn:'Dawn',day:'Day',dusk:'Dusk',night:'Night'},WXN={clear:'Clear',rain:'Rain',fog:'Fog'},SSN=['Spring','Summer','Fall','Winter'];
+const OUTN={sold:'Sold',released:'Released',tagged:'Tagged & released',live:'Bait bucket',cut:'Cut bait',well:'Live well'};
+const MISSN={set:'Struck, hook didn’t set',late:'Struck too late',early:'Struck too early',circle:'Struck a circle hook'};
+function itemName(it){const [k,a,b]=String(it||'').split(':');
+  if(k==='lure')return luName(a);if(k==='rod')return rodName(a);if(k==='upgrade')return`${rodName(a)} upgrade ${b}`;if(k==='pack'||k==='gear')return META.gear[a]||a;
+  if(k==='look')return`Outfit: ${b} (${a})`;return it||'?';}
+const itemCat=it=>({lure:'Lures & bait',rod:'Rods',upgrade:'Rod upgrades',pack:'Tackle packs',gear:'Gear',look:'Outfits'})[String(it).split(':')[0]]||'Other';
 const PCOL=i=>`var(--p${i%8})`;
 const $=s=>document.querySelector(s);
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
@@ -104,46 +118,65 @@ const hrs=m=>m>=60?fmt(m/60,1)+' h':fmt(m,0)+' min';
 const DAY=864e5;
 const ago=t=>{const d=(Date.now()-new Date(t))/DAY;return d<1/24?'just now':d<1?fmt(d*24)+' h ago':fmt(d)+' d ago';};
 const dayKey=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const when=t=>new Date(t).toLocaleString([], {weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
 
-let RAW=null,DEMO=false,RANGE=+(store.get('bs-range')||30),TAB=store.get('bs-tab')||'overview';
-const CMP={dim:'version',a:'',b:''};
+let RAW=null,DEMO=false,RANGE=+(store.get('bs-range')||30),TAB=store.get('bs-tab')||'overview',WHO=store.get('bs-who')||'',BPLACE='';
+if(!['overview','players','balance','economy','tourney','health'].includes(TAB))TAB='overview';
 
 // ---------- data ----------
-async function load(){const key=store.get('bs-key');if(DEMO){RAW=demoData();render();return;}
+async function load(){const key=store.get('bs-key');if(DEMO){RAW=prep(demoData());render();return;}
   if(!key){showLogin();return;}
   $('#stamp').textContent='loading…';
   try{const r=await fetch(SB_URL+'/rest/v1/rpc/stats_dashboard',{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:key,p_days:90})});
     const t=await r.text();if(!r.ok){let m=t;try{m=JSON.parse(t).message||t}catch(e){}throw new Error(m);}
-    RAW=JSON.parse(t);render();}
+    RAW=prep(JSON.parse(t));render();}
   catch(e){const m=String(e.message||e);if(/not allowed/.test(m)){store.set('bs-key',null);showLogin('That key didn’t work.');}
-    else if(/stats_dashboard/.test(m)&&/find|exist/i.test(m)){showLogin('The dashboard function isn’t set up in the database yet. Run the SQL first.');}
     else{$('#stamp').textContent='';$('#main').hidden=false;$('#main').innerHTML=`<div class="empty err">Couldn’t load the data: ${esc(m)}</div>`;}}}
 function showLogin(msg){$('#login').hidden=false;$('#main').hidden=true;$('#loginMsg').textContent=msg||'';$('#stamp').textContent='';}
 $('#keyForm').onsubmit=e=>{e.preventDefault();const k=$('#keyIn').value.trim();if(!k)return;store.set('bs-key',k);DEMO=false;$('#login').hidden=true;load();};
 $('#demoBtn').onclick=()=>{DEMO=true;$('#login').hidden=true;load();};
 $('#refresh').onclick=()=>load();
 
-// Everything the views need, for the chosen date range.
-function slice(){const cut=Date.now()-RANGE*DAY,S=RAW.sessions.filter(s=>new Date(s.at)>=cut),E=RAW.errors.filter(e=>new Date(e.at)>=cut);
-  const P={};for(const p of RAW.players)P[p.player_id]=p;
-  return{S,E,P};}
-function nameOf(P,id){const p=P[id];return p&&p.player?p.player:'Player '+String(id).slice(0,5);}
+// Events arrive as [epoch seconds, player, kind, data, version]; turn them into objects once.
+function prep(R){R.ev=(R.events||[]).map(a=>({t:a[0]*1000,p:a[1],k:a[2],d:a[3]||{},v:a[4]}));R.P={};for(const p of R.players||[])R.P[p.player_id]=p;
+  R.evSince=R.events_since?new Date(R.events_since).getTime():(R.ev.length?R.ev[0].t:null);return R;}
+// Everything the views need, for the chosen date range and player.
+function slice(){const cut=Date.now()-RANGE*DAY,w=x=>!WHO||x===WHO;
+  const S=RAW.sessions.filter(s=>new Date(s.at)>=cut&&w(s.player_id)),E=RAW.errors.filter(e=>new Date(e.at)>=cut&&w(e.player_id)),V=RAW.ev.filter(e=>e.t>=cut&&w(e.p));
+  return{S,E,V,P:RAW.P,cut};}
+function nameOf(P,id){const p=P[id];return p&&p.player?p.player+(p.tag?' #'+p.tag:''):'Player '+String(id).slice(0,5);}
+function shortName(P,id){const p=P[id];return p&&p.player?p.player:'Player '+String(id).slice(0,5);}
 function summarize(S,E){const ids=new Set(S.map(s=>s.player_id)),min=S.reduce((a,s)=>a+(+s.minutes||0),0),fish=S.reduce((a,s)=>a+(+s.fish||0),0);
   const locs={};for(const s of S)for(const k in (s.locs||{}))locs[k]=(locs[k]||0)+(+s.locs[k]||0);
   const casts=S.reduce((a,s)=>a+(+s.casts||0),0),hooked=S.reduce((a,s)=>a+(+s.hooked||0),0),lost=S.reduce((a,s)=>a+(+s.lost||0),0),quests=S.reduce((a,s)=>a+(+s.quests||0),0);
   return{players:ids.size,sessions:S.length,min,fish,avg:S.length?min/S.length:0,fph:min?fish/(min/60):0,errors:E.length,eph:min?E.length/(min/60):0,locs,app:S.length?S.filter(s=>s.app).length/S.length:0,
-    casts,hooked,lost,quests,hookR:casts?hooked/casts:null,lostR:hooked?lost/hooked:null,qph:min?quests/(min/60):0};}
+    casts,hooked,lost,quests,hookR:casts?hooked/casts:null,landR:hooked?fish/hooked:null,lostR:hooked?lost/hooked:null};}
+// Fishing outcomes from events, grouped by any key: landed, lost, missed and the rates between them.
+function outcomes(V,keyFn){const g={};const get=k=>g[k]||(g[k]={k,landed:0,lost:0,missed:0,len:0,lenN:0,pctMax:0,fs:0,fsN:0,why:{},amt:0,sold:0,rel:0});
+  for(const e of V){if(e.k!=='catch'&&e.k!=='lost'&&e.k!=='miss')continue;const k=keyFn(e);if(k==null||k==='')continue;const r=get(k);
+    if(e.k==='catch'){r.landed++;r.amt+=+e.d.amt||0;if(e.d.out==='sold')r.sold++;else if(e.d.out==='released'||e.d.out==='tagged')r.rel++;
+      if(e.d.len){r.len+=+e.d.len;r.lenN++;const sp=SPM[e.d.sp];if(sp&&sp.len)r.pctMax+=e.d.len/sp.len[1];}if(e.d.fs!=null){r.fs+=+e.d.fs;r.fsN++;}}
+    else if(e.k==='lost'){r.lost++;const w=e.d.why||'?';r.why[w]=(r.why[w]||0)+1;if(e.d.fs!=null){r.fs+=+e.d.fs;r.fsN++;}}
+    else{r.missed++;const w=MISSN[e.d.why]||e.d.why||'?';r.why[w]=(r.why[w]||0)+1;}}
+  for(const r of Object.values(g)){r.hooked=r.landed+r.lost;r.bites=r.hooked+r.missed;r.landR=r.hooked?r.landed/r.hooked:null;r.setR=r.bites?r.hooked/r.bites:null;r.avgLen=r.lenN?r.len/r.lenN:null;r.avgPct=r.lenN?r.pctMax/r.lenN:null;r.avgFs=r.fsN?r.fs/r.fsN:null;
+    r.topWhy=Object.entries(r.why).sort((a,b)=>b[1]-a[1])[0];}
+  return g;}
+function evSpan(){return RAW.evSince?`Detailed tracking started ${new Date(RAW.evSince).toLocaleDateString([], {month:'short',day:'numeric'})} (v1.24a). Phones only send it with stats sharing on.`:'Detailed tracking starts with v1.24a. Nothing has come in yet; phones only send it with stats sharing on.';}
+function noEvents(m,what){m.append(el('div',{class:'empty'},`${esc(what)} needs the detailed tracking in v1.24a and later. ${esc(evSpan())}`));}
 
 // ---------- shell ----------
-const TABS=[['overview','Overview'],['progress','Progress'],['catches','Catches'],['players','Players'],['compare','Compare'],['errors','Errors']];
-function renderChrome(){const rg=$('#ranges');rg.innerHTML='';for(const d of[7,30,90]){const b=document.createElement('button');b.className='chip'+(RANGE===d?' on':'');b.textContent=`Last ${d} days`;b.onclick=()=>{RANGE=d;store.set('bs-range',d);render();};rg.append(b);}
+const TABS=[['overview','Overview'],['players','Players'],['balance','Balance'],['economy','Economy'],['tourney','Tournaments'],['health','Health']];
+function renderChrome(){const rg=$('#ranges');rg.innerHTML='';for(const d of[7,30,90]){const b=document.createElement('button');b.className='chip'+(RANGE===d?' on':'');b.textContent=`${d} days`;b.onclick=()=>{RANGE=d;store.set('bs-range',d);render();};rg.append(b);}
+  const sel=document.createElement('select');sel.id='who';sel.innerHTML='<option value="">All players</option>'+(RAW.players||[]).slice().sort((a,b)=>String(a.player).localeCompare(b.player)).map(p=>`<option value="${esc(p.player_id)}"${p.player_id===WHO?' selected':''}>${esc(nameOf(RAW.P,p.player_id))}</option>`).join('');
+  sel.onchange=()=>{WHO=sel.value;store.set('bs-who',WHO||null);render();};rg.append(sel);
   if(DEMO){const s=document.createElement('span');s.className='pill';s.textContent='Sample data';rg.append(s);const o=document.createElement('button');o.className='chip';o.textContent='Use real data';o.onclick=()=>{DEMO=false;load();};rg.append(o);}
   else{const o=document.createElement('button');o.className='chip';o.textContent='Sign out';o.onclick=()=>{store.set('bs-key',null);RAW=null;showLogin();};rg.append(o);}
   const tb=$('#tabs');tb.innerHTML='';for(const [k,n] of TABS){const b=document.createElement('button');b.textContent=n;b.className=TAB===k?'on':'';b.onclick=()=>{TAB=k;store.set('bs-tab',k);render();};tb.append(b);}
   $('#stamp').textContent=DEMO?'':'updated '+new Date(RAW.now||Date.now()).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});}
-function render(){if(!RAW)return;$('#login').hidden=true;$('#main').hidden=false;renderChrome();const m=$('#main');m.innerHTML='';
-  const D=slice();if(!RAW.sessions.length&&!RAW.players.length&&!RAW.errors.length){m.innerHTML='<div class="empty">No data yet. It shows up once players say yes to sharing stats and play a session.</div>';return;}
-  ({overview:viewOverview,progress:viewProgress,catches:viewCatches,compare:viewCompare,players:viewPlayers,errors:viewErrors}[TAB]||viewOverview)(m,D);}
+function render(){if(!RAW)return;$('#login').hidden=true;$('#main').hidden=false;if(WHO&&!RAW.P[WHO])WHO='';renderChrome();const m=$('#main');m.innerHTML='';
+  const D=slice();if(!RAW.sessions.length&&!RAW.players.length){m.innerHTML='<div class="empty">No data yet. It shows up once players say yes to sharing stats and play a session.</div>';return;}
+  try{({overview:viewOverview,players:viewPlayers,balance:viewBalance,economy:viewEconomy,tourney:viewTourney,health:viewHealth}[TAB]||viewOverview)(m,D);}
+  catch(e){m.append(el('div',{class:'empty err'},'This view hit an error: '+esc(e.message)));console.error(e);}}
 
 // ---------- tooltip ----------
 const tip=$('#tip');function showTip(e,html){tip.innerHTML=html;tip.style.display='block';const x=Math.min(innerWidth-tip.offsetWidth-8,e.clientX+12),y=Math.max(8,e.clientY-tip.offsetHeight-12);tip.style.left=x+'px';tip.style.top=y+'px';}
@@ -194,118 +227,6 @@ function kpis(list){const k=el('div',{class:'kpis'});for(const [v,l,sub] of list
 function countBy(arr,key,val){const o={};for(const x of arr){const k=typeof key==='function'?key(x):x[key];if(k==null||k==='')continue;o[k]=(o[k]||0)+(val?val(x):1);}return o;}
 function toRows(o,limit=10,label){return Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,limit).map(([k,v])=>({name:label?label(k):k,v}));}
 
-// ---------- views ----------
-function viewOverview(m,{S,E,P}){const s=summarize(S,E),cut=Date.now()-RANGE*DAY,newP=RAW.players.filter(p=>new Date(p.first_seen)>=cut).length;
-  m.append(kpis([[fmt(s.players),'Players','who played'],[fmt(newP),'New players',''],[fmt(s.sessions),'Sessions',''],[hrs(s.min),'Time played',''],
-    [fmt(s.avg,1)+' min','Average session',''],[fmt(s.fish),'Fish landed',fmt(s.fph,1)+' per hour'],[fmt(s.errors),'Errors',fmt(s.eph,2)+' per hour played'],[fmt(s.app*100)+'%','From the home-screen app','']]));
-  const c1=card('Time played per day','Minutes of play each day.');c1.append(dayChart([{name:'Minutes',c:'--s1',by:countBy(S,s=>dayKey(s.at),s=>+s.minutes||0)}],'min',v=>fmt(v)));m.append(c1);
-  const c2=card('Players per day','Different players who played each day.');const pd={};for(const x of S){const d=dayKey(x.at);(pd[d]=pd[d]||new Set()).add(x.player_id);}const pdc={};for(const d in pd)pdc[d]=pd[d].size;c2.append(dayChart([{name:'Players',c:'--s1',by:pdc}],'players',v=>fmt(v)));m.append(c2);
-  const g=el('div',{class:'grid2'});
-  const c3=card('Where people fish','Total time at each place.');c3.append(barList(PLACE_ORDER.filter(k=>s.locs[k]).map(k=>({name:PLACES[k],v:s.locs[k]})).sort((a,b)=>b.v-a.v),hrs));g.append(c3);
-  const c4=card('Devices','Sessions by kind of device.');c4.append(barList(toRows(countBy(S,'device')),v=>fmt(v)));g.append(c4);
-  const c5=card('Versions','Sessions by game version.');c5.append(barList(toRows(countBy(S,'version'),8),v=>fmt(v)));g.append(c5);
-  const c6=card('Session length','How long sessions last.');const bins=[['Under 5 min',0,5],['5–15 min',5,15],['15–30 min',15,30],['30–60 min',30,60],['Over an hour',60,1e9]];c6.append(barList(bins.map(([n,a,b])=>({name:n,v:S.filter(x=>+x.minutes>=a&&+x.minutes<b).length})),v=>fmt(v)));g.append(c6);
-  m.append(g);}
-
-function viewProgress(m,{S,E,P}){const per={};for(const s of S)(per[s.player_id]=per[s.player_id]||[]).push(s);
-  const places=(RAW.places||[]).slice().sort((a,b)=>a.unlock_level-b.unlock_level);
-  const rows=RAW.players.map(p=>{const mine=per[p.player_id]||[],min=mine.reduce((a,s)=>a+(+s.minutes||0),0),lvNow=+p.level||1;
-    const start=mine.length?Math.min(...mine.map(s=>+(s.lv_start||s.level)||lvNow)):lvNow,gained=Math.max(0,lvNow-start);
-    const nxt=places.find(pl=>pl.unlock_level>lvNow),resp=+p.respect||0;let next='All places open';
-    if(nxt){next=`${PLACES[nxt.id]||nxt.name} in ${nxt.unlock_level-lvNow} level${nxt.unlock_level-lvNow>1?'s':''}`;}
-    if(lvNow>=30&&resp<1000)next=`North Lake needs ${fmt(1000-resp)} more respect`;
-    return{p,name:p.player||'Player '+p.player_id.slice(0,5),lv:lvNow,start,gained,min,hpl:gained?min/60/gained:null,resp,sp:+p.species||0,next,nxt,active:mine.length};});
-  const act=rows.filter(r=>r.active);const tot=act.reduce((a,r)=>a+r.gained,0),hrsT=act.reduce((a,r)=>a+r.min,0)/60;
-  m.append(kpis([[fmt(tot),'Levels gained',`by ${act.filter(r=>r.gained).length} players`],[hrsT&&tot?fmt(hrsT/tot,1)+' h':'–','Play time per level','across everyone'],
-    [fmt(rows.filter(r=>r.lv>=30&&r.resp>=1000).length),'Can go to North Lake','level 30 and 1,000 respect'],[fmt(Math.max(0,...rows.map(r=>r.lv))),'Highest level','']]));
-  const top=act.sort((a,b)=>b.lv-a.lv).slice(0,8),ser=top.map((r,i)=>({name:r.name,c:`--p${i}`,by:levelBy(per[r.p.player_id]),start:r.start}));
-  const c1=card('Level by day','Each player’s level, held from day to day. Dots are days they played.');c1.append(legendOf(ser),lineChart(ser,'level',v=>fmt(v)));m.append(c1);
-  const c2=card('Levels gained per day','Everyone together.');const gd={};for(const s of S){const g=Math.max(0,(+s.level||0)-(+(s.lv_start||s.level)||0));if(g){const d=dayKey(s.at);gd[d]=(gd[d]||0)+g;}}c2.append(dayChart([{name:'Levels',c:'--s1',by:gd}],'levels',v=>fmt(v)));m.append(c2);
-  const c3=card('Pace and what’s next',`Levels and play time are for the last ${RANGE} days. Tap a player for details.`);const tw=el('div',{class:'tw'}),tb=el('table');
-  const all=rows.slice().sort((a,b)=>b.lv-a.lv||b.resp-a.resp);
-  tb.innerHTML=`<thead><tr><th>Name</th><th class="n">Level</th><th class="n">Gained</th><th class="n">Time</th><th class="n">Per level</th><th class="n">Respect</th><th class="n">Species</th><th>Next</th></tr></thead><tbody>${all.map(r=>{
-      const lvP=r.nxt?Math.min(1,(r.lv-(places.filter(pl=>pl.unlock_level<=r.lv).pop()||{unlock_level:1}).unlock_level)/Math.max(1,r.nxt.unlock_level-(places.filter(pl=>pl.unlock_level<=r.lv).pop()||{unlock_level:1}).unlock_level)):1;
-      return`<tr class="click" data-id="${esc(r.p.player_id)}"><td>${esc(r.name)}</td><td class="n">${r.lv}</td><td class="n">${r.gained?'+'+r.gained:'–'}</td><td class="n">${r.min?hrs(r.min):'–'}</td><td class="n">${r.hpl?fmt(r.hpl,1)+' h':'–'}</td><td class="n">${fmt(r.resp)}</td><td class="n">${r.sp}</td><td style="min-width:170px">${esc(r.next)}<div class="prog" title="Progress to the next place"><div style="width:${lvP*100}%"></div></div></td></tr>`;}).join('')}</tbody>`;
-  tb.querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>{TAB='players';store.set('bs-tab','players');render();const r=$(`#main tr[data-id="${CSS.escape(tr.dataset.id)}"]`);if(r)r.click();});
-  tw.append(tb);c3.append(tw);m.append(c3);}
-
-function viewCatches(m,{S,E,P}){const B=RAW.bests||[],LB=RAW.loc_bests||[],LIM=RAW.limits||{},cut=Date.now()-RANGE*DAY;
-  const lim=id=>LIM[id]?+LIM[id].cm:null,nm=b=>b.player||nameOf(P,b.player_id),atCap=b=>lim(b.species)&&+b.len_cm>=lim(b.species)-.05;
-  const recent=B.filter(b=>new Date(b.caught_at)>=cut).sort((a,b)=>b.caught_at.localeCompare(a.caught_at));
-  const caps=B.filter(atCap);
-  m.append(kpis([[fmt(recent.length),'New personal bests',`last ${RANGE} days`],[fmt(new Set(B.map(b=>b.species)).size),'Species on the board',`of ${Object.keys(SPN).length}`],
-    [fmt(caps.length),'Bests at the size cap','the biggest the game allows'],[fmt(new Set(B.map(b=>b.player_id)).size),'Anglers on the board','']]));
-  // records: the biggest of each species, against the most the game allows
-  const rec={};for(const b of B)if(!rec[b.species]||+b.len_cm>+rec[b.species].len_cm)rec[b.species]=b;
-  const c1=card('Records by place','The biggest of each fish anyone has landed, and how close it is to the biggest the game allows.');
-  const pk=el('div',{class:'row',style:'margin-bottom:6px'});let RP=store.get('bs-recplace')||PLACE_ORDER[0];
-  for(const k of PLACE_ORDER){const b=el('button',{class:'chip'+(k===RP?' on':'')},PLACES[k]);b.onclick=()=>{store.set('bs-recplace',k);render();};pk.append(b);}c1.append(pk);
-  const sp=Object.keys(SPN).filter(id=>SPN[id][1].includes(RP));const tb=el('table');
-  tb.innerHTML=`<thead><tr><th>Fish</th><th>Holder</th><th class="n">Length</th><th class="n">Weight</th><th class="n">Of max</th></tr></thead><tbody>${sp.map(id=>{const r=rec[id],L=lim(id);
-    if(!r)return`<tr><td>${esc(spName(id))}</td><td class="muted" colspan="4">Not caught yet</td></tr>`;const f=L?+r.len_cm/L:null;
-    return`<tr><td>${esc(spName(id))}</td><td>${esc(nm(r))}<span class="sm">${new Date(r.caught_at).toLocaleDateString([], {month:'short',day:'numeric'})}${r.lv?' · level '+r.lv:''}</span></td><td class="n">${fmt(+r.len_cm,0)} cm</td><td class="n">${fmt(+r.lb,+r.lb<10?2:1)} lb</td><td class="n ${f>=.999?'cap':''}">${f==null?'–':f>=.999?'At cap':fmt(f*100)+'%'}</td></tr>`;}).join('')}</tbody>`;
-  const tw=el('div',{class:'tw'});tw.append(tb);c1.append(tw);m.append(c1);
-  const g=el('div',{class:'grid2'});
-  const c2=card('Place coverage','How many of each place’s fish anyone has a best for.');const seen={};for(const b of LB)(seen[b.loc]=seen[b.loc]||new Set()).add(b.species);
-  c2.append(barList(PLACE_ORDER.map(k=>{const tot=Object.values(SPN).filter(v=>v[1].includes(k)).length;return{name:PLACES[k],v:tot?((seen[k]||new Set()).size/tot):0,t:tot,c:(seen[k]||new Set()).size};}).filter(r=>r.t),v=>fmt(v*100)+'%'));g.append(c2);
-  const c3=card('Personal bests by angler','Species each angler has a best for. The orange part is bests at the size cap.');const byP={};for(const b of B){const r=byP[b.player_id]||(byP[b.player_id]={name:nm(b),n:0,cap:0});r.n++;if(atCap(b))r.cap++;}
-  const pr=Object.values(byP).sort((a,b)=>b.n-a.n),mx=Math.max(1,...pr.map(r=>r.n)),w=el('div',{class:'bars'});
-  for(const r of pr)w.append(el('div',{class:'bl'},`<span class="nm">${esc(r.name)}</span><span class="tr"><div style="width:${r.n/mx*100}%;background:var(--s1)"></div><div style="left:${(r.n-r.cap)/mx*100}%;width:${r.cap/mx*100}%;background:var(--accent);border-radius:0 4px 4px 0"></div></span><span class="v">${r.n}${r.cap?` <span class="cap">${r.cap}</span>`:''}</span>`));
-  c3.append(w);g.append(c3);m.append(g);
-  const c4=card('New personal bests',`The latest ${Math.min(30,recent.length)} from the last ${RANGE} days.`);const t2=el('table');
-  t2.innerHTML=`<thead><tr><th>When</th><th>Angler</th><th>Fish</th><th>Place</th><th class="n">Length</th><th class="n">Of max</th></tr></thead><tbody>${recent.slice(0,30).map(b=>{const L=lim(b.species),f=L?+b.len_cm/L:null;
-    return`<tr><td>${ago(b.caught_at)}</td><td>${esc(nm(b))}</td><td>${esc(spName(b.species))}</td><td>${esc(PLACES[b.loc]||b.loc||'')}</td><td class="n">${fmt(+b.len_cm,0)} cm</td><td class="n ${f>=.999?'cap':''}">${f==null?'–':f>=.999?'At cap':fmt(f*100)+'%'}</td></tr>`;}).join('')||'<tr><td colspan="6" class="muted">None in this range.</td></tr>'}</tbody>`;
-  const tw2=el('div',{class:'tw'});tw2.append(t2);c4.append(tw2);m.append(c4);}
-
-const DIMS={version:{n:'Version',key:s=>s.version},device:{n:'Device',key:s=>s.device},player:{n:'Player',key:s=>s.player_id},place:{n:'Place'},app:{n:'App vs browser',key:s=>s.app?'Home-screen app':'Browser'},week:{n:'Week',key:s=>{const d=new Date(s.at);d.setHours(0,0,0,0);d.setDate(d.getDate()-d.getDay());return dayKey(d);}}};
-function viewCompare(m,{S,E,P}){const dim=DIMS[CMP.dim];
-  const label=v=>CMP.dim==='player'?nameOf(P,v):CMP.dim==='place'?PLACES[v]||v:CMP.dim==='week'?'Week of '+new Date(v+'T12:00').toLocaleDateString([], {month:'short',day:'numeric'}):v;
-  let opts;if(CMP.dim==='place')opts=PLACE_ORDER.filter(k=>S.some(s=>s.locs&&s.locs[k]));else opts=Object.entries(countBy(S,dim.key)).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
-  if(!opts.includes(CMP.a))CMP.a=opts[0]||'';if(!opts.includes(CMP.b)||CMP.b===CMP.a)CMP.b=opts.find(o=>o!==CMP.a)||'';
-  const ctl=el('div',{class:'card'});ctl.innerHTML='<h3>Compare two groups</h3><p class="sub">Pick what to split by, then the two to put side by side.</p>';
-  const r=el('div',{class:'row'});const sd=el('select');for(const k in DIMS)sd.append(new Option(DIMS[k].n,k,false,k===CMP.dim));sd.onchange=()=>{CMP.dim=sd.value;CMP.a=CMP.b='';render();};
-  const mk=(which)=>{const s2=el('select');for(const o of opts)s2.append(new Option(label(o),o,false,o===CMP[which]));s2.onchange=()=>{CMP[which]=s2.value;render();};return s2;};
-  r.append(sd,el('span',{class:'muted'},'A'),mk('a'),el('span',{class:'muted'},'B'),mk('b'));ctl.append(r);m.append(ctl);
-  if(!CMP.a||!CMP.b){m.append(el('div',{class:'empty'},'Not enough different groups in this range to compare yet.'));return;}
-  const pick=v=>{if(CMP.dim==='place'){return S.filter(s=>s.locs&&s.locs[v]).map(s=>({...s,minutes:+s.locs[v],fish:Math.round((+s.fish||0)*(+s.locs[v]/Math.max(.1,+s.minutes)))}));}return S.filter(s=>String(dim.key(s))===v);};
-  const SA=pick(CMP.a),SB=pick(CMP.b),ids=x=>new Set(x.map(s=>s.player_id));
-  const EA=CMP.dim==='place'?[]:E.filter(e=>{if(CMP.dim==='player')return e.player_id===CMP.a;if(CMP.dim==='week'||CMP.dim==='app')return SA.some(s=>s.player_id===e.player_id);return String(e[CMP.dim])===CMP.a;});
-  const EB=CMP.dim==='place'?[]:E.filter(e=>{if(CMP.dim==='player')return e.player_id===CMP.b;if(CMP.dim==='week'||CMP.dim==='app')return SB.some(s=>s.player_id===e.player_id);return String(e[CMP.dim])===CMP.b;});
-  const A=summarize(SA,EA),B=summarize(SB,EB);
-  const lg=el('div',{class:'legend'});lg.innerHTML=`<span style="--c:var(--s1)">A: ${esc(label(CMP.a))}</span><span style="--c:var(--s2)">B: ${esc(label(CMP.b))}</span>`;
-  const t=card('Side by side');t.append(lg);const rows=[['Players',A.players,B.players,v=>fmt(v)],['Sessions',A.sessions,B.sessions,v=>fmt(v)],['Time played',A.min,B.min,hrs],['Average session',A.avg,B.avg,v=>fmt(v,1)+' min'],
-    ['Fish landed',A.fish,B.fish,v=>fmt(v)],['Fish per hour',A.fph,B.fph,v=>fmt(v,1)]];if(CMP.dim!=='place')rows.push(['Hooked per cast',A.hookR,B.hookR,pct],['Hooked fish lost',A.lostR,B.lostR,pct],['Quests per hour',A.qph,B.qph,v=>fmt(v,1)]);if(CMP.dim!=='place')rows.push(['Errors',A.errors,B.errors,v=>fmt(v)],['Errors per hour',A.eph,B.eph,v=>fmt(v,2)]);
-  const tb=el('table',{class:'cmp'});tb.innerHTML=`<tr><th></th><th class="n">A</th><th class="n">B</th><th class="n">B vs A</th></tr>`+rows.map(([n,a,b,f])=>{const d=a&&b!=null?((b-a)/a*100):null;return`<tr><td>${n}</td><td class="n a">${f(a)}</td><td class="n a">${f(b)}</td><td class="n dlt">${d==null?'–':(d>0?'+':'')+fmt(d)+'%'}</td></tr>`;}).join('');
-  t.append(tb);m.append(t);
-  const c1=card('Time played per day','Minutes each day, A and B on the same scale.');const lg2=lg.cloneNode(true);c1.append(lg2,dayChart([{name:'A',c:'--s1',by:countBy(SA,s=>dayKey(s.at),s=>+s.minutes||0)},{name:'B',c:'--s2',by:countBy(SB,s=>dayKey(s.at),s=>+s.minutes||0)}],'min',v=>fmt(v)));m.append(c1);
-  if(CMP.dim!=='place'){const c2=card('Where they fish','Share of each group’s time at each place.');c2.append(lg.cloneNode(true));const tot=x=>Object.values(x).reduce((a,b)=>a+b,0)||1;
-    c2.append(barList(PLACE_ORDER.filter(k=>A.locs[k]||B.locs[k]).map(k=>({name:PLACES[k],a:(A.locs[k]||0)/tot(A.locs)*100,b:(B.locs[k]||0)/tot(B.locs)*100})),v=>fmt(v)+'%',true));m.append(c2);}}
-
-function viewPlayers(m,{S,E,P}){const per={};for(const s of S){const r=per[s.player_id]||(per[s.player_id]={min:0,n:0,fish:0,locs:{},casts:0,hooked:0,lost:0,q:0});r.min+=+s.minutes||0;r.n++;r.fish+=+s.fish||0;r.casts+=+s.casts||0;r.hooked+=+s.hooked||0;r.lost+=+s.lost||0;r.q+=+s.quests||0;for(const k in(s.locs||{}))r.locs[k]=(r.locs[k]||0)+(+s.locs[k]||0);}
-  const errBy=countBy(E,'player_id');
-  const rows=RAW.players.map(p=>({p,id:p.player_id,name:p.player||'Player '+p.player_id.slice(0,5),lv:+p.level||1,resp:+p.respect||0,sp:+p.species||0,places:(p.locs||'').split(',').filter(Boolean).length,dev:p.device||'',ver:p.version||'',last:p.last_seen,first:p.first_seen,min:(per[p.player_id]||{}).min||0,n:(per[p.player_id]||{}).n||0,fish:(per[p.player_id]||{}).fish||0,err:errBy[p.player_id]||0,hook:(x=>x&&x.casts?x.hooked/x.casts:-1)(per[p.player_id]),lostR:(x=>x&&x.hooked?x.lost/x.hooked:-1)(per[p.player_id]),q:(per[p.player_id]||{}).q||0}));
-  const sortK=store.get('bs-psort')||'last',dir=+(store.get('bs-pdir')||-1);rows.sort((a,b)=>{const x=a[sortK],y=b[sortK];return(typeof x==='string'&&sortK!=='last'&&sortK!=='first'?String(x).localeCompare(y):(new Date(x)-new Date(y)||x-y))*dir;});
-  const c=card(`${rows.length} players`,`Tap a heading to sort. Tap a player for details. Time, sessions and fish are for the last ${RANGE} days.`);
-  const cols=[['name','Name'],['lv','Level',1],['resp','Respect',1],['sp','Species',1],['places','Places',1],['min','Time',1],['n','Sessions',1],['fish','Fish',1],['hook','Hooked/cast',1],['lostR','Lost',1],['q','Quests',1],['err','Errors',1],['dev','Device'],['ver','Version'],['last','Last seen']];
-  const tw=el('div',{class:'tw'}),tb=el('table');
-  tb.innerHTML=`<thead><tr>${cols.map(([k,n,num])=>`<th data-k="${k}" class="${num?'n':''}">${n}${k===sortK?(dir>0?' ↑':' ↓'):''}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr class="click" data-id="${esc(r.id)}"><td>${esc(r.name)}</td><td class="n">${r.lv}</td><td class="n">${r.resp}</td><td class="n">${r.sp}</td><td class="n">${r.places}</td><td class="n">${r.min?hrs(r.min):'–'}</td><td class="n">${r.n||'–'}</td><td class="n">${r.fish||'–'}</td><td class="n">${r.hook<0?'–':pct(r.hook)}</td><td class="n">${r.lostR<0?'–':pct(r.lostR)}</td><td class="n">${r.q||'–'}</td><td class="n ${r.err?'err':''}">${r.err||'–'}</td><td>${esc(r.dev)}</td><td>${esc(r.ver)}</td><td>${ago(r.last)}</td></tr>`).join('')}</tbody>`;
-  tb.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;store.set('bs-pdir',k===sortK?-dir:-1);store.set('bs-psort',k);render();});
-  tb.querySelectorAll('tr.click').forEach(tr=>tr.onclick=()=>playerDetail(m,tr.dataset.id,rows.find(r=>r.id===tr.dataset.id),S,E));
-  tw.append(tb);c.append(tw);m.append(c);}
-function playerDetail(m,id,r,S,E){const old=$('#pdetail');if(old)old.remove();const c=card(r.name,`First seen ${new Date(r.first).toLocaleDateString()} · last seen ${ago(r.last)} · ${r.dev} · ${r.ver}`);c.id='pdetail';
-  const mine=S.filter(s=>s.player_id===id);c.append(kpis([[r.lv,'Level'],[r.resp,'Respect'],[r.sp,'Species logged'],[hrs(r.min),'Time played'],[fmt(r.n),'Sessions'],[fmt(r.fish),'Fish landed']]));
-  const loc={};for(const s of mine)for(const k in(s.locs||{}))loc[k]=(loc[k]||0)+(+s.locs[k]||0);const h=el('h2',{},'Where they fish');c.append(h,barList(PLACE_ORDER.filter(k=>loc[k]).map(k=>({name:PLACES[k],v:loc[k]})).sort((a,b)=>b.v-a.v),hrs));
-  const places=(r.p.locs||'').split(',').filter(Boolean);if(places.length)c.append(el('p',{class:'sub'},'Has caught fish at: '+places.map(k=>`<span class="tag">${esc(PLACES[k]||k)}</span>`).join('')));
-  c.append(el('h2',{},'Level by day'),lineChart([{name:r.name,c:'--p0',by:levelBy(mine)}],'level',v=>fmt(v)));
-  c.append(el('h2',{},'Time played per day'),dayChart([{name:'Minutes',c:'--s1',by:countBy(mine,s=>dayKey(s.at),s=>+s.minutes||0)}],'min',v=>fmt(v)));
-  {const LIM=RAW.limits||{},bs=(RAW.bests||[]).filter(b=>b.player_id===id).sort((a,b)=>b.caught_at.localeCompare(a.caught_at));
-    if(bs.length){c.append(el('h2',{},`Personal bests (${bs.length})`));const t=el('table');t.innerHTML=`<thead><tr><th>Fish</th><th>Place</th><th class="n">Length</th><th class="n">Of max</th><th class="n">When</th></tr></thead><tbody>${bs.slice(0,15).map(b=>{const L=LIM[b.species]?+LIM[b.species].cm:null,f=L?+b.len_cm/L:null;
-      return`<tr><td>${esc(spName(b.species))}</td><td>${esc(PLACES[b.loc]||b.loc||'')}</td><td class="n">${fmt(+b.len_cm,0)} cm</td><td class="n ${f>=.999?'cap':''}">${f==null?'–':f>=.999?'At cap':fmt(f*100)+'%'}</td><td class="n">${ago(b.caught_at)}</td></tr>`;}).join('')}</tbody>`;
-      const tw=el('div',{class:'tw',style:'max-height:340px'});tw.append(t);c.append(tw);}}
-  const b=el('button',{},'Compare with another player');b.onclick=()=>{CMP.dim='player';CMP.a=id;CMP.b='';TAB='compare';store.set('bs-tab','compare');render();scrollTo(0,0);};c.append(el('div',{class:'row',style:'margin-top:10px'}),b);
-  m.prepend(c);scrollTo({top:0,behavior:'smooth'});}
-
-// Versions like v0.97a, v0.98, v0.98b: compare the numbers, then the letter ('' before 'a' before 'b').
 function vparts(v){const m=/(\d+)\.(\d+)([a-z]*)/.exec(v||'');return m?[+m[1],+m[2],m[3]]:[0,0,''];}
 function vcmp(a,b){const x=vparts(a),y=vparts(b);return x[0]-y[0]||x[1]-y[1]||(x[2]<y[2]?-1:x[2]>y[2]?1:0);}
 let ERRV=store.get('bs-errv')||'open',ERRLATEST=store.get('bs-errlatest')==='1';
@@ -343,18 +264,204 @@ function viewErrors(m,{S,E,P}){
     btn.onclick=()=>setFix(g.msg,g.status==='fixed'?g.fix.fixed_version:g.newest,g.status==='fixed');d.append(btn);c.append(d);}
   m.append(c);}
 
-// ---------- sample data, to see how the page looks before real data comes in ----------
-function demoData(){let z=7;const r=()=>(z=(z*9301+49297)%233280)/233280;const now=Date.now();
-  const names=['Brandon','Carter','Lucy','Jason','Nick','Ava','Sam','Mia'],devs=['iPhone','iPhone','iPhone','Android phone','iPad','Computer'],vers=['v0.95a','v0.96a','v0.97a'];
-  const players=names.map((n,i)=>({player_id:'demo'+i+'abcdef',player:n,level:3+Math.floor(r()*26),respect:Math.floor(r()*160),species:5+Math.floor(r()*50),locs:PLACE_ORDER.filter(()=>r()<.5).join(','),version:vers[2],device:devs[i%devs.length],first_seen:new Date(now-(20+r()*60)*DAY).toISOString(),last_seen:new Date(now-r()*6*DAY).toISOString()}));
-  const sessions=[];for(let d=0;d<90;d++)for(const p of players){if(r()<.55)continue;const min=Math.round((2+r()*r()*80)*10)/10,locs={};let left=min;const ks=PLACE_ORDER.filter(()=>r()<.35);if(!ks.length)ks.push('pond');ks.forEach((k,i)=>{const v=i===ks.length-1?left:Math.round(left*r()*10)/10;locs[k]=v;left-=v;});
-    {const fish=Math.round(min*(.6+r()*1.2)),lost=Math.round(fish*r()*.15),lv=Math.max(1,p.level-Math.floor(d/12));sessions.push({at:new Date(now-d*DAY-r()*DAY*.9).toISOString(),player_id:p.player_id,version:d<6?'v0.97a':d<20?'v0.96a':'v0.95a',device:p.device,screen:'390x844',app:r()<.6,minutes:min,locs,fish,level:lv,lv_start:r()<.25?Math.max(1,lv-1):lv,casts:Math.round(fish*(1.6+r())),hooked:fish+lost,lost,quests:Math.floor(r()*3)});}}
-  const msgs=["TypeError: Cannot read properties of undefined (reading 'x')","ReferenceError: mx is not defined",'NetworkError when attempting to fetch resource.','Script error.'];
-  const errors=[];for(let i=0;i<40;i++){const p=players[Math.floor(r()*players.length)];errors.push({at:new Date(now-r()*80*DAY).toISOString(),player_id:p.player_id,version:vers[Math.floor(r()*3)],device:p.device,msg:msgs[Math.floor(r()*r()*msgs.length)],src:'index.html:'+(1000+Math.floor(r()*3000))});}
-  const ids=Object.keys(SPN),limits={};for(const id of ids)limits[id]={cm:20+Math.floor(r()*120),lb:1};
-  const bests=[];for(const p of players)for(const id of ids)if(r()<.35){const L=limits[id].cm,len=Math.round(L*(r()<.08?1:.55+r()*.4));bests.push({player_id:p.player_id,player:p.player,species:id,loc:SPN[id][1][0],len_cm:len,lb:+(len*len*len*2e-5).toFixed(2),caught_at:new Date(now-r()*60*DAY).toISOString(),lv:p.level});}
-  const places=[['pond',1],['creek',5],['lake',10],['bayou',12],['river',15],['alpine',18],['amazon',20],['pier',24],['congo',27],['pei',30]].map(([id,l])=>({id,name:PLACES[id],unlock_level:l}));
-  return{now:new Date().toISOString(),players,sessions:sessions.sort((a,b)=>b.at.localeCompare(a.at)),errors,bests,loc_bests:bests,limits,places};}
+
+// Sortable table. cols: [key, label, {n:numeric, f:format(value,row), w:min width}]; rows are objects.
+function table(cols,rows,opt={}){const wrap=el('div',{class:'tw'});let sk=opt.sort||cols[1][0],dir=opt.dir||-1;
+  const val=(r,k)=>{const v=r[k];return v==null||(typeof v==='number'&&!isFinite(v))?null:v;};
+  const draw=()=>{const rs=rows.slice().sort((a,b)=>{const x=val(a,sk),y=val(b,sk);if(x==null&&y==null)return 0;if(x==null)return 1;if(y==null)return-1;return(typeof x==='string'?x.localeCompare(y):x-y)*dir;});
+    const t=el('table');t.innerHTML=`<thead><tr>${cols.map(([k,l,o={}])=>`<th class="${o.n?'n':''}" data-k="${k}">${esc(l)}${k===sk?(dir<0?' ▾':' ▴'):''}</th>`).join('')}</tr></thead>`;
+    const tb=el('tbody');for(const r of rs.slice(0,opt.limit||500)){const tr=el('tr',{class:opt.click?'click':''});tr.innerHTML=cols.map(([k,l,o={}])=>`<td class="${o.n?'n':''}">${o.f?o.f(r[k],r):esc(r[k]==null?'–':r[k])}</td>`).join('');if(opt.click)tr.onclick=()=>opt.click(r);tb.append(tr);}
+    t.append(tb);t.querySelectorAll('th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;if(k===sk)dir=-dir;else{sk=k;dir=-1;}draw();});wrap.innerHTML='';wrap.append(t);
+    if(!rs.length)wrap.append(el('div',{class:'muted',style:'padding:8px'},opt.empty||'Nothing yet.'));};
+  draw();return wrap;}
+const P0=v=>v==null?'–':pct(v),F1=v=>v==null?'–':fmt(v,1),F0=v=>v==null?'–':fmt(v);
+// a small two-part bar: landed vs lost, for reading a rate at a glance in a table
+const rateBar=(v)=>v==null?'–':`<span class="rb"><i style="width:${Math.round(v*100)}%"></i></span>${pct(v)}`;
+
+// ---------- Overview ----------
+function viewOverview(m,{S,E,V,P,cut}){const s=summarize(S,E),active=new Set(S.map(x=>x.player_id)).size;
+  m.append(kpis([[fmt(active),'Played',WHO?'':`of ${RAW.players.length} anglers`],[hrs(s.min),'Time fishing',`${fmt(s.sessions)} sessions, ${hrs(s.avg)} each`],[fmt(s.fish),'Fish landed',`${fmt(s.fph,1)} an hour`],
+    [pct(s.landR),'Hooked fish landed',`${pct(s.hookR)} of casts get hooked`],[fmt(s.quests),'Quests done',s.min?`${fmt(s.quests/(s.min/60),1)} an hour`:''],[fmt(s.errors),'Errors',`${fmt(s.eph,2)} an hour`]]));
+  const ins=insights({S,E,V,P,cut}),c=card('Worth a look','What stands out in this range, most pressing first.');
+  if(!ins.length)c.append(el('div',{class:'muted'},'Nothing stands out.'));else{const ul=el('ul',{class:'ins'});for(const i of ins)ul.append(el('li',{class:i.lvl},`<b>${esc(i.title)}</b><span>${esc(i.why)}</span>`));c.append(ul);}
+  m.append(c);
+  const hBy={},pBy={},fBy={},lBy={};for(const x of S){const d=dayKey(x.at);hBy[d]=(hBy[d]||0)+(+x.minutes||0)/60;fBy[d]=(fBy[d]||0)+(+x.fish||0);lBy[d]=(lBy[d]||0)+(+x.lost||0);(pBy[d]=pBy[d]||new Set()).add(x.player_id);}
+  const pc={};for(const d in pBy)pc[d]=pBy[d].size;
+  const g=el('div',{class:'grid2'});const c1=card('Hours fished per day');c1.append(dayChart([{by:hBy,c:'--s1',name:'Hours'}],'hours',v=>fmt(v,v&&v<10?1:0)));g.append(c1);
+  const c2=card('Anglers per day');c2.append(dayChart([{by:pc,c:'--s2',name:'Anglers'}],'anglers',v=>fmt(v)));g.append(c2);
+  const c3=card('Where the time goes','Hours at each place.');c3.append(barList(toRows(s.locs,12,plName),hrs));g.append(c3);
+  const c4=card('Fish landed and lost per day');const ser=[{by:fBy,c:'--s1',name:'Landed'},{by:lBy,c:'--s2',name:'Lost'}];c4.append(legendOf(ser));c4.append(dayChart(ser,'fish',v=>fmt(v)));g.append(c4);m.append(g);
+  if(!V.length)m.append(el('p',{class:'muted',style:'font-size:13px'},evSpan()));}
+
+function lastBalance(V){const b={};for(const e of V)if(e.d.c!=null&&!e.d.tour&&(!b[e.p]||e.t>=b[e.p].t))b[e.p]={c:+e.d.c,t:e.t};return b;}
+function insights({S,E,V,P,cut}){const out=[],add=(lvl,title,why)=>out.push({lvl,title,why}),now=Date.now(),mine=p=>!WHO||p.player_id===WHO;
+  for(const p of RAW.players.filter(mine)){const d=(now-new Date(p.last_seen))/DAY;if(d>=3&&d<45)add(d>=7?'hi':'mid',`${nameOf(P,p.player_id)} hasn’t played in ${fmt(Math.floor(d))} days`,`Last seen ${when(p.last_seen)}, level ${p.level}, at ${plName((RAW.sessions.find(s=>s.player_id===p.player_id)||{}).quit_loc)}.`);}
+  const latest=[...new Set(RAW.sessions.map(x=>x.version).filter(Boolean))].sort(vcmp).pop();
+  for(const p of RAW.players.filter(mine))if(p.version&&latest&&vcmp(p.version,latest)<0&&(now-new Date(p.last_seen))/DAY<7)add('mid',`${nameOf(P,p.player_id)} is still on ${p.version}`,`Latest is ${latest}. The game updates after it has been closed for 15 minutes.`);
+  // stalled: played a lot in range without a level
+  const per={};for(const x of S){const r=per[x.player_id]||(per[x.player_id]={min:0,lo:99,hi:0});r.min+=+x.minutes||0;r.lo=Math.min(r.lo,+x.lv_start||+x.level||0);r.hi=Math.max(r.hi,+x.level||0);}
+  for(const [id,r] of Object.entries(per)){const lv=(P[id]||{}).level;if(r.min>=180&&r.hi===r.lo&&lv&&lv<31)add('low',`${nameOf(P,id)} hasn’t levelled in ${hrs(r.min)} of play`,`Stuck at level ${r.hi}.`);}
+  if(V.length){const sp=outcomes(V.filter(e=>!e.d.tour),e=>e.d.sp);
+    for(const r of Object.values(sp)){if(r.hooked>=10&&r.landR<.6)add('mid',`${spName(r.k)} gets away ${pct(1-r.landR)} of the time`,`${r.lost} lost of ${r.hooked} hooked. Most often: ${r.topWhy?r.topWhy[0]:'–'}.`);
+      else if(r.bites>=15&&r.setR<.45)add('low',`Only ${pct(r.setR)} of ${spName(r.k)} bites get hooked`,`${r.missed} missed of ${r.bites} bites. Most often: ${r.topWhy?r.topWhy[0]:'–'}.`);}
+    const ms=V.filter(e=>e.k==='miss'&&e.d.fit!=null),small=ms.filter(e=>e.d.fit<0);if(ms.length>=15&&small.length/ms.length>.35)add('low',`${pct(small.length/ms.length)} of missed strikes were on a hook too small for the fish`,'Players may not know to size up the hook.');
+    const byLoc=outcomes(V,e=>e.d.loc),min={};for(const x of S)for(const k in(x.locs||{}))min[k]=(min[k]||0)+(+x.locs[k]||0);
+    const rates=Object.keys(min).filter(k=>min[k]>=30&&byLoc[k]).map(k=>({k,r:byLoc[k].landed/(min[k]/60)}));if(rates.length>=3){const med=rates.map(x=>x.r).sort((a,b)=>a-b)[Math.floor(rates.length/2)];for(const x of rates)if(x.r<med*.5)add('low',`${plName(x.k)} is slow: ${fmt(x.r,1)} fish an hour`,`The middle place does ${fmt(med,1)} an hour.`);}
+    {const rich=Object.entries(lastBalance(V)).filter(([id,b])=>b.c>=25000).sort((a,b)=>b[1].c-a[1].c);if(rich.length)add('low',rich.length>1?`${rich.length} anglers are sitting on 25,000+ coins`:`${nameOf(P,rich[0][0])} is sitting on ${fmt(rich[0][1].c)} coins`,(rich.length>1?rich.map(([id,b])=>`${shortName(P,id)} ${fmt(b.c)}`).join(', ')+'. ':'')+'Plenty saved and little left they want to buy.');}
+    const cs=V.filter(e=>e.k==='catch'&&!e.d.tour),so=cs.filter(e=>e.d.out==='sold').length,re=cs.filter(e=>e.d.out==='released'||e.d.out==='tagged').length;
+    if(so+re>=30&&re/(so+re)<.15)add('low',`Only ${pct(re/(so+re))} of fish are released`,'Releasing pays half but adds luck and respect; nearly everyone sells.');
+    const never=META.sp.filter(s=>!s[8]&&!s[5]).map(s=>s[0]).filter(id=>!cs.some(e=>e.d.sp===id));const reach=never.filter(id=>SPM[id].locs.some(l=>min[l]>=60));
+    if(reach.length&&RANGE>=30)add('low',`${reach.length} species weren’t caught where people fished`,reach.slice(0,6).map(spName).join(', ')+(reach.length>6?'…':'')+'.');}
+  const cur=(RAW.tourneys||[]).find(t=>new Date(t.starts)<=now&&new Date(t.ends)>now);
+  if(cur){const ent=new Set((RAW.entries||[]).filter(e=>e.tid===cur.id).map(e=>e.player_id)),miss=RAW.players.filter(p=>mine(p)&&p.level>=31&&!ent.has(p.player_id));
+    if(miss.length)add('low',`${miss.length} level-31 angler${miss.length>1?'s haven’t':' hasn’t'} entered ${cur.name}`,miss.map(p=>p.player).join(', ')+'.');}
+  const FIX={};for(const f of(RAW.fixes||[]))FIX[f.msg]=f;const recent=E.filter(e=>!FIX[(e.msg||'').slice(0,160)]&&now-new Date(e.at)<7*DAY);
+  if(recent.length)add(recent.length>=5?'hi':'mid',`${recent.length} unfixed error report${recent.length>1?'s':''} this week`,'See Health.');
+  const ord={hi:0,mid:1,low:2};return out.sort((a,b)=>ord[a.lvl]-ord[b.lvl]);}
+
+// ---------- Players ----------
+function viewPlayers(m,D){const {S,V,P}=D;if(WHO){playerDetail(m,WHO,D);return;}
+  const per={};for(const p of RAW.players)per[p.player_id]={id:p.player_id,name:nameOf(P,p.player_id),lv:p.level,resp:p.respect,wins:p.wins||0,seen:new Date(p.last_seen).getTime(),ver:p.version,min:0,fish:0,hooked:0,days:new Set(),coins:null,sp:p.species};
+  for(const s of S){const r=per[s.player_id];if(!r)continue;r.min+=+s.minutes||0;r.fish+=+s.fish||0;r.hooked+=+s.hooked||0;r.days.add(dayKey(s.at));}
+  const bal=lastBalance(RAW.ev);for(const r of Object.values(per)){r.nd=r.days.size;r.land=r.hooked?r.fish/r.hooked:null;r.fph=r.min?r.fish/(r.min/60):null;r.coins=bal[r.id]?bal[r.id].c:null;}
+  const c=card('Anglers','Activity in the chosen range. Tap a row for the full picture.');
+  c.append(table([['name','Angler'],['lv','Level',{n:1}],['seen','Last seen',{n:1,f:v=>ago(v)}],['nd','Days',{n:1}],['min','Time',{n:1,f:v=>v?hrs(v):'–'}],['fish','Fish',{n:1,f:F0}],['fph','Per hour',{n:1,f:F1}],['land','Landed',{n:1,f:P0}],
+    ['coins','Coins',{n:1,f:F0}],['resp','Respect',{n:1,f:F0}],['sp','Species',{n:1}],['wins','Wins',{n:1,f:v=>v?'🏆'+v:'–'}],['ver','Version']],Object.values(per),{sort:'seen',click:r=>{WHO=r.id;store.set('bs-who',WHO);render();}}));m.append(c);
+  // level race
+  const ser=Object.values(per).filter(r=>r.min>0).sort((a,b)=>b.lv-a.lv).slice(0,8).map((r,i)=>({name:shortName(P,r.id),c:`--p${i}`,by:levelBy(S.filter(s=>s.player_id===r.id)),start:1}));
+  if(ser.length){const c2=card('Levels over time','Each angler’s level by day.');c2.append(legendOf(ser));c2.append(lineChart(ser,'level',v=>fmt(v)));m.append(c2);}}
+
+function feedLine(e,P){const d=e.d,pl=plName(d.loc),t=new Date(e.t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});let s;
+  if(e.k==='catch')s=`Landed a ${fmt(d.len,1)} cm ${spName(d.sp)} on ${luName(d.lu)} · ${OUTN[d.out]||d.out}${d.amt?` +${fmt(d.amt)}`:''}${d.pb?' · personal best':''}`;
+  else if(e.k==='lost')s=`Lost a ${fmt(d.len,1)} cm ${spName(d.sp)}: ${d.why}`;else if(e.k==='miss')s=`Missed a ${spName(d.sp)}: ${MISSN[d.why]||d.why}`;
+  else if(e.k==='bait')s=`Sabiki: ${d.n} ${spName(d.sp)}`;else if(e.k==='buy')s=`Bought ${itemName(d.item)} for ${fmt(d.amt)}`;else if(e.k==='earn')s=`${d.src==='quest'?'Quest: '+(d.q||''):d.src==='prize'?'Tournament prize, '+(d.rank?'#'+d.rank:''):d.src} +${fmt(d.amt)}`;
+  else if(e.k==='fee')s=`Paid ${fmt(d.amt)} for ${plName(d.place)}`;else if(e.k==='unlock')s=`Unlocked ${plName(d.place)} for ${fmt(d.amt)}`;else if(e.k==='level')s=`Reached level ${d.to}`;
+  else if(e.k==='tcatch')s=`Tournament: ${fmt(d.len,1)} cm ${spName(d.sp)}${d.hit?'':' (not the target)'}`;else if(e.k==='tour')s=d.act==='enter'?'Entered the tournament':`Left the tournament after ${fmt(d.min,0)} min`;else s=e.k;
+  return`<li><span class="muted">${esc(t)}</span> ${esc(s)}${e.k!=='buy'&&e.k!=='level'&&d.loc?` <span class="muted">· ${esc(pl)}</span>`:''}</li>`;}
+function playerDetail(m,id,{S,E,V,P}){const p=P[id]||{},mine=S,ev=V,s=summarize(mine,E),bal=lastBalance(RAW.ev)[id];
+  const back=el('button',{class:'chip'},'‹ All anglers');back.onclick=()=>{WHO='';store.set('bs-who',null);render();};m.append(back);
+  m.append(el('h2',{},esc(nameOf(P,id))+` <small class="muted">level ${p.level||'–'} · ${esc(p.device||'')} · ${esc(p.version||'')} · joined ${p.first_seen?new Date(p.first_seen).toLocaleDateString():''}</small>`));
+  m.append(kpis([[hrs(s.min),'Time fishing',`${fmt(new Set(mine.map(x=>dayKey(x.at))).size)} days, ${fmt(s.sessions)} sessions`],[fmt(s.fish),'Fish landed',`${fmt(s.fph,1)} an hour`],[pct(s.landR),'Hooked fish landed',`${pct(s.hookR)} of casts hooked`],
+    [bal?fmt(bal.c):'–','Coins now',bal?ago(bal.t):''],[fmt(p.respect),'Respect',''],[`${fmt(p.species)}/${META.sp.filter(x=>!x[8]).length}`,'Species found',''],[p.wins?'🏆 '+p.wins:'0','Tournament wins','']]));
+  const g=el('div',{class:'grid2'});
+  const c1=card('Level by day');c1.append(lineChart([{name:'Level',c:'--s1',by:levelBy(mine),start:1}],'level',v=>fmt(v)));g.append(c1);
+  const mBy={};for(const x of mine){const d=dayKey(x.at);mBy[d]=(mBy[d]||0)+(+x.minutes||0);}const c2=card('Minutes per day');c2.append(dayChart([{by:mBy,c:'--s2',name:'Minutes'}],'min',v=>fmt(v)));g.append(c2);
+  const c3=card('Where they fish');c3.append(barList(toRows(s.locs,10,plName),hrs));g.append(c3);
+  if(ev.length){const cs=ev.filter(e=>e.k==='catch');const c4=card('What they land');c4.append(barList(toRows(countBy(cs,e=>e.d.sp),10,spName),v=>fmt(v)));g.append(c4);
+    const c5=card('Favourite baits','Fish landed on each.');c5.append(barList(toRows(countBy(cs,e=>e.d.lu),8,luName),v=>fmt(v)));g.append(c5);
+    const lo=ev.filter(e=>e.k==='lost'),mi=ev.filter(e=>e.k==='miss');const c6=card('How fish get away',`${lo.length} lost in the fight, ${mi.length} missed strikes.`);c6.append(barList(toRows(Object.assign(countBy(lo,e=>e.d.why),countBy(mi,e=>MISSN[e.d.why]||e.d.why)),8),v=>fmt(v)));g.append(c6);}
+  m.append(g);
+  if(ev.length){const bu=ev.filter(e=>e.k==='buy');if(bu.length){const c7=card('Purchases',`${fmt(bu.reduce((a,e)=>a+(+e.d.amt||0),0))} coins on ${bu.length} things.`);c7.append(table([['when','When',{f:v=>esc(new Date(v).toLocaleDateString())}],['item','Item',{f:v=>esc(itemName(v))}],['amt','Coins',{n:1,f:F0}],['lv','Level',{n:1}]],bu.map(e=>({when:e.t,item:e.d.item,amt:+e.d.amt,lv:e.d.lv})),{sort:'when'}));m.append(c7);}
+    const c8=card('Recent activity');const ul=el('ul',{class:'feed'});ul.innerHTML=ev.slice(-60).reverse().map(e=>feedLine(e,P)).join('');c8.append(ul);m.append(c8);}
+  else m.append(el('p',{class:'muted',style:'font-size:13px'},evSpan()));}
+
+// ---------- Balance ----------
+function viewBalance(m,{S,V}){V=V.filter(e=>!e.d.tour);if(!V.some(e=>e.k==='catch'||e.k==='lost'||e.k==='miss')){noEvents(m,'Game balance');return;}
+  const locs=[...new Set(V.map(e=>e.d.loc).filter(Boolean))].sort((a,b)=>PLACE_ORDER.indexOf(a)-PLACE_ORDER.indexOf(b));if(BPLACE&&!locs.includes(BPLACE))BPLACE='';
+  const bar=el('div',{class:'row',style:'margin-top:12px'});for(const k of['',...locs]){const b=el('button',{class:'chip'+(BPLACE===k?' on':'')},k?esc(plName(k)):'All places');b.onclick=()=>{BPLACE=k;render();};bar.append(b);}m.append(bar);
+  const W=BPLACE?V.filter(e=>e.d.loc===BPLACE):V,all=outcomes(W,()=>'all').all||{bites:0};
+  const min=BPLACE?S.reduce((a,x)=>a+(+(x.locs||{})[BPLACE]||0),0):S.reduce((a,x)=>a+(+x.minutes||0),0);
+  m.append(kpis([[fmt(all.bites),'Bites',min?`${fmt(all.bites/(min/60),1)} an hour`:''],[P0(all.setR),'Bites hooked',`${fmt(all.missed)} missed`],[P0(all.landR),'Hooked fish landed',`${fmt(all.lost)} lost`],[F1(all.avgFs)+' s','Average fight',''],[P0(all.avgPct),'Average size','of the species’ top size']]));
+  const sp=Object.values(outcomes(W,e=>e.d.sp)).map(r=>Object.assign(r,{name:spName(r.k)}));
+  const c=card('Species','Bites = landed + lost + missed strikes. A low “hooked” rate means fish bite but strikes miss; a low “landed” rate means they get off in the fight. Size is the average catch as a share of the biggest the species gets.');
+  c.append(table([['name','Species'],['bites','Bites',{n:1}],['setR','Hooked',{n:1,f:rateBar}],['landR','Landed',{n:1,f:rateBar}],['landed','Fish',{n:1}],['avgLen','Avg cm',{n:1,f:F1}],['avgPct','Size',{n:1,f:P0}],['avgFs','Fight s',{n:1,f:F0}],['topWhy','Main way it gets away',{f:v=>v?esc(v[0])+` <span class="muted">×${v[1]}</span>`:'–'}]],sp,{sort:'bites'}));m.append(c);
+  const g=el('div',{class:'grid2'});
+  const lo=W.filter(e=>e.k==='lost'),c1=card('Why hooked fish get away',`${lo.length} lost.`);c1.append(barList(toRows(countBy(lo,e=>e.d.why),10),v=>fmt(v)));g.append(c1);
+  const mi=W.filter(e=>e.k==='miss'),fit=countBy(mi.filter(e=>e.d.fit!=null),e=>e.d.fit<0?'Hook too small':e.d.fit>0?'Hook too big':'Hook the right size');
+  const c2=card('Why strikes miss',`${mi.length} missed. Hook size below counts misses on plain bait hooks and lures.`);c2.append(barList(toRows(countBy(mi,e=>MISSN[e.d.why]||e.d.why),6),v=>fmt(v)));c2.append(el('div',{style:'height:8px'}));c2.append(barList(toRows(fit,3),v=>fmt(v)));g.append(c2);m.append(g);
+  const lu=Object.values(outcomes(W,e=>e.d.lu)).map(r=>{const top=countBy(W.filter(e=>e.k==='catch'&&e.d.lu===r.k),e=>e.d.sp),t=Object.entries(top).sort((a,b)=>b[1]-a[1])[0];return Object.assign(r,{name:luName(r.k),top:t?spName(t[0]):'–',spN:Object.keys(top).length});});
+  const c3=card('Baits and lures','How each one fishes. “Kinds” is how many species it has caught.');
+  c3.append(table([['name','Bait or lure'],['bites','Bites',{n:1}],['setR','Hooked',{n:1,f:rateBar}],['landR','Landed',{n:1,f:rateBar}],['landed','Fish',{n:1}],['spN','Kinds',{n:1}],['top','Catches most']],lu,{sort:'bites'}));m.append(c3);
+  const rods=Object.values(outcomes(W,e=>e.d.rod+(e.d.rl?':'+e.d.rl:''))).map(r=>{const [id,l]=r.k.split(':');const sn=W.filter(e=>e.k==='lost'&&e.d.why==='Line snapped'&&(e.d.rod+(e.d.rl?':'+e.d.rl:''))===r.k).length;return Object.assign(r,{name:rodName(id)+(l?` +${l}`:''),snap:r.hooked?sn/r.hooked:null});});
+  const c4=card('Rods','“Snapped” is the share of hooked fish that broke the line.');c4.append(table([['name','Rod'],['hooked','Hooked',{n:1}],['landR','Landed',{n:1,f:rateBar}],['snap','Snapped',{n:1,f:P0}],['avgFs','Fight s',{n:1,f:F0}],['avgPct','Size',{n:1,f:P0}]],rods,{sort:'hooked'}));m.append(c4);
+  const cond=[];const add=(label,fn)=>{for(const r of Object.values(outcomes(W,fn)))cond.push(Object.assign(r,{name:label(r.k)}));};
+  add(k=>PERN[k]||k,e=>e.d.per);add(k=>WXN[k]||k,e=>e.d.wx);add(k=>SSN[k]||k,e=>e.d.ssn);
+  const c5=card('Time, weather and season','Bites an hour would need minutes per condition, which isn’t tracked; compare the rates instead.');c5.append(table([['name','When'],['bites','Bites',{n:1}],['setR','Hooked',{n:1,f:rateBar}],['landR','Landed',{n:1,f:rateBar}],['avgPct','Size',{n:1,f:P0}]],cond,{sort:'bites'}));m.append(c5);
+  const caught=new Set(W.filter(e=>e.k==='catch').map(e=>e.d.sp)),miss=META.sp.filter(s=>!s[8]&&(!BPLACE||s[2].includes(BPLACE))&&!caught.has(s[0]));
+  if(miss.length){const c6=card('Not caught',`Species${BPLACE?' here':''} nobody landed in this range. Legends are rare by design.`);c6.append(el('div',{},miss.map(s=>`<span class="tag">${esc(s[1])}${s[5]?' ★':''}${BPLACE?'':` <span class="muted">${esc(s[2].map(plName).join(', '))}</span>`}</span>`).join('')));m.append(c6);}
+  const ba=W.filter(e=>e.k==='bait');if(ba.length){const c7=card('Sabiki bait','Herring and mackerel swung aboard.');c7.append(barList(toRows(countBy(ba,e=>e.d.sp,e=>+e.d.n||0),4,spName),v=>fmt(v)));m.append(c7);}}
+
+// ---------- Economy ----------
+function viewEconomy(m,{V,P}){V=V.filter(e=>!e.d.tour);const money=V.filter(e=>(e.k==='catch'&&e.d.amt)||e.k==='earn'||e.k==='buy'||e.k==='fee'||e.k==='unlock');
+  if(!money.length){noEvents(m,'The economy view');return;}
+  const inc=e=>e.k==='catch'||e.k==='earn',src=e=>e.k==='catch'?(e.d.out==='sold'?'Selling fish':'Releasing fish'):e.d.src==='quest'?'Quests':e.d.src==='prize'?'Tournament prizes':'Other',
+    cat=e=>e.k==='buy'?itemCat(e.d.item):e.k==='fee'?'Trip fees':'Unlocking places';
+  const earned=money.filter(inc).reduce((a,e)=>a+(+e.d.amt||0),0),spent=money.filter(e=>!inc(e)).reduce((a,e)=>a+(+e.d.amt||0),0),bal=lastBalance(V),bals=Object.values(bal).map(b=>b.c).sort((a,b)=>a-b);
+  m.append(kpis([[fmt(earned),'Coins earned',''],[fmt(spent),'Coins spent',earned?pct(spent/earned)+' of earnings':''],[fmt(earned-spent),'Saved',''],[bals.length?fmt(bals[Math.floor(bals.length/2)]):'–','Typical balance',bals.length>1?`${fmt(bals[0])} to ${fmt(bals[bals.length-1])}`:'']]));
+  const g=el('div',{class:'grid2'});const c1=card('Where coins come from');c1.append(barList(toRows(countBy(money.filter(inc),src,e=>+e.d.amt||0),8),v=>fmt(v)));g.append(c1);
+  const c2=card('Where coins go');c2.append(barList(toRows(countBy(money.filter(e=>!inc(e)),cat,e=>+e.d.amt||0),8),v=>fmt(v)));g.append(c2);m.append(g);
+  const eBy={},sBy={};for(const e of money){const d=dayKey(e.t),o=inc(e)?eBy:sBy;o[d]=(o[d]||0)+(+e.d.amt||0);}const ser=[{by:eBy,c:'--s1',name:'Earned'},{by:sBy,c:'--s2',name:'Spent'}];
+  const c3=card('Earned and spent per day');c3.append(legendOf(ser));c3.append(dayChart(ser,'coins',v=>fmt(v)));m.append(c3);
+  const items={};for(const e of V.filter(e=>e.k==='buy')){const r=items[e.d.item]||(items[e.d.item]={item:e.d.item,name:itemName(e.d.item),cat:itemCat(e.d.item),n:0,coins:0,who:new Set(),lv:0});r.n++;r.coins+=+e.d.amt||0;r.who.add(e.p);r.lv+=+e.d.lv||0;}
+  const rows=Object.values(items).map(r=>Object.assign(r,{buyers:r.who.size,avgLv:r.n?r.lv/r.n:null}));
+  const c4=card('What gets bought','“Level” is the average angler level at purchase: when in the game each item matters.');c4.append(table([['name','Item'],['cat','Kind'],['n','Bought',{n:1}],['buyers','Anglers',{n:1}],['coins','Coins',{n:1,f:F0}],['avgLv','Level',{n:1,f:F0}]],rows,{sort:'coins'}));m.append(c4);
+  const pl={};for(const e of money){const r=pl[e.p]||(pl[e.p]={id:e.p,name:nameOf(P,e.p),earn:0,spend:0,sold:0,rel:0});if(inc(e)){r.earn+=+e.d.amt||0;if(e.k==='catch'){if(e.d.out==='sold')r.sold++;else r.rel++;}}else r.spend+=+e.d.amt||0;}
+  for(const r of Object.values(pl)){r.bal=bal[r.id]?bal[r.id].c:null;r.relR=r.sold+r.rel?r.rel/(r.sold+r.rel):null;}
+  const c5=card('Anglers','“Released” is the share of kept-or-released fish they let go.');c5.append(table([['name','Angler'],['bal','Coins now',{n:1,f:F0}],['earn','Earned',{n:1,f:F0}],['spend','Spent',{n:1,f:F0}],['relR','Released',{n:1,f:P0}]],Object.values(pl),{sort:'bal',click:r=>{WHO=r.id;TAB='players';store.set('bs-who',WHO);store.set('bs-tab',TAB);render();}}));m.append(c5);
+  const bought=new Set(RAW.ev.filter(e=>e.k==='buy').map(e=>String(e.d.item).split(':').slice(0,2).join(':')));
+  const never=[...Object.keys(META.lu).filter(k=>k!=='worm'&&!/^(sabiki|seacut|tunalive|tunadead|livebait|cutbait)$/.test(k)).map(k=>'lure:'+k),...Object.keys(META.rod).filter(k=>!/^(sea|tuna)/.test(k)&&k!=='medium').map(k=>'rod:'+k)].filter(k=>!bought.has(k));
+  if(never.length){const c6=card('Never bought',`Since tracking started. Some may be bought before then or not reachable yet.`);c6.append(el('div',{},never.map(k=>`<span class="tag">${esc(itemName(k))}</span>`).join('')));m.append(c6);}}
+
+// ---------- Tournaments ----------
+function tRank(tid){return(RAW.entries||[]).filter(e=>e.tid===tid).sort((a,b)=>(b.len_cm??-1)-(a.len_cm??-1)||(b.lb??-1)-(a.lb??-1)).map((e,i,a)=>Object.assign({},e,{rank:e.len_cm==null?null:a.findIndex(x=>x.len_cm===e.len_cm&&x.lb===e.lb)+1}));}
+function viewTourney(m,{V,P}){const T=RAW.tourneys||[],now=Date.now();if(!T.length){m.append(el('div',{class:'empty'},'No tournaments yet.'));return;}
+  const cur=T.find(t=>new Date(t.starts)<=now&&new Date(t.ends)>now),nxt=T.filter(t=>new Date(t.starts)>now).sort((a,b)=>new Date(a.starts)-new Date(b.starts))[0];
+  if(cur){const st=tRank(cur.id),ent=new Set(st.map(e=>e.player_id)),elig=RAW.players.filter(p=>p.level>=31),out=elig.filter(p=>!ent.has(p.player_id));
+    const left=(new Date(cur.ends)-now)/DAY;
+    m.append(el('h2',{},`${esc(cur.name)} <small class="muted">${esc(spName(cur.species))} at ${esc(plName(cur.loc))} · ${esc(rodName(cur.rod))} · ${esc((cur.lures||[]).map(luName).join(', '))} · ends ${esc(when(cur.ends))} (${left>=1?fmt(left,0)+' days':fmt(left*24,0)+' h'} left)</small>`));
+    const tv=V.filter(e=>e.d.tour===cur.id),mins=tv.filter(e=>e.k==='tour'&&e.d.act==='leave').reduce((a,e)=>a+(+e.d.min||0),0),tc=tv.filter(e=>e.k==='tcatch');
+    m.append(kpis([[`${ent.size}/${elig.length}`,'Entered','of level-31 anglers'],[fmt(st.filter(e=>e.len_cm!=null).length),'Weighed in',''],[fmt(st.reduce((a,e)=>a+(e.fish||0),0)),'Target fish',''],[tv.length?hrs(mins):'–','Time fished','from tracking'],[tc.length?pct(tc.filter(e=>e.d.hit).length/tc.length):'–','Catches on target','']]));
+    const c=card('Standings');c.append(table([['rank','#',{n:1,f:v=>v||'–'}],['player','Angler',{f:(v,r)=>esc(v)+(r.tag?` <span class="muted">#${r.tag}</span>`:'')}],['len_cm','Biggest',{n:1,f:v=>v==null?'–':fmt(v,1)+' cm'}],['lb','Weight',{n:1,f:v=>v==null?'–':fmt(v,1)+' lb'}],['fish','Fish',{n:1}],['caught_at','Caught',{n:1,f:v=>v?esc(when(v)):'–'}],['joined_at','Joined',{n:1,f:v=>esc(when(v))}]],st,{sort:'rank',dir:1}));
+    if(out.length)c.append(el('p',{class:'muted',style:'font-size:13px'},`Not entered: ${out.map(p=>esc(p.player)).join(', ')}.`));m.append(c);}
+  if(nxt)m.append(el('p',{class:'muted',style:'font-size:13px'},`Next: ${esc(nxt.name)}, ${esc(spName(nxt.species))} at ${esc(plName(nxt.loc))}, starts ${esc(when(nxt.starts))}.`));
+  const past=T.filter(t=>new Date(t.ends)<=now).map(t=>{const st=tRank(t.id),w=st[0]&&st[0].len_cm!=null?st[0]:null;return{id:t.id,name:t.name,week:new Date(t.starts).getTime(),entrants:st.length,weighed:st.filter(e=>e.len_cm!=null).length,winner:w?w.player:null,size:w?w.len_cm:null,sp:spName(t.species)};});
+  if(past.length){const c=card('Past tournaments');c.append(table([['week','Week of',{f:v=>esc(new Date(v).toLocaleDateString([], {month:'short',day:'numeric'}))}],['name','Event'],['sp','Target'],['entrants','Entered',{n:1}],['weighed','Weighed in',{n:1}],['winner','Winner',{f:v=>v?'🏆 '+esc(v):'–'}],['size','Size',{n:1,f:v=>v==null?'–':fmt(v,1)+' cm'}]],past,{sort:'week'}));m.append(c);}
+  const rec={};for(const t of T){const st=tRank(t.id),done=new Date(t.ends)<=now;for(const e of st){const r=rec[e.player_id]||(rec[e.player_id]={id:e.player_id,name:nameOf(P,e.player_id),n:0,top3:0,wins:0,best:null,fish:0,ranks:[]});r.n++;r.fish+=e.fish||0;if(done&&e.rank){r.ranks.push(e.rank);if(e.rank<=3)r.top3++;if(e.rank===1)r.wins++;r.best=r.best==null?e.rank:Math.min(r.best,e.rank);}}}
+  for(const r of Object.values(rec)){r.avg=r.ranks.length?r.ranks.reduce((a,b)=>a+b,0)/r.ranks.length:null;const tv=RAW.ev.filter(e=>e.p===r.id&&e.k==='tour'&&e.d.act==='leave');r.min=tv.length?tv.reduce((a,e)=>a+(+e.d.min||0),0):null;}
+  const c2=card('Anglers','Across every tournament. Ranks count finished events only.');c2.append(table([['name','Angler'],['n','Entered',{n:1}],['wins','Wins',{n:1}],['top3','Top 3',{n:1}],['best','Best',{n:1,f:v=>v?'#'+v:'–'}],['avg','Avg rank',{n:1,f:F1}],['fish','Target fish',{n:1}],['min','Time',{n:1,f:v=>v==null?'–':hrs(v)}]],Object.values(rec),{sort:'n'}));m.append(c2);
+  const runs={};for(const t of T)(runs[t.tpl]=runs[t.tpl]||[]).push(new Date(t.starts).getTime());
+  const c3=card('Rotation','Every challenge in the pool, how often it has run and when it last did. Add a row to the templates table for a new one.');
+  c3.append(table([['name','Challenge'],['target','Target'],['rod','Rod'],['active','In pool',{f:v=>v?'Yes':'No'}],['weight','Weight',{n:1}],['n','Runs',{n:1}],['last','Last run',{n:1,f:v=>v?esc(new Date(v).toLocaleDateString([], {month:'short',day:'numeric'})):'–'}]],
+    (RAW.templates||[]).map(t=>({name:t.name,target:`${spName(t.species)}, ${plName(t.loc)}`,rod:rodName(t.rod),active:t.active,weight:t.weight,n:(runs[t.id]||[]).length,last:(runs[t.id]||[]).sort().pop()||null})),{sort:'n'}));m.append(c3);}
+
+// ---------- Health ----------
+function viewHealth(m,D){const {S,P}=D,latest=[...new Set(RAW.sessions.map(x=>x.version).filter(Boolean))].sort(vcmp).pop();
+  const rows=RAW.players.filter(p=>!WHO||p.player_id===WHO).map(p=>({name:nameOf(P,p.player_id),ver:p.version,ok:p.version===latest,dev:p.device,seen:new Date(p.last_seen).getTime(),app:(RAW.sessions.find(s=>s.player_id===p.player_id)||{}).app}));
+  const c=card('Versions',`Latest is ${latest||'–'}. Phones update after the game has been closed for 15 minutes.`);c.append(table([['name','Angler'],['ver','Version',{f:(v,r)=>r.ok?esc(v):`<b class="err">${esc(v||'–')}</b>`}],['dev','Device'],['app','Home screen app',{f:v=>v?'Yes':'Browser'}],['seen','Last seen',{n:1,f:v=>ago(v)}]],rows,{sort:'seen'}));m.append(c);
+  viewErrors(m,D);}
+
+// ---------- sample data, to see how the page looks without signing in ----------
+function demoData(){let z=7;const r=()=>(z=(z*9301+49297)%233280)/233280,pick=a=>a[Math.floor(r()*a.length)],now=Date.now(),iso=t=>new Date(t).toISOString();
+  const names=['Ben','Gary','Jason','Mom','Dave','Kim','Lou','Sam'],vers=['v1.21a','v1.22a','v1.23a','v1.24a'],devs=['iPhone','iPhone','Android phone','iPad'];
+  const players=names.map((n,i)=>({player_id:'demo-'+i+'-xxxxxxxx',player:n,tag:10001+i,wins:i<2?2-i:0,level:[31,31,31,30,22,14,9,4][i],respect:[260,210,180,150,60,20,8,0][i],species:[60,55,52,48,30,18,12,6][i],locs:'pond,creek',version:i===6?'v1.22a':'v1.24a',device:devs[i%4],first_seen:iso(now-(80-i*6)*DAY),last_seen:iso(now-(i===5?5:i===7?12:r()*1.5)*DAY)}));
+  const L=Object.keys(PLACES),sessions=[],events=[],errors=[];
+  const spAt=loc=>META.sp.filter(s=>s[2].includes(loc)&&!s[8]&&!s[5]);
+  for(const p of players){const i=+p.player_id.split('-')[1],skill=1-i*.06;let lv=Math.max(1,p.level-12),coins=500+i*100;
+    for(let d=89;d>=0;d--){if(r()>.55-i*.03)continue;if(new Date(p.last_seen)<now-d*DAY)continue;const n=1+Math.floor(r()*3);
+      for(let k=0;k<n;k++){const at=now-d*DAY-r()*DAY*.8,min=5+r()*45,locs={},nl=1+Math.floor(r()*2);const pool=L.slice(0,Math.min(L.length,2+Math.floor(lv/4)));
+        for(let j=0;j<nl;j++){const l=pick(pool);locs[l]=(locs[l]||0)+min/nl;}
+        const casts=Math.round(min*2.2),hooked=Math.round(casts*(.35+r()*.2)),lost=Math.round(hooked*(.08+(1-skill)*.25)),fish=hooked-lost;
+        const lv0=lv;if(r()<.35&&lv<p.level)lv++;
+        sessions.push({at:iso(at),player_id:p.player_id,version:d<4?p.version:pick(vers.slice(0,3)),device:p.device,screen:'390x844',app:i%3!==2,minutes:+min.toFixed(1),locs,fish,level:lv,lv_start:lv0,quit_loc:Object.keys(locs)[0],casts,hooked,lost,quests:r()<.3?1:0,bait:0});
+        if(d<=20){let t=at;for(const l of Object.keys(locs)){const sps=spAt(l);if(!sps.length)continue;const nb=Math.round(locs[l]*1.4);
+          for(let b=0;b<nb;b++){t+=r()*60e3;const s=pick(sps),len=+(s[3][0]+(s[3][1]-s[3][0])*Math.pow(r(),1.6)).toFixed(1),lu=pick(['worm','spinner','jig','minnow','popper','spoon','cricket']),
+            base={loc:l,rod:pick(['medium','ultra','heavy','cat']),rl:Math.floor(r()*3),lu,per:pick(['dawn','day','day','dusk','night']),wx:pick(['clear','clear','rain','fog']),ssn:Math.floor(r()*3),lv,hk:pick(['h10','h4','h20'])};
+            const hard=s[4]>3?.25:0,x=r();
+            if(x<.22+hard*.5)events.push([t/1000|0,p.player_id,'miss',Object.assign({},base,{c:coins,sp:s[0],why:pick(['set','set','late','early']),fit:pick([0,0,-1,1])}),p.version]);
+            else if(x<.3+hard*.9-skill*.05)events.push([t/1000|0,p.player_id,'lost',Object.assign({},base,{c:coins,sp:s[0],len,why:pick(['Line snapped','It threw the hook','The hook tore out','It threw the hook mid-jump!']),fs:Math.round(5+r()*40)}),p.version]);
+            else{const sold=r()<.7,amt=Math.round(len*(sold?1:.5)*(1+s[4]*.3));coins+=amt;events.push([t/1000|0,p.player_id,'catch',Object.assign({},base,{c:coins,sp:s[0],len,lb:+(len*len*len*1.2e-5).toFixed(2),out:sold?'sold':'released',amt,fs:Math.round(4+r()*30),first:0,pb:r()<.05?1:0,medal:-1}),p.version]);}}
+          if(r()<.25){const item=pick(['lure:spinner','lure:jig','lure:minnow','rod:ultra','upgrade:medium:1','pack:egg','gear:net','gear:shades','look:hat:cap']),amt=pick([30,60,120,400,900]);if(coins>amt){coins-=amt;events.push([t/1000|0,p.player_id,'buy',{loc:l,lv,c:coins,item,amt},p.version]);}}
+          if(r()<.15){const amt=pick([150,250,400]);coins+=amt;events.push([t/1000|0,p.player_id,'earn',{loc:l,lv,c:coins,src:'quest',amt,q:'Land 3 bluegill'},p.version]);}}}}}}
+  events.sort((a,b)=>a[0]-b[0]);
+  const tpls=[['pond-bass-ultra','Bucketmouth Classic','pond','bass','ultra'],['creek-brown-fly','Willow Browns','creek','brown','fly'],['river-cat-stink','Iron Ferry Stinkbait','river','catfish','cat'],['congo-tigerfish','Boyoma Tigerfish','congo','tigerfish','heavy'],['bayou-bluecat','Tupelo Blue Cats','bayou','bluecat','cat']];
+  const templates=tpls.map(([id,name,loc,species,rod])=>({id,name,loc,species,rod,lures:['worm','spinner'],active:true,weight:1}));
+  const wk=now-((new Date(now).getUTCDay()+6)%7)*DAY,tourneys=[],entries=[];
+  for(let k=-3;k<=1;k++){const t=tpls[(k+3)%tpls.length],st=wk+k*7*DAY,id=10+k;tourneys.push({id,tpl:t[0],name:t[1],loc:t[2],species:t[3],rod:t[4],lures:['worm','spinner'],starts:iso(st),ends:iso(st+7*DAY),finalized:k<0,winner:null,entrants:0,weighed:0});
+    if(k<=0)for(const p of players.filter(p=>p.level>=31||r()<.3))if(r()<.8){const w=r()<.85,len=w?+(60+r()*40).toFixed(1):null;entries.push({tid:id,player_id:p.player_id,player:p.player,tag:p.tag,lv:p.level,len_cm:len,lb:len?+(len*len*len*2.5e-5).toFixed(2):null,fish:w?1+Math.floor(r()*30):0,joined_at:iso(st+r()*2*DAY),caught_at:w?iso(st+r()*5*DAY):null,claimed:k<0});
+      if(k===0){events.push([(st+DAY)/1000|0,p.player_id,'tour',{loc:t[2],tour:id,act:'enter',tid:id},p.version],[(st+DAY+3600e3)/1000|0,p.player_id,'tour',{loc:t[2],tour:id,act:'leave',tid:id,min:20+r()*60},p.version]);
+        for(let q=0;q<5;q++)events.push([(st+DAY+q*600e3)/1000|0,p.player_id,'tcatch',{loc:t[2],tour:id,sp:r()<.7?t[3]:'bluegill',hit:r()<.7?1:0,len:50+r()*40},p.version]);}}}
+  for(let k=0;k<6;k++)errors.push({at:iso(now-r()*10*DAY),player_id:pick(players).player_id,version:pick(vers),device:'iPhone',msg:pick(["TypeError: undefined is not an object (evaluating 'G.fight.f')","Script error."]),src:'index.html:4021'});
+  return{now:iso(now),days:90,players,sessions,events,events_since:iso(now-20*DAY),errors,fixes:[],bests:[],loc_bests:[],limits:{},places:[],tourneys,entries,templates};}
 
 if(/demo/.test(location.hash)){DEMO=true;}
 load();

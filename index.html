@@ -1198,7 +1198,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.23a';
+const VERSION='v1.24a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -2067,6 +2067,7 @@ function landString(){const L=G.lure,st=L.string||[];L.string=[];if(!st.length)r
   for(const o of st){const sp=SPMAP[o.sp];names[sp.name]=(names[sp.name]||0)+1;if(!S.log[sp.id]){S.log[sp.id]={n:0,best:0,bestW:0};firsts.push(sp.name);}const r=S.log[sp.id];r.n++;
     if(o.len>r.best){r.best=o.len;r.bestW=SHAPES[sp.shape].k*Math.pow(o.len,3);}S.stats.caught++;G.sess.bait=(G.sess.bait||0)+1;questCatch(sp,o.len);  // bait for the well: counted apart from the fish you land
     if(s&&s.well.length<WELL_MAX){s.well.push({sp:sp.id,len:o.len});well++;}else back++;}
+  {const by={};for(const o of st){const b=by[o.sp]=by[o.sp]||{n:0,best:0};b.n++;b.best=Math.max(b.best,o.len);}for(const id in by)ev('bait',{sp:id,n:by[id].n,best:+by[id].best.toFixed(1)});}
   const xp=st.length*3+firsts.length*40;setTimeout(()=>gainXP(xp),5200);save();SFX.coin();vib([30,30,30]);splash(DOCKX+24,.6);updateHUD(true);
   const kinds=Object.entries(names).map(([n,k])=>`${k} ${n.replace(/^Atlantic /,'').toLowerCase()}`),title=`Swung aboard ${kinds.join(' and ')}`;
   const bits=[];if(well)bits.push(`${well} into the live well (${s.well.length}/${WELL_MAX})`);if(back)bits.push(`${back} went back: the well is full`);if(firsts.length)bits.push(`First ${firsts.join(' and ')} in your log!`);
@@ -2737,7 +2738,7 @@ function fDist(m,d=0){return imp()?(m*3.281).toFixed(d)+' ft':m.toFixed(d)+' m';
 function fTrophy(id){const t=TROPHY[id];if(!t)return'\u2014';return imp()?t.map(v=>Math.round(v/2.54)).join(' / ')+' in':t.join(' / ')+' cm';}
 function lvlSummary(){return`Casts reach ${fDist(castReach()/10)} \u00b7 hook sets up to ${Math.round(Math.min(.97,.92*hookSkill())*100)}%`;}
 function gainXP(n){if(G.tour)return;const before=S.lvSeen||lvlInfo().l;S.xp=(S.xp||0)+n;const now=lvlInfo().l;S.lvSeen=now;updateLvChip();
-  if(now>before){G.lvMsg=[`Angler level ${now}`,now===MAXLV?'Tournaments are open: find them on the main menu':lvlSummary()];if(!currentScreen())flushLv();}}
+  if(now>before){ev('level',{to:now,xp:S.xp});G.lvMsg=[`Angler level ${now}`,now===MAXLV?'Tournaments are open: find them on the main menu':lvlSummary()];if(!currentScreen())flushLv();}}
 function flushLv(){if(!G.lvMsg)return;const m=G.lvMsg;G.lvMsg=null;setTimeout(()=>{toast(m[0],m[1]);SFX.fanfare();G.lvFx=G.t;vib([40,60,40]);},500);}
 function updateLvChip(){if(!$('#log').hidden)renderLog();}
 function gearOn(id){return!!S.owned[id]&&S.settings[id]!==false;}
@@ -2751,10 +2752,10 @@ function pullAway(f){const L=G.lure;f.mouthHold=false;f.reelT=0;L.fish=null;f.st
 function missHook(f,why){
   // With a circle hook you let the tuna swim off with the bait: as the line comes tight the hook turns into the corner of its jaw.
   if(why==='late'&&G.sea&&f.sp.giant&&LURES[S.lure].sea&&Math.random()<.85){startFight(f,false);toast('It hooked itself','The circle hook turned into the corner of its jaw as the line came tight');return;}
-  if(why==='circle'){flee(f,10);f.wise=true;SFX.lose();G.lure.bare=true;useBait();toast('Pulled it out of its mouth','Don\u2019t strike with a circle hook. Let it swim off with the bait and come tight');refreshControls();return;}
+  if(why==='circle'){ev('miss',{sp:f.sp.id,why});flee(f,10);f.wise=true;SFX.lose();G.lure.bare=true;useBait();toast('Pulled it out of its mouth','Don\u2019t strike with a circle hook. Let it swim off with the bait and come tight');refreshControls();return;}
   const L=G.lure,bait=isBait(),d=hookFit(f.sp);
   if(why==='late'){const base=[.6,.35,.2][f.sp.mouth];const sw=bait?base*(1+Math.max(0,-d)*.3)*(d>0?.6:1):.03;if(Math.random()<sw){startFight(f,true);return;}}
-  flee(f,10);f.wise=true;SFX.lose();chatter('miss',.45);
+  ev('miss',{sp:f.sp.id,why,fit:d});flee(f,10);f.wise=true;SFX.lose();chatter('miss',.45);
   const bn=baitNoun();if(bait){L.bare=true;useBait();}
   const msg=bait?(why==='late'?`It stole your ${bn}`:`Missed! It stole the ${bn}`):(why==='late'?'It spat the lure':'Missed! The hook didn\u2019t set');
   const sub=why==='late'?'Tap HOOK the moment the lure plunges':d<0?'That hook is small for its mouth':d>0?'That hook is big for its mouth':'Bad luck. It happens';
@@ -3272,9 +3273,9 @@ function heftOf(f){const R=fishLb(f)/(lineTest()*2.5)*(mods().fightPull<1?.75:1)
 function snap(why,title){chatter('snap',.7);
   const F=G.fight,f=F.f;SFX.snap();vib(120);S.stats.snapped++;
   const adv=why||((F.heftR||0)>2.5?`Way too much fish for ${lineTest()} lb line`:(F.heftR||0)>1.2?`Heavy fish for ${lineTest()} lb line, let it run`:'');
-  const sub=breakOff('snap');f.state='wander';flee(f,12);G.sess.lost++;endFight();toast(title||(why?'Line twist! It snapped':'Line snapped!'),adv?adv+'. '+sub:sub);save();updateHUD(true);
+  ev('lost',fishEv(f,{why:'Line snapped',fs:Math.round(F.t||0),heft:+(F.heftR||0).toFixed(2)}));const sub=breakOff('snap');f.state='wander';flee(f,12);G.sess.lost++;endFight();toast(title||(why?'Line twist! It snapped':'Line snapped!'),adv?adv+'. '+sub:sub);save();updateHUD(true);
 }
-function lostFish(msg,sub){G.sess.lost++;chatter('lost',.55);if(S.lure!=='worm'&&isBait())useBait();const f=G.fight.f;f.state='wander';flee(f,10);SFX.lose();endFight();toast(msg,sub);}
+function lostFish(msg,sub){G.sess.lost++;if(G.fight)ev('lost',fishEv(G.fight.f,{why:msg,fs:Math.round(G.fight.t||0)}));chatter('lost',.55);if(S.lure!=='worm'&&isBait())useBait();const f=G.fight.f;f.state='wander';flee(f,10);SFX.lose();endFight();toast(msg,sub);}
 function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}if(G.tour){tourLand();return;}const qHits=questCatch(G.fight.f.sp,G.fight.f.len);{const F0=G.fight,f0=F0.f,big0=medalFor(f0.sp.id,f0.len)>=1||f0.sp.legend;chatter(big0?'big':'catch',big0?.85:.3);}
   useBait();
   const F=G.fight,f=F.f,sp=f.sp;
@@ -3283,7 +3284,7 @@ function landFish(){if(G.fight&&G.fight.f.sp.turtle){landTurtle();return;}if(G.t
   const size=Math.min(3,(f.len-sp.len[0])/Math.max(1,sp.len[1]-sp.len[0]));
   const value=Math.round(sp.price*(.6+.9*size));
   const rec=S.log[sp.id];const first=!rec;const record=!rec||f.len>rec.best;const medal=medalFor(sp.id,f.len),prevMedal=rec?medalFor(sp.id,rec.best):-1;
-  G.pending={sp,len:f.len,weight,value,first,record,prevBest:rec?rec.best:null};if(sp.giant)G.pending.fightT=F.t;
+  G.pending={sp,len:f.len,weight,value,first,record,prevBest:rec?rec.best:null,fs:Math.round(F.t||0),gutH:!!F.gut,medal:medalFor(sp.id,f.len)};if(sp.giant)G.pending.fightT=F.t;
 if(F.gut){G.pending.gut=true;G.pending.value=Math.max(1,Math.round(value*.35));}
   G.schoolHint=f.school&&f.school.m.some(m=>!m.dead&&m!==f&&m.state!=='leave')?sp.name:null;
   G.pending.medal=medal;if(f.bed){G.pending.bed=f.bed;f.bed.guard=null;f.bed.empty=true;f.bed=null;}G.pending.newMedal=medal>prevMedal;
@@ -7619,7 +7620,7 @@ function hookDown(){
   // A circle hook isn't struck: a sharp hookset pulls it out of the fish's mouth before it can turn into the jaw.
   if(f&&f.state==='bite'&&G.sea&&f.sp.giant&&LURES[S.lure].sea){if(Math.random()<.4){startFight(f,false);gainXP(3);}else missHook(f,'circle');return;}
   if(f&&f.state==='bite'){if(Math.random()<Math.min(.97,setChance(hookFit(f.sp))*hookSkill()*mods().hookSet*(isBait()?1:G.input.reel?1.1:.85)*(f.sp.bony?(G.t-(f.biteAt||0)<.4?.35:1.15):1))){startFight(f,false);gainXP(3);if(curSetup().power>=3&&f.sp.mouth===0&&Math.random()<.22){lostFish('Ripped the hook right out','That heavy rod is too stiff for a small mouth');return;}}else missHook(f,'set');}
-  else if(f&&f.state==='nibble'){toast('Too early!','Wait for the lure to plunge');spook(f);}
+  else if(f&&f.state==='nibble'){ev('miss',{sp:f.sp.id,why:'early'});toast('Too early!','Wait for the lure to plunge');spook(f);}
   else{toast('Nothing on yet');SFX.ui();}
 }
 function actionUp(){if(G.tapCast==='armed'){G.tapCast='free';return;}if(G.tapCast)return;releaseCast();}
@@ -7731,7 +7732,23 @@ function flushSessions(){clearTimeout(flushSessions.t);if(!statsOn()||flushSessi
     // a 4xx means the server will never take this one (bad data): drop it rather than block the queue
     .then(r=>done(r.ok||(r.status>=400&&r.status<500))).catch(()=>done(false));}catch(e){done(false);}}
 // On launch: a session that was still open when the app was closed goes in the queue, then the queue is sent.
-function recoverSessions(){if(S.sessOpen){if(S.sessOpen.p_minutes>=.5)queueSession(S.sessOpen);S.sessOpen=null;}G.sess.key=newSessKey();setTimeout(flushSessions,3000);}
+// ---- Play events: catches, losses, misses, purchases, earnings, levels (only with stats consent) ----
+// Kept in their own localStorage queue, not in S, so a tournament (which never saves S) can't drop them.
+// Each carries the context it happened in, including the coin balance, so the stats page can follow balance and economy.
+const EVQ='mossback-evq';let evQ=null;
+function evLoad(){if(!evQ){try{evQ=JSON.parse(localStorage.getItem(EVQ)||'[]');}catch(e){evQ=[];}if(!Array.isArray(evQ))evQ=[];}return evQ;}
+function evStore(){try{localStorage.setItem(EVQ,JSON.stringify(evQ));}catch(e){}}
+function evCtx(){const lu=LURES[S.lure]||{},c={loc:S.loc,rod:G.sea?G.sea.rig:S.setup,lu:S.lure,per:period(),wx:S.weather,ssn:seasonIdx(),lv:lvlInfo().l,c:Math.round(S.coins||0)};
+  try{if(lu.bait&&!lu.sea){c.hk=S.hook;c.rig=rig().type;}else if(!lu.bait&&!lu.sea){const v=lureVar();if(v.size&&v.size!=='reg')c.lsz=v.size;c.col=colorName();}const st=S.setups&&S.setups[S.setup];if(st&&!G.sea)c.rl=st.lvl||0;}catch(e){}
+  if(G.tour)c.tour=G.tour.ev.tid;return c;}
+function ev(k,d){if(!statsOn())return;try{const q=evLoad();q.push({at:new Date().toISOString(),k,key:newSessKey(),d:Object.assign(evCtx(),d||{})});if(q.length>2000)q.splice(0,q.length-2000);evStore();if(q.length>=40)evFlush();}catch(e){}}
+function evFlush(){clearTimeout(evFlush.t);if(!statsOn()||evFlush.busy)return;const q=evLoad();if(!q.length)return;const batch=q.slice(0,250),keys=new Set(batch.map(e=>e.key));evFlush.busy=true;
+  const done=ok=>{evFlush.busy=false;if(ok){evQ=evLoad().filter(e=>!keys.has(e.key));evStore();if(evQ.length)evFlush.t=setTimeout(evFlush,2000);}else evFlush.t=setTimeout(evFlush,60000);};
+  try{fetch(SB_URL+'/rest/v1/rpc/log_events',{method:'POST',keepalive:batch.length<60,headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_id:sbPid(),p_version:VERSION,p_events:batch})})
+    .then(r=>done(r.ok||(r.status>=400&&r.status<500))).catch(()=>done(false));}catch(e){done(false);}}
+setInterval(()=>{if(evQ&&evQ.length)evFlush();},90000);
+function fishEv(f,extra){const sp=f.sp;return Object.assign({sp:sp.id,len:+(+f.len).toFixed(1),lb:+(SHAPES[sp.shape].k*Math.pow(f.len,3)*2.2046).toFixed(2)},extra||{});}
+function recoverSessions(){setTimeout(evFlush,4000);if(S.sessOpen){if(S.sessOpen.p_minutes>=.5)queueSession(S.sessOpen);S.sessOpen=null;}G.sess.key=newSessKey();setTimeout(flushSessions,3000);}
 let errSent=0,errSeen={};
 function reportError(msg,src){if(!statsOn()||errSent>=5)return;msg=String(msg||'Unknown error').slice(0,300);
   // "Script error." at line 0 is all a browser says about an error in a script from another site (an in-app browser or a
@@ -7740,7 +7757,7 @@ function reportError(msg,src){if(!statsOn()||errSent>=5)return;msg=String(msg||'
   const b={p_id:sbPid(),p_version:VERSION,p_device:devInfo().device,p_msg:msg,p_src:String(src||'').slice(0,120)};statsPost('/rest/v1/rpc/log_error',b);statsLog('Error report',b);}
 window.addEventListener('error',e=>reportError(e.message,(String(e.filename||'').split('/').pop()||'game')+':'+(e.lineno||0)));
 window.addEventListener('unhandledrejection',e=>{const r=e.reason;reportError(r&&r.message||String(r),'promise');});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')sendSession();else flushSessions();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){sendSession();evFlush();}else flushSessions();});
 // Updates for a game left open: a phone can keep the page alive in the background for days, so it never reloads and
 // keeps running an old version. Coming back after 15 minutes or more away, the game reads the small version.txt the
 // site publishes; if a newer version is out it saves and reloads (never with a fish on or a catch waiting).
@@ -7830,26 +7847,28 @@ function paintTour(d){const b=$('#tourBody'),c=d&&d.cur;let h='';
   b.innerHTML=h;b.querySelectorAll('.av').forEach(a=>a.append(anglerIcon(a.dataset.look)));
   const go=$('#tourGo');if(go)go.onclick=()=>{if(G.tour){resume();return;}tourEnter(c);};}
 
-function tourEnter(ev){if(G.tour||!ev)return;if(new Date(ev.ends)<=Date.now()){toast('That tournament has ended');return;}
-  if(!LOCS[ev.loc]||!SETUPS[ev.rod]||!SPMAP[ev.species]||!(ev.lures||[]).every(id=>LURES[id])){toast('Update the game to fish this one');return;}
+function tourEnter(te){if(G.tour||!te)return;if(new Date(te.ends)<=Date.now()){toast('That tournament has ended');return;}
+  if(!LOCS[te.loc]||!SETUPS[te.rod]||!SPMAP[te.species]||!(te.lures||[]).every(id=>LURES[id])){toast('Update the game to fish this one');return;}
   save();const bak=JSON.stringify(SEA_KEEP?Object.assign({},S,{lure:SEA_KEEP.lure}):S),T=JSON.parse(bak);
-  Object.assign(T,{loc:ev.loc,setup:ev.rod,setups:{[ev.rod]:{owned:true,lvl:0}},lures:{},lure:ev.lures[0],hook:['h10','h4','h20'][clamp(SPMAP[ev.species].mouth|0,0,2)],luck:0,respect:0,bait:{},notices:[],yday:tourYday(),minutes:tourMin(),wtimer:999});
-  for(const id of ev.lures)T.lures[id]=99;
+  Object.assign(T,{loc:te.loc,setup:te.rod,setups:{[te.rod]:{owned:true,lvl:0}},lures:{},lure:te.lures[0],hook:['h10','h4','h20'][clamp(SPMAP[te.species].mouth|0,0,2)],luck:0,respect:0,bait:{},notices:[],yday:tourYday(),minutes:tourMin(),wtimer:999});
+  for(const id of te.lures)T.lures[id]=99;
+  // lures start at the size whose hook fits the target's mouth (colour stays the angler's own pick)
+  {const mo=SPMAP[te.species].mouth|0;T.variant=Object.assign({},T.variant);for(const id of te.lures){const lu=LURES[id];if(lu.bait||lu.sea||lu.hook==null)continue;const dz=clamp(mo-lu.hook,-1,1);T.variant[id]=Object.assign({},T.variant[id],{size:dz<0?'small':dz>0?'large':'reg'});}}
   const own={willow:1,tin:1,l4:1,h4:1,h10:1,h20:1,none:1,net:1,dropnet:1,lantern:1,leader:1,shades:1};T.packs={};for(const id of PACKED){own[id]=1;T.packs[id]=99;}T.owned=own;
-  const rs=S.respect||0;G.sea=null;SEA_KEEP=null;S=T;G.tour={ev,bak,joined:false,me:ev.me||null,respect:rs};S.weather=tourWx();
+  const rs=S.respect||0;G.sea=null;SEA_KEEP=null;S=T;G.tour={ev:te,bak,joined:false,me:te.me||null,respect:rs};S.weather=tourWx();
   document.body.classList.add('tour');tourReset();
   G.mode='play';G.paused=false;G.stack=[];show(null);inGameUI(true);G.spawnT=6;updateHUD(true);refreshControls();
-  toast(ev.name,`${SPMAP[ev.species].name} · ${SETUPS[ev.rod].short} only`);
-  if(!S.dev)tourRpc('tourney_join',{p_tid:ev.tid,p_name:(S.name||'Angler').slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l}).then(()=>{if(G.tour&&G.tour.ev===ev)G.tour.joined=true;}).catch(()=>{});}
+  toast(te.name,`${SPMAP[te.species].name} · ${SETUPS[te.rod].short} only`);G.tour.t0=Date.now();ev('tour',{act:'enter',tid:te.tid});
+  if(!S.dev)tourRpc('tourney_join',{p_tid:te.tid,p_name:(S.name||'Angler').slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l}).then(()=>{if(G.tour&&G.tour.ev===te)G.tour.joined=true;}).catch(()=>{});}
 function tourReset(){if(G.fight){G.fight.f.state='wander';endFight();}G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.net=null;G.cam=0;G.pan=null;G.schoolHint=null;G.dry=0;G.pending=null;G.hatch=null;ROPE.pts=null;
   if(LOC().ocean)G.seaX=seaStart();resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}}
-function tourLeave(){const T=G.tour;if(!T)return;const sq=S.sessQ||[];G.tour=null;G.tcatch=null;S=JSON.parse(T.bak);for(const b of sq)queueSession(b);S.dev=!!window.DEV_BUILD;S.tRun=new Date().toDateString()+'|'+T.ev.tid;
+function tourLeave(){const T=G.tour;if(!T)return;ev('tour',{act:'leave',tid:T.ev.tid,min:+((Date.now()-(T.t0||Date.now()))/6e4).toFixed(1)});const sq=S.sessQ||[];G.tour=null;G.tcatch=null;S=JSON.parse(T.bak);for(const b of sq)queueSession(b);S.dev=!!window.DEV_BUILD;S.tRun=new Date().toDateString()+'|'+T.ev.tid;
   document.body.classList.remove('tour');tourReset();save();
   G.mode='menu';G.paused=false;G.stack=[];inGameUI(false);show('menu');renderMenu();updateHUD(true);refreshControls();}
 
 function tourLand(){const F=G.fight,f=F.f,sp=f.sp,T=G.tour;f.dead=true;splash(DOCKX+20,1);
   const kg=SHAPES[sp.shape].k*Math.pow(f.len,3),hit=sp.id===T.ev.species;endFight();SFX.fanfare();vib([60,40,60,40,120]);
-  const c={sp,len:f.len,kg,hit,state:!hit?'off':S.dev?'dev':'send'};G.tcatch=c;
+  const c={sp,len:f.len,kg,hit,state:!hit?'off':S.dev?'dev':'send'};G.tcatch=c;ev('tcatch',fishEv(f,{hit:hit?1:0,fs:Math.round(F.t||0)}));
   if(c.state==='send'){const q={tid:T.ev.tid,sp:sp.id,len:+f.len.toFixed(2),lb:+(kg*2.2046).toFixed(3)};if(!T.q||q.len>T.q.len)T.q=q;try{localStorage.setItem(TOUR_Q,JSON.stringify(T.q));}catch(e){}tourSend(c);}
   setTimeout(showTourCatch,650);}
 // Sends the biggest unsent fish (kept in localStorage too, so a dropped connection or a closed app doesn't lose it).
@@ -7875,7 +7894,7 @@ $('#pTour').onclick=()=>open('tour');
 // Prizes: each finished, unclaimed event pays once (the server marks it claimed), then a card explains it.
 function tourClaim(d){if(G.tour||S.dev||!d||!d.results||!d.results.length)return;
   for(const r of d.results)tourRpc('tourney_claim',{p_tid:r.tid}).then(x=>{if(!x||x.already||G.tour)return;
-    const t=S.tours=S.tours||{n:0,wins:0,hist:[]},sp=SPMAP[r.species],won=x.rank===1&&x.len_cm!=null;t.n++;if(won)t.wins++;S.coins+=x.coins||0;
+    const t=S.tours=S.tours||{n:0,wins:0,hist:[]},sp=SPMAP[r.species],won=x.rank===1&&x.len_cm!=null;t.n++;if(won)t.wins++;S.coins+=x.coins||0;ev('earn',{src:'prize',amt:x.coins||0,tid:r.tid,rank:x.rank});
     t.hist.unshift({tid:r.tid,name:r.name,rank:x.len_cm!=null?x.rank:null,of:x.entrants,len:x.len_cm,coins:x.coins||0});t.hist=t.hist.slice(0,30);
     const L=[];if(x.len_cm==null)L.push('No fish weighed in this time.');
     else L.push(`You finished ${ordinal(x.rank)} of ${x.entrants} with a ${fLen(+x.len_cm)} ${sp?sp.name:''}.`.replace(' .','.'));
@@ -8170,7 +8189,7 @@ function renderShop(){
       const acts=[own];const has=S.lures[id]===-1||S.lures[id]>0;
       if(has&&S.lure===id)acts.unshift(pill('on','In use',()=>{},true));
       else if(has)acts.unshift(pill('equip','Use',()=>{if(G.lure.state!=='ready'){toast('Reel in first');return;}if(!lureOK(id)){toast(LURES[id].flyOnly?'Needs the fly rod':'Not on the fly rod',LURES[id].flyOnly?'Flies only cast on a fly rod':'The fly rod casts flies only');return;}S.lure=id;save();SFX.ui();updateHUD(true);renderShop();}));
-      if(id!=='worm')acts.unshift(pill('buy',buyHtml(lu.price),()=>buy(()=>{S.lures[id]=(S.lures[id]||0)+pk;},lu.price),S.coins<lu.price));
+      if(id!=='worm')acts.unshift(pill('buy',buyHtml(lu.price),()=>buy(()=>{S.lures[id]=(S.lures[id]||0)+pk;},lu.price,'lure:'+id),S.coins<lu.price));
       row(lureIcon(id),lu.name,lu.desc,stat+(targets.length?` · Caught: ${targets.length>3?targets.length+' species':targets.join(', ')}`:''),acts);
       {const ic=box.lastElementChild.querySelector('.ic');ic.classList.add('tap');ic.setAttribute('role','button');ic.setAttribute('aria-label',lu.name+' info');ic.onclick=()=>openLureInfo(id);}}
   }else if(shopTab==='outfit'){renderOutfit(box,row,pill,buyHtml);
@@ -8179,9 +8198,9 @@ function renderShop(){
       const ic=document.createElement('canvas');ic.width=ic.height=80;const x=ic.getContext('2d');x.strokeStyle=u.rod;x.lineWidth=u.w*1.6;x.lineCap='round';x.beginPath();x.moveTo(8,72);x.lineTo(72,8);x.stroke();x.fillStyle='#9aa3a8';x.beginPath();x.arc(20,60,5,0,TAU);x.fill();
       const acts=[];
       if(!own&&u.resp&&(S.respect||0)<rankNeed(u.resp))acts.push(pill('buy',`Respect: ${u.resp}`,()=>{},true));
-      else if(!own)acts.push(pill('buy',buyHtml(u.price),()=>buy(()=>{S.setups[id]={owned:true,lvl:0};if(u.fly)S.lures.dryfly=(S.lures.dryfly>0?S.lures.dryfly:0)+5;switchSetup(id);if(u.fly)toast('Fly rod','Comes with 5 dry flies');},u.price),S.coins<u.price));
+      else if(!own)acts.push(pill('buy',buyHtml(u.price),()=>buy(()=>{S.setups[id]={owned:true,lvl:0};if(u.fly)S.lures.dryfly=(S.lures.dryfly>0?S.lures.dryfly:0)+5;switchSetup(id);if(u.fly)toast('Fly rod','Comes with 5 dry flies');},u.price,'rod:'+id),S.coins<u.price));
       else{acts.push(S.setup===id?pill('on','In hand',()=>{},true):pill('equip','Use',()=>{if(G.lure.state!=='ready'){toast('Reel in first');return;}switchSetup(id);SFX.ui();renderShop();}));
-        if(lvl<2){const c2=tierCost(id,lvl+1);acts.push(pill('buy',`Upgrade <span class="coin"></span>${c2}`,()=>buy(()=>{st.lvl=lvl+1;},c2),S.coins<c2));}
+        if(lvl<2){const c2=tierCost(id,lvl+1);acts.push(pill('buy',`Upgrade <span class="coin"></span>${c2}`,()=>buy(()=>{st.lvl=lvl+1;},c2,'upgrade:'+id+':'+(lvl+1)),S.coins<c2));}
         const o=document.createElement('span');o.className='own';o.textContent=TIERS[lvl].name;acts.push(o);}
       const cw=imp()?`${u.cast[0].toFixed(1)}–${u.cast[1]} oz-ish`:'';
       row(ic,u.name,u.desc,`${(LINE_TEST[id]||[8,8,8])[Math.max(0,lvl)]} lb line · ${['','Light','Medium','Heavy'][u.power]} power · casts ${u.cast[0]<1?'tiny':u.cast[0]<2?'light':'heavy'} tackle best${own&&lvl<2?` · next: ${TIERS[lvl+1].name}, ${(LINE_TEST[id]||[])[lvl+1]} lb line`:''}`,acts);
@@ -8192,8 +8211,8 @@ function renderShop(){
       let stat='';if(shopTab==='rods')stat=`Holds max strain ${it.grace.toFixed(1)}s · thrash ×${it.damp}`;if(shopTab==='reels')stat=`Retrieve ${it.speed} ft/s`;if(shopTab==='hooks')stat=`${MOUTHN[it.size]} hook · for bait rigs`;if(shopTab==='rigging')stat=it.add!=null?`Bait sink rate ${22+it.add}`:it.max?`Holds bait down to ${fDist(it.max/3.281)}`:'For Carolina and three-way rigs';if(shopTab==='lines')stat=`Takes ${Math.round(100-it.f*100)}% of the pull off the bar`;
       const owned=!!S.owned[id];let a;
       if(shopTab==='rigging'&&PACKED.includes(id)){const n=owned?(packs()[id]??PACK):0;stat+=` \u00b7 Pack of ${PACK}${n?` \u00b7 ${n} in your box`:''}`;
-        a=pill('buy',buyHtml(it.price),()=>buy(()=>{packs()[id]=(S.owned[id]?(packs()[id]??PACK):0)+PACK;S.owned[id]=1;},it.price),S.coins<it.price);}
-      else if(!owned)a=pill('buy',buyHtml(it.price),()=>buy(()=>{S.owned[id]=1;if(slot)S[slot]=id;},it.price),S.coins<it.price);
+        a=pill('buy',buyHtml(it.price),()=>buy(()=>{packs()[id]=(S.owned[id]?(packs()[id]??PACK):0)+PACK;S.owned[id]=1;},it.price,'pack:'+id),S.coins<it.price);}
+      else if(!owned)a=pill('buy',buyHtml(it.price),()=>buy(()=>{S.owned[id]=1;if(slot)S[slot]=id;},it.price,'gear:'+id),S.coins<it.price);
       else if(!slot)a=pill('on','Owned',()=>{},true);
       else if(S[slot]===id)a=pill('on','Equipped',()=>{},true);
       else a=pill('equip','Equip',()=>{S[slot]=id;save();SFX.ui();renderShop();});
@@ -8202,7 +8221,7 @@ function renderShop(){
   }
   box.querySelectorAll('.item .ic:empty').forEach(e=>{e.innerHTML=`<span style="font-family:var(--f-display);font-size:20px;color:var(--amber)">${{rods:'/',reels:'@',lines:'~',gear:'+',hooks:'J',sinkers:'o'}[shopTab]}</span>`;});
 }
-function buy(fn,price){if(S.coins<price)return;S.coins-=price;fn();save();SFX.coin();renderShop();updateHUD(true);}
+function buy(fn,price,item){if(S.coins<price)return;S.coins-=price;fn();ev('buy',{item:item||'?',amt:price});save();SFX.coin();renderShop();updateHUD(true);}
 
 // Log
 // Respect sits right under the level: rank, points, and how far to the next rank.
@@ -8330,6 +8349,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.24", "Better stats", ["Tournament lures start at the size that fits the target fish", "With stats sharing on, the game reports catches, lost fish, purchases and coins to the stats page"]],
   ["v1.23", "Bait off the board", ["Herring and mackerel no longer have leaderboards", "Fishing a tournament no longer shows your respect as 0 in the player stats", "Tournaments start you on the hook that fits the target fish"]],
   ["v1.22", "Second chances", ["Fish that miss the hook bite again after a few minutes, and spooked schools move on"]],
   ["v1.21", "Tournaments", ["Level 31 opens after you land 3 bluefin", "Weekly tournaments: one water, one target fish, one loaner rod, real time and weather", "Coins for the top 3, a trophy on the leaderboard for the winner, a ribbon for everyone who fishes"]],
@@ -8431,7 +8451,7 @@ function showCatch(){
     x.fillStyle='rgba(255,255,255,.5)';for(let i=0;i<10;i++){const a=t*.8+i*.63,r=140+Math.sin(t*2+i)*14;x.fillRect(320+Math.cos(a)*r*1.6,160+Math.sin(a)*r*.7,3,3);}
     requestAnimationFrame(anim);};anim();
 }
-function finishCatch(sold){const P=G.pending;if(!P)return;const rp0=sold?0:respectFor(P);const amt=sold?P.value:Math.ceil(P.value*.5);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));{const rp=rp0;markRespect(P);if(rp){const r0=rankIdx();S.respect=(S.respect||0)+rp;if(rankIdx()>r0)setTimeout(()=>{toast(`Respect earned: ${rankName()}`,rankUnlocks(rankIdx()));SFX.coin();vib([60,40,60]);},1700);}}gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
+function finishCatch(sold){const P=G.pending;if(!P)return;const rp0=sold?0:respectFor(P);const amt=sold?P.value:Math.ceil(P.value*.5);catchEv(P,sold?'sold':P.sp.release?'tagged':'released',amt,rp0);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));{const rp=rp0;markRespect(P);if(rp){const r0=rankIdx();S.respect=(S.respect||0)+rp;if(rankIdx()>r0)setTimeout(()=>{toast(`Respect earned: ${rankName()}`,rankUnlocks(rankIdx()));SFX.coin();vib([60,40,60]);},1700);}}gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
   G.pending=null;save();SFX.coin();resume();toast(sold?`+${amt} coins`:P.bed?'Back to its nest':P.sp.giant?'Tagged and released':'Released',sold?null:`+${amt} coins · luck now +${Math.round(S.luck*100)}%`+(rp0?` · +${rp0} respect`:''));
   const qd=(P.quest||[]).filter(h=>h.done);if(qd.length)setTimeout(()=>{toast('Quest complete!',qd.map(h=>`${qTitle(h.q)} · +${h.q.reward} coins`).join(' · '));SFX.coin();},1300);updateQuestBtn();}
 
@@ -8526,7 +8546,8 @@ function drawNet(c,dk){const N=G.net;if(!N)return;const a=1-dk*.5,mesh=`rgba(226
   c.fillStyle=`rgba(200,200,190,${.8*a})`;c.beginPath();c.arc(cx,horn,1.3,0,TAU);c.fill();
   if(N.ph==='haul'&&ly<SURF+2){for(let i=0;i<2;i++)if(Math.random()<.4)G.parts.push({k:'drop',x:cx+rand(-w,w),y:ly+2,vx:rand(-6,6),vy:rand(10,30),life:.5,r:rand(.8,1.6)});}
   c.restore();}
-function keepCatch(kind){const P=G.pending;if(!P)return;
+function catchEv(P,out,amt,rp){ev('catch',fishEv(P,{out,amt:amt||0,c:Math.round((S.coins||0)+(amt||0)),fs:P.fs,first:P.first?1:0,pb:P.record?1:0,medal:P.medal,bed:P.bed?1:0,rp:rp||0,gut:P.gutH?1:0}));}
+function keepCatch(kind){const P=G.pending;if(!P)return;if(G.sea&&kind==='live'?G.sea.well.length<WELL_MAX:kind==='live'?bucketCount()<BUCKET_MAX:true)catchEv(P,G.sea&&kind==='live'?'well':kind,0,0);
   if(G.sea&&kind==='live'){if(G.sea.well.length>=WELL_MAX)return;G.sea.well.push({sp:P.sp.id,len:P.len});G.pending=null;save();SFX.ui();resume();toast('Into the live well',`${wellText()} \u00b7 bait for the tuna rod`);updateHUD(true);return;}const b=BK(),nm=P.sp.name;let sub;
   if(kind==='live'){if(bucketCount()>=BUCKET_MAX)return;b.live.push({sp:P.sp.id,len:P.len,t:absMin()});b.ls=P.sp.id;syncOwnBait(true);sub=`${b.live.length} live in the bucket · pick it in the tackle box`;}
   else{const n0=cutStrips(P.weight),n=addCut(P.sp.id,n0);if(!n)return;sub=`${n} strip${n>1?'s':''} of cut ${nm.toLowerCase()} · good for a day`+(n<n0?` · no room for ${n0-n} more`+(gearOn('cooler')?'':' without a cooler'):'');}
@@ -8579,11 +8600,11 @@ function renderMap(){
     if(!ok&&LOCS[id].perTrip){const rq=document.createElement('div');rq.className='req';rq.innerHTML=`Needs angler level <b>${Lc.lv}</b> (you\u2019re ${lv})`+(Lc.resp?` and <b>${Lc.resp.toLocaleString()} respect</b> (you have ${(S.respect||0).toLocaleString()})`:'')+`. ${Lc.feeWhy}`+(Lc.fee?` <b>${Lc.fee} coins</b> a trip.`:'');d.append(rq);}
     else if(!ok){const rq=document.createElement('div');rq.className='req';rq.innerHTML=`Needs angler level <b>${Lc.lv}</b> (you’re ${lv}) and a <b>${Lc.feeName}</b>. ${Lc.feeWhy}`;d.append(rq);
       const b=document.createElement('button');b.className='btn primary';b.innerHTML=`<span>Buy ${Lc.feeName}</span><span style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px">\u00b7 <span class="coin"></span> ${Lc.fee}</span>`;b.style.flexWrap='wrap';b.style.columnGap='6px';b.disabled=lv<Lc.lv||S.coins<Lc.fee;
-      b.onclick=()=>{if(lv<Lc.lv||S.coins<Lc.fee)return;S.coins-=Lc.fee;S.unlocked[id]=true;save();SFX.coin();toast(`${Lc.name} unlocked`,`${Lc.feeName} bought`);renderMap();updateHUD(true);};d.append(b);}
+      b.onclick=()=>{if(lv<Lc.lv||S.coins<Lc.fee)return;S.coins-=Lc.fee;S.unlocked[id]=true;ev('unlock',{place:id,amt:Lc.fee});save();SFX.coin();toast(`${Lc.name} unlocked`,`${Lc.feeName} bought`);renderMap();updateHUD(true);};d.append(b);}
     else if(!here){const b=document.createElement('button');b.className='btn primary';b.textContent=`Travel to ${Lc.name}`;if(Lc.perTrip&&Lc.fee){b.innerHTML=`${Lc.feeName} \u00b7 <span class="coin"></span> ${Lc.fee} \u2192 Go`;b.disabled=S.coins<Lc.fee;}b.onclick=()=>travel(id);d.append(b);}
     box.append(d);}}
 function travel(id){if(G.tour||!locOK(id))return;if(G.fight){toast('Land your fish first');return;}if(G.pending){showCatch();return;}
-  const Lt=LOCS[id];if(Lt.perTrip&&id!==S.loc){if(S.coins<Lt.fee){toast(`You need ${Lt.fee} coins`,`${Lt.feeName} costs ${Lt.fee} coins a trip`);return;}S.coins-=Lt.fee;SFX.coin();}
+  const Lt=LOCS[id];if(Lt.perTrip&&id!==S.loc){if(S.coins<Lt.fee){toast(`You need ${Lt.fee} coins`,`${Lt.feeName} costs ${Lt.fee} coins a trip`);return;}S.coins-=Lt.fee;ev('fee',{place:id,amt:Lt.fee});SFX.coin();}
   const prevLoc=S.loc;S.loc=id;G.logTab=id;save();G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.net=null;G.cam=0;G.pan=null;G.schoolHint=null;G.dry=0;ROPE.pts=null;
   if(Lt.ocean)G.seaX=seaStart();
   // a charter leaves at first light: the clock moves on to the next dawn (a new day if it's already past it)
@@ -8598,7 +8619,7 @@ function charterNight(){if(S.loc!=='pei'||G.fight||G.pending||!$('#charter').hid
   G.paused=true;G.input.reel=false;G.charging=false;const Lt=LOCS.pei,b=$('#chBook'),need=Lt.fee-S.coins;
   b.innerHTML=need>0?`Book tomorrow \u00b7 need ${need.toLocaleString()} more coins`:`<span>Book tomorrow</span><span style="white-space:nowrap;display:inline-flex;align-items:center;gap:6px">\u00b7 <span class="coin"></span> ${Lt.fee}</span>`;
   b.disabled=need>0;$('#charter').hidden=false;save();}
-$('#chBook').onclick=()=>{const Lt=LOCS.pei;if(S.coins<Lt.fee)return;S.coins-=Lt.fee;SFX.coin();
+$('#chBook').onclick=()=>{const Lt=LOCS.pei;if(S.coins<Lt.fee)return;S.coins-=Lt.fee;ev('fee',{place:'pei',amt:Lt.fee});SFX.coin();
   // the next dawn, the same way travel() starts a charter
   const m0=S.minutes;let t2=300;if(t2<=m0)t2+=1440;if((m0<300&&t2>=300)||t2>=1740)questDawn();if(t2>=1440)newDay();S.minutes=300;if(Math.random()<.6){S.weather=rollWeather();S.wtimer=rand(160,340);}
   // a fresh trip: new water, an empty well, the boat running out to find bait (keep the lure you had before the charter)
@@ -8653,7 +8674,7 @@ function questCatch(sp,len){const Q=ensureQuests(),hits=[];
     if(!hit){if(q.type==='when'&&sp.id===q.sp)hits.push({q,miss:`Not ${QWHEN[q.per]} (${QHRS[q.per]}), so it doesn\u2019t count for the quest`});
       else if(q.type==='size'&&sp.id===q.sp)hits.push({q,miss:`The quest needs one over ${fLen(q.len,0)}`});continue;}
     q.got++;
-    if(q.got>=q.n){q.done=true;G.sess.quests++;S.coins+=q.reward;S.stats.earned+=q.reward;Q.total=(Q.total||0)+1;}
+    if(q.got>=q.n){q.done=true;G.sess.quests++;S.coins+=q.reward;S.stats.earned+=q.reward;ev('earn',{src:'quest',amt:q.reward,q:qTitle(q)});Q.total=(Q.total||0)+1;}
     hits.push({q,done:q.done});}
   return hits;}
 function an(w){return/^[aeiou]/i.test(w)?'an':'a';}
@@ -8890,7 +8911,7 @@ function renderOutfit(box,row,pill,buyHtml){
       else if(ownsLook(slot,id))a=pill('equip',isRod?'Apply':'Wear',()=>{S.look=Object.assign(look(),{[slot]:id});save();SFX.ui();renderShop();});
       else if(it.quests&&done<it.quests)a=pill('buy',`${done}/${it.quests} quests`,()=>{},true);
       else if(it.resp&&(S.respect||0)<rankNeed(it.resp))a=pill('buy',`Respect: ${it.resp}`,()=>{},true);
-      else a=pill('buy',buyHtml(it.price),()=>buy(()=>{S.owned['look_'+slot+'_'+id]=1;S.look=Object.assign(look(),{[slot]:id});},it.price),S.coins<it.price);
+      else a=pill('buy',buyHtml(it.price),()=>buy(()=>{S.owned['look_'+slot+'_'+id]=1;S.look=Object.assign(look(),{[slot]:id});},it.price,'look:'+slot+':'+id),S.coins<it.price);
       row(lookIcon(slot,id),it.name,it.desc,it.quests?`Unlocks after ${it.quests} quests`:it.resp?`Earned at ${it.resp} respect`:'',[a]);}}}
 
 document.querySelectorAll('.ver-tag').forEach(e=>e.textContent='Snag & Brag '+VERSION);
