@@ -1200,7 +1200,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.25a';
+const VERSION='v1.26a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -2871,7 +2871,9 @@ function updateLure(dt){G.lure.ox=G.lure.x;G.lure.oy=G.lure.y;
       if(L.sk.x<DOCKX+14){retrieve();return;}}
     if(caro){}
     else if(G.input.reel){const sp=curReel().speed*(L.bare?1.3:1);dragAlong(L,sp*dt);L.moving=true;reelClick(dt);
-      if(r.type==='bobber'||bottomRig){L.y+=(ty-L.y)*Math.min(1,dt*2);L.y=Math.min(L.y,bottomAt(L.x)-3);if(r.type==='bobber'&&Math.random()<dt*6)ripple(L.x,.3);}else L.y-=sp*riseRate()*dt;}
+      // still falling, the tight line holds it up: it keeps sinking, slower than on slack line (like the Carolina's sinker),
+      // never faster; once down to its depth it rides there along the bottom
+      if(r.type==='bobber'||bottomRig){if(L.y<ty-1)L.y=Math.min(ty,L.y+sinkRate()*(bottomRig?.35:.6)*dt);else L.y+=(ty-L.y)*Math.min(1,dt*2);L.y=Math.min(L.y,bottomAt(L.x)-3);if(r.type==='bobber'&&Math.random()<dt*6)ripple(L.x,.3);}else L.y-=sp*riseRate()*dt;}
     else{if(L.y<ty)L.y=Math.min(ty,L.y+sinkRate()*dt);else L.y=Math.max(ty,L.y-40*dt);}
     if(LOC().current&&!(L.fish&&L.fish.state==='bite')){const held=['carolina','dropshot','threeway'].includes(r.type)&&L.y>=bot-14;L.x+=currentAt(L.x,L.y)*dt*(held?.1:r.type==='bobber'?1:.85);}
     L.y=clamp(L.y,SURF+1,bot);if(snagCheck(dt,bot,['egg','bank','teardrop'].includes(rigSinker())))return;if(L.x<DOCKX+12)retrieve();return;
@@ -8522,6 +8524,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.26", "Drop-shot fix", ["Reeling a falling drop-shot slows its fall instead of speeding it to the bottom"]],
   ["v1.25", "Thanksgiving", ["A wild turkey drops by the title screen on Thanksgiving", "Wild turkeys now wander the far bank at wooded waters", "Everyone who plays on Thanksgiving gets a Pilgrim Hat", "Leaving and re-entering a tournament no longer restocks the fish"]],
   ["v1.24", "Better stats", ["Tournament lures start at the size that fits the target fish", "With stats sharing on, the game reports catches, lost fish, purchases and coins to the stats page"]],
   ["v1.23", "Bait off the board", ["Herring and mackerel no longer have leaderboards", "Fishing a tournament no longer shows your respect as 0 in the player stats", "Tournaments start you on the hook that fits the target fish"]],
