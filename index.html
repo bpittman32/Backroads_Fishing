@@ -34,6 +34,7 @@ body{background:var(--ink);color:var(--lichen);font-family:var(--f-body);font-si
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0;
   -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;touch-action:none;-webkit-tap-highlight-color:transparent}
 #cv{position:fixed;inset:0;display:block;touch-action:none}
+#turkeyCv{position:fixed;inset:0;width:100%;height:100%;z-index:5;pointer-events:none;display:none}
 button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 button:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
 .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -516,6 +517,7 @@ kbd{font-family:var(--f-mono);font-size:12px;background:rgba(0,0,0,.35);border:1
 </style>
 
 <canvas id="cv" aria-label="Pond"></canvas>
+<canvas id="turkeyCv" aria-hidden="true"></canvas>
 
 <div id="hud" hidden>
   <button class="chip" id="lureChip" aria-label="Change lure"><span class="dot"></span><span class="nm">Nightcrawler</span></button>
@@ -1198,7 +1200,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.24a';
+const VERSION='v1.25a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -2635,7 +2637,7 @@ function spawnTick(initial){
       G.fish.push(f);}
     i+=n;}
 }
-function repopulate(){seaTackle();G.fish=G.fish.filter(f=>f.state==='fight');G.beds=[];spawnTick(true);updateNests();}
+function repopulate(){BT.b=null;BT.next=0;seaTackle();G.fish=G.fish.filter(f=>f.state==='fight');G.beds=[];spawnTick(true);updateNests();}
 // ---------------- NESTS ----------------
 // In spring, bass and sunfish fan round beds in the shallows and a male guards each one. He chases
 // other fish off and hits anything that lands on the bed, out of anger rather than hunger. Bluegill nest
@@ -3624,6 +3626,7 @@ function drawBackdrop(c,cam,dk,fog,rain,h){
   if(jg||(!Z.jungle&&Z.leaf<.97&&trees.some(t=>!t.con&&t.cyp===undefined))||(Z.snow>.02&&!Z.jungle&&Z.leaf<.3))c.lineCap='round';
   if(Z.leafDrop>.02){for(let i=0;i<22;i++){const tt=(G.t*.12+i*.137)%1,x=((i*61.3+Math.sin(G.t*.8+i)*12)%(WX*.5+W))+tt*14,y=SURF-70+tt*68;c.save();c.translate(x,y);c.rotate(G.t*2+i);c.fillStyle=rgbStr(mx(FALLC[i%FALLC.length],'#0a0806',dk*.8),Z.leafDrop*fa);c.beginPath();c.ellipse(0,0,1.8,.9,0,0,TAU);c.fill();c.restore();}}
   for(const m of nearMarks)drawFarMark(c,m,dk,fog,Z);
+  drawBankTurkey(c,dk);
   drawReeds(c,dk);
   c.restore();
   // grassy shore strip (a muddy cut bank with rocks on the river)
@@ -7460,7 +7463,7 @@ function renderSeaPick(list){const s=G.sea,rack=document.createElement('div');ra
       card.append(body);}
     rack.append(card);}
   const note=document.createElement('p');note.className='tb-cond';note.textContent=`${wellText()} \u00b7 it holds ${WELL_MAX}`;list.append(rack,note);}
-function update(dt){boatMove(dt);updateSeaLife(dt);charterNight();
+function update(dt){bankTurkeyTick(dt);boatMove(dt);updateSeaLife(dt);charterNight();
   tickChatter(dt);updateFlock(dt);updateCritters(dt);updatePlane(dt);
   tickClock(dt);
   G.spawnT-=dt;if(G.spawnT<=0){spawnTick(false);G.spawnT=6;}
@@ -7676,6 +7679,167 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(
 const SCREENS=['charter','map','menu','shop','log','help','settings','pause','catch','lurePick','confirm','name','quests','board','notes','lureInfo','install','turtle','notice','statsAsk','statsView','tour','tcatch'];
 function show(id){for(const s of SCREENS)$('#'+s).hidden=s!==id;}
 function open(id){if(G.tour&&['shop','map','quests','charter'].includes(id)){toast('Not during the tournament');return;}G.stack.push(currentScreen());show(id);render_(id);if(id==='map')$('#map').scrollTop=0;SFX.ui();}
+
+// ---------------- THANKSGIVING ----------------
+// On Thanksgiving (fourth Thursday of November, by the player's own date) a wild turkey now and then rises up close
+// in the open water between the sign and the buttons, looks around, gobbles, then spots you and startles.
+function isTurkeyDay(d=new Date()){return d.getMonth()===10&&d.getDay()===4&&d.getDate()>=22&&d.getDate()<=28;}
+function turkeyOn(){if(window.__noSeasonal)return false;return isTurkeyDay()||(S.dev&&Date.now()<Date.parse('2026-11-27T12:00:00Z'));}
+// Cartoon wild turkey, front on, peeking up at you: inked outlines, flat colours with one shade tone.
+// Local origin = middle of the head. k: {look -1..1, blink 0..1, sur 0..1 (eyes pop, brows shoot up,
+// sweat flies), sweat 0..1 (how far the drops have flown), gape 0..1 (beak open), wattle (rad), tail 0..1 (fan spread)}
+function drawToonTurkey(c,x,y,s,rot,k){
+  const sur=k.sur||0,lk=k.look||0,gp=k.gape||0,INK='#15100c',LW=3.2;
+  let IS=1;const ink=(w=LW)=>{c.lineWidth=w/IS;c.strokeStyle=INK;c.lineJoin='round';c.lineCap='round';c.stroke();};
+  const fillInk=(col,w)=>{c.fillStyle=col;c.fill();ink(w);};
+  c.save();c.translate(x,y);c.rotate(rot);c.scale(s,s);
+  // ---- tail fan behind the body ----
+  const tf=.9+(k.tail||0)*.1+sur*.08;
+  for(let i=0;i<9;i++){const a=-Math.PI*.92+i*(Math.PI*.84/8);c.save();c.translate(0,175);c.rotate(a+Math.PI/2);c.scale(tf,tf);
+    c.beginPath();c.moveTo(-20,0);c.bezierCurveTo(-30,-90,-34,-160,-22,-205);c.quadraticCurveTo(0,-226,22,-205);c.bezierCurveTo(34,-160,30,-90,20,0);c.closePath();fillInk(i%2?'#4a2a18':'#43271a');
+    c.save();c.clip();c.fillStyle='#cdbb9e';c.fillRect(-40,-186,80,16);c.fillStyle='#2e1a10';c.fillRect(-40,-230,80,44);c.fillStyle='rgba(0,0,0,.18)';c.fillRect(6,-230,40,240);c.restore();
+    c.beginPath();c.moveTo(-20,0);c.bezierCurveTo(-30,-90,-34,-160,-22,-205);c.quadraticCurveTo(0,-226,22,-205);c.bezierCurveTo(34,-160,30,-90,20,0);ink();c.restore();}
+  // ---- body ----
+  c.beginPath();c.ellipse(0,205,118,100,0,0,7);fillInk('#5c3420');
+  c.save();c.beginPath();c.ellipse(0,205,118,100,0,0,7);c.clip();c.fillStyle='#4a2917';c.beginPath();c.ellipse(70,225,90,110,-.3,0,7);c.fill();c.restore();
+  c.beginPath();c.ellipse(0,205,118,100,0,0,7);ink();
+  // wings folded at the sides
+  for(const sx of[-1,1]){c.beginPath();c.moveTo(sx*92,150);c.bezierCurveTo(sx*140,170,sx*150,250,sx*112,300);c.bezierCurveTo(sx*100,260,sx*95,210,sx*80,175);c.closePath();fillInk(sx<0?'#5c3420':'#4a2917');}
+  // ---- neck, with a fluffy collar where it meets the body ----
+  const neck=()=>{c.beginPath();c.moveTo(-20,40);c.bezierCurveTo(-22,70,-26,100,-30,140);c.lineTo(30,140);c.bezierCurveTo(26,100,22,70,20,40);c.closePath();};
+  neck();fillInk('#93552a');c.save();neck();c.clip();c.fillStyle='#7c4422';c.fillRect(6,0,40,150);c.restore();neck();ink();
+  for(const [px,py,r] of [[-34,140,17],[-14,150,18],[8,150,18],[30,140,17],[-24,128,12],[22,128,12]]){c.beginPath();c.arc(px,py,r,0,7);fillInk('#93552a');}
+  c.beginPath();c.moveTo(-6,160);c.quadraticCurveTo(-10,175,-2,185);ink(2.2);
+  // ---- head ----
+  c.save();c.translate(lk*5,0);c.scale(1.55,1.55);IS=1.55;
+  c.beginPath();c.moveTo(0,-40);c.bezierCurveTo(26,-40,34,-18,32,4);c.bezierCurveTo(30,26,16,36,0,36);c.bezierCurveTo(-16,36,-30,26,-32,4);c.bezierCurveTo(-34,-18,-26,-40,0,-40);c.closePath();fillInk('#93552a');
+  // little feather tufts on the crown, bristling when startled
+  for(let i=0;i<3;i++){const bx=10+i*7,by=-36+i*4;c.beginPath();c.moveTo(bx,by);c.lineTo(bx+4+sur*2,by-6-sur*5);ink(2.2);}
+  // ---- eyes: two big ovals pressed together; they pop when it's startled ----
+  const er=1+sur*.28,ey=-20-sur*6;
+  for(const sx of[-1,1]){c.beginPath();c.ellipse(sx*13*er,ey,13*er,17*er,sx*.08,0,7);fillInk('#fff');
+    c.fillStyle='rgba(0,0,0,.1)';c.beginPath();c.ellipse(sx*13*er+4,ey+4,9*er,13*er,0,0,7);c.fill();
+    const pr=(6.5-sur*3.2),px=sx*13*er+lk*7*er,py=ey+4-sur*1;c.fillStyle=INK;c.beginPath();c.arc(px,py,pr,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(px-pr*.35,py-pr*.35,pr*.32,0,7);c.fill();
+    const bl=k.blink||0;if(bl>0){c.save();c.beginPath();c.ellipse(sx*13*er,ey,13*er,17*er,sx*.08,0,7);c.clip();c.fillStyle='#93552a';c.fillRect(sx*13*er-16*er,ey-18*er,32*er,36*er*bl);c.restore();c.beginPath();c.ellipse(sx*13*er,ey,13*er,17*er,sx*.08,0,7);ink();}
+    // brows: wedges that lift and tilt up in the middle when surprised
+    c.save();c.translate(sx*(14+sur*3),ey-21*er-sur*10);c.rotate(sx*(-.25+sur*.55)+lk*.15);c.beginPath();c.moveTo(-9,3);c.lineTo(9,3);c.lineTo(sx*5,-4);c.closePath();c.fillStyle=INK;c.fill();c.restore();}
+  // ---- wattle hanging down the throat ----
+    c.save();c.translate(6,12);c.scale(.72,.72);c.rotate(k.wattle||0);c.beginPath();c.moveTo(-8,0);c.bezierCurveTo(-14,20,-4,30,-10,48);c.bezierCurveTo(-14,64,6,70,10,56);c.bezierCurveTo(14,40,8,20,10,0);c.closePath();fillInk('#bd1b25');
+    c.fillStyle='rgba(0,0,0,.18)';c.beginPath();c.ellipse(4,44,4,10,0,0,7);c.fill();c.restore();
+    // ---- beak, pointing at you; opens with the gobble and gasps open when startled ----
+  const open=gp*14;
+  c.beginPath();c.moveTo(-13,4);c.quadraticCurveTo(0,-3,13,4);c.quadraticCurveTo(10,18,0,24);c.quadraticCurveTo(-10,18,-13,4);c.closePath();fillInk('#f6b234');c.fillStyle='rgba(160,90,0,.35)';c.beginPath();c.moveTo(3,6);c.quadraticCurveTo(10,8,8,15);c.quadraticCurveTo(4,20,1,21);c.closePath();c.fill();
+  if(open>1){c.beginPath();c.moveTo(-10,18);c.quadraticCurveTo(0,22,10,18);c.quadraticCurveTo(8,20+open,0,24+open*1.1);c.quadraticCurveTo(-8,20+open,-10,18);c.closePath();fillInk('#6b1414');
+    c.fillStyle='#e0525a';c.beginPath();c.ellipse(0,20+open*.85,4.5,2.6,0,0,7);c.fill();
+    c.beginPath();c.moveTo(-9,22+open*.9);c.quadraticCurveTo(0,30+open*1.1,9,22+open*.9);c.quadraticCurveTo(4,34+open*1.1,0,35+open*1.1);c.quadraticCurveTo(-4,34+open*1.1,-9,22+open*.9);c.closePath();fillInk('#e9a12e');}
+  else{c.beginPath();c.moveTo(-9,20);c.quadraticCurveTo(0,30,9,20);c.quadraticCurveTo(4,30,0,32);c.quadraticCurveTo(-4,30,-9,20);c.closePath();fillInk('#e9a12e');}
+    c.fillStyle=INK;c.beginPath();c.ellipse(-4,8,1.6,1,0,0,7);c.ellipse(4,8,1.6,1,0,0,7);c.fill();
+  // snood draped over the beak
+  c.beginPath();c.moveTo(-4,0);c.bezierCurveTo(-14,2,-20,12,-20,26-sur*10);c.bezierCurveTo(-20,34-sur*10,-12,35-sur*10,-12,26-sur*8);c.bezierCurveTo(-12,16,-8,8,2,3);c.closePath();fillInk('#bd1b25');
+  IS=1;c.restore();
+  // ---- sweat drops flying off when startled ----
+  const sw=k.sweat||0;if(sw>0&&sw<1){c.globalAlpha=Math.min(1,(1-sw)*3);for(const [a,d] of[[-2.5,1],[-1.95,1.1],[-1.2,1.05],[-.6,.95]]){const r=70+sw*45*d,dx=Math.cos(a)*r,dy=Math.sin(a)*r-10;
+      c.save();c.translate(dx,dy);c.rotate(a+Math.PI/2);c.beginPath();c.moveTo(0,-9);c.bezierCurveTo(7,0,7,7,0,8);c.bezierCurveTo(-7,7,-7,0,0,-9);c.closePath();fillInk('#13a0e6',2.2);
+      c.fillStyle='#bfe8ff';c.beginPath();c.ellipse(-2,3,1.6,2.4,0,0,7);c.fill();c.restore();}c.globalAlpha=1;}
+  c.restore();}
+const TK={cv:null,c:null,next:0,a:null,raf:0,gob:0,gobAt:0};
+// The gobble is a recorded clip (Pixabay, free to use), 1 s, kept inline so it works offline. GOB_ENV is its loudness at
+// 60 steps a second; read against the audio clock it flaps the beak open on each syllable as you hear it.
+const GOB_MP3='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',GOB_ENV='63258974345655334458644676532358864456632234333322222246421110';let gobBuf=null,gobLoading=false;
+function gobLoad(){const a=audio();if(!a||gobBuf||gobLoading)return;gobLoading=true;try{const bin=atob(GOB_MP3),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  a.decodeAudioData(u.buffer,b=>{gobBuf=b;},()=>{gobLoading=false;});}catch(e){gobLoading=false;}}
+function gobble(vol=.9,far=false){const a=audio();if(!a||!S.settings||S.settings.sound===false)return false;if(!gobBuf){gobLoad();return false;}
+  const src=a.createBufferSource(),g=a.createGain(),rate=.94+Math.random()*.12;src.buffer=gobBuf;src.playbackRate.value=rate;g.gain.value=vol;if(far){const lp=a.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1500;src.connect(lp);lp.connect(g);}else src.connect(g);g.connect(master||a.destination);const t0=a.currentTime+.02;src.start(t0);return{t0,rate,lat:(a.outputLatency||a.baseLatency||0)};}
+// how far the beak is open for a gobble started by gobble(): from the audio clock when sound is playing, else from wall time
+function gobGape(g,wallMs){let ms=wallMs;if(g&&g.t0!=null&&AC)ms=(AC.currentTime-g.t0-g.lat)*1000*g.rate;const i=Math.floor(ms/16.67);if(i<0||i>=GOB_ENV.length)return 0;return Math.max(0,Math.min(1,(+GOB_ENV[i]-3)/5));}
+function putt(d=0){const a=audio();if(!a||!S.settings||S.settings.sound===false)return;tone(1250,.045,'square',.07,700,d);noise(.03,.06,2400,1.2,d);}
+// One visit: rise from behind the Go Fishing button, look around with jerky turns and gobble, then notice you:
+// eyes go wide, crown bristles stand up, the snood shrinks, an alarm "putt putt", a stare, and it ducks back down.
+function turkeyFrame(now){TK.raf=0;const scr=currentScreen(),on=turkeyOn(),show=G.mode==='menu'&&scr==='menu'&&on&&!document.hidden;
+  // off the title screen: check back once a second instead of every frame
+  if(!show){if(TK.cv&&TK.a){TK.a=null;TK.cv.style.display='none';}TK.next=Math.max(TK.next,now+4000);if(on)TK.raf=setTimeout(()=>{TK.raf=requestAnimationFrame(turkeyFrame);},1000);return;}
+  if(!TK.cv){TK.cv=$('#turkeyCv');TK.c=TK.cv.getContext('2d');}
+  const W=innerWidth,H=innerHeight,sign=$('#menu .sign'),btn=$('#mPlay');
+  if(!TK.a&&now>=TK.next){const top=sign?sign.getBoundingClientRect().bottom:H*.3,bot=btn?btn.getBoundingClientRect().top:H*.65,gap=bot-top;
+    if(gap>90){gobLoad();const s=Math.max(.6,Math.min(gap*.95/240,W/390*1.6));
+      TK.a={t0:now,dur:6400+Math.random()*1200,s,bot,x:W*(.34+Math.random()*.32),y:bot-150*s,sur:2500+Math.random()*700,gob:900+Math.random()*400,
+        looks:[[700,-.7],[1300,.6],[1900,-.3],[2300,0]].map(([t,l])=>[t+Math.random()*150,l+(Math.random()-.5)*.3])};}
+    else TK.next=now+15000;}
+  const A=TK.a,dpr=Math.min(2,window.devicePixelRatio||1);
+  if(TK.cv.width!==Math.round(W*dpr)||TK.cv.height!==Math.round(H*dpr)){TK.cv.width=Math.round(W*dpr);TK.cv.height=Math.round(H*dpr);}
+  const c=TK.c;c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+  if(A){TK.cv.style.display='block';const t=now-A.t0,s=A.s;
+    if(t>=A.dur){TK.a=null;TK.cv.style.display='none';TK.next=now+20000+Math.random()*40000;}
+    else{const ease=u=>1-Math.pow(1-u,3),rise=ease(Math.min(1,t/650)),duck=Math.max(0,(t-(A.dur-600))/600),down=duck*duck;
+      let look=0;for(const [lt,l] of A.looks){if(t<lt)break;look+=(l-look)*Math.min(1,(t-lt)/90);}
+      const st=t-A.sur,sur=st<0?0:Math.min(1,st/110);if(sur>0)look*=Math.max(0,1-st/150);
+      if(st>=0&&!A.putt){A.putt=1;putt();putt(.22);if(Math.random()<.5)putt(.5);}
+      let gape=0;if(t>=A.gob&&st<0&&!A.gobbled){A.gobbled=1;A.gobAt=now;A.g=gobble();}if(A.gobAt)gape=gobGape(A.g,now-A.gobAt);
+      if(TK.gobAt)gape=Math.max(gape,gobGape(TK.g,now-TK.gobAt));
+      if(st>=0)gape=Math.max(gape,st<900?sur*.85:.85-Math.min(.6,(st-900)/1500));
+      const jolt=st>=0&&st<260?Math.sin(st/260*Math.PI):0,trem=sur?Math.sin(now/45)*.6:0;
+      const blink=[1500,1640,4300,4420].some(b=>t>b&&t<b+130)?1:0;
+      const y=A.y+(1-rise)*150*s+down*160*s-jolt*12*s,x=A.x+trem*s;A.hx=x;A.hy=y;
+      c.save();c.beginPath();c.rect(0,0,W,A.bot+2);c.clip();
+      drawToonTurkey(c,x,y,s*(1-jolt*.04),look*.06,{blink,sur,look,gape,sweat:st>=0?Math.min(1,st/750):0,tail:sur,wattle:Math.sin(now/800+1)*.05+(gape?Math.sin(now/40)*.1*gape:0)});
+      c.restore();}}
+  else TK.cv.style.display='none';
+  TK.raf=requestAnimationFrame(turkeyFrame);}
+// tap the turkey: if it hasn't spotted you yet, it does now; after that it gobbles at you
+document.addEventListener('pointerdown',e=>{const A=TK.a;if(!A||G.mode!=='menu')return;const dx=e.clientX-A.hx,dy=e.clientY-A.hy;
+  if(dx*dx+dy*dy<Math.pow(70*A.s,2)){const t=performance.now()-A.t0;if(t<A.sur)A.sur=t;else if(performance.now()-TK.gob>1200){TK.gob=TK.gobAt=performance.now();TK.g=gobble();if(!TK.g){putt();putt(.2);}}}},true);
+// Everyone who opens the game on Thanksgiving gets a Pilgrim Hat to keep, put straight on (they can switch back in Outfits).
+function thanksGift(){if(G.tour||!turkeyOn()||!S.owned||S.owned.look_hat_pilgrim)return;S.owned.look_hat_pilgrim=1;S.look=Object.assign(look(),{hat:'pilgrim'});
+  queueNotice('Happy Thanksgiving!',['Here\u2019s a Pilgrim Hat to keep, marked Thanksgiving 2026. You\u2019re wearing it now; switch back any time in the Shop under Outfits.'],'A gift');updateHUD(true);if(!$('#menu').hidden)renderMenu();}
+// ---- wild turkeys on the far bank ----
+// Only where eastern wild turkeys would really be: wooded ponds, creeks, lakes, river bottoms and bayous; not on the
+// alpine lake, the pier, the charter, or the Amazon and Congo. They roost in trees at night, so none after dark.
+// Now and then a bird wanders along the far shore, pecking, sometimes stopping to strut with its tail fanned, and may
+// give a soft, far-off gobble: most in spring when they're breeding, more often on Thanksgiving.
+const BT_LOCS=new Set(['pond','creek','lake','river','bayou']);
+const BT={b:null,next:0,lastGob:0};
+function bankTurkeyOK(){return!window.__noSeasonal&&BT_LOCS.has(S.loc)&&!G.sea&&period()!=='night';}
+function bankTurkeyTick(dt){if(!bankTurkeyOK()){BT.b=null;return;}const now=G.t;
+  const tg=turkeyOn(),spring=seasonIdx()===0;
+  if(!BT.b){if(!BT.next)BT.next=now+(tg?8+Math.random()*20:60+Math.random()*180);if(now<BT.next)return;
+    const camX=(G.cam||0)*.5,dir=Math.random()<.5?1:-1,x=dir>0?camX-30:camX+innerWidth+30;
+    BT.b={x,dir,mode:'walk',mt:2+Math.random()*3,step:0,peck:0,fan:0,gob:-9,gobbled:Math.random()>(tg?.7:spring?.6:.25),strut:tg||spring?.17:.06,born:now};return;}
+  const b=BT.b;b.mt-=dt;
+  if(b.mt<=0){const r=Math.random();if(b.mode!=='walk'){b.mode='walk';b.mt=2+Math.random()*4;}
+    else if(r<.45){b.mode='peck';b.mt=1.5+Math.random()*2.5;}else if(r<.45+b.strut){b.mode='strut';b.mt=3+Math.random()*3;}else b.mt=2+Math.random()*3;
+    if(Math.random()<.12)b.dir*=-1;}
+  if(b.mode==='walk'){b.x+=b.dir*9*dt;b.step+=dt*5;}
+  b.peck=b.mode==='peck'?Math.max(0,Math.sin(G.t*7)):0;b.fan+=((b.mode==='strut'?1:0)-b.fan)*Math.min(1,dt*3);
+  // a gentle gobble, at most one per bird and never two close together
+  const camX=(G.cam||0)*.5,onScreen=b.x>camX&&b.x<camX+innerWidth;
+  const pil=look().hat==='pilgrim';// turkeys can't help gobbling at a pilgrim: every bird, up to twice, and sooner
+  if(onScreen&&(!b.gobbled||(pil&&(b.gn||0)<2))&&b.mode!=='peck'&&now-b.born>(pil?3:6)&&now-BT.lastGob>(pil?35:70)&&Math.random()<dt*(pil?.16:.08)){b.gobbled=true;b.gn=(b.gn||0)+1;BT.lastGob=now;b.gob=now;gobble(.16,true);}
+  if(b.x<camX-120||b.x>camX+innerWidth+120||now-b.born>180){BT.b=null;BT.next=now+(tg?60+Math.random()*120:240+Math.random()*360);}}
+function drawBankTurkey(c,dk){const b=BT.b;if(!b)return;const D=col=>rgbStr(mix(col,'#0a1414',dk*.85));
+  const x=b.x,y=SURF-4.5,d=b.dir,fan=b.fan,sw=Math.sin(b.step*Math.PI),pk=b.peck,gb=G.t-b.gob<1.1?Math.sin((G.t-b.gob)*9)*.5+.5:0;
+  c.save();c.translate(x,y);c.scale(d,1);c.lineCap='round';
+  // legs
+  c.strokeStyle=D('#b08a7a');c.lineWidth=.9;c.beginPath();c.moveTo(-.6,-5);c.lineTo(-1.2+sw*1.6,0);c.moveTo(.8,-5);c.lineTo(1.4-sw*1.6,0);c.stroke();
+  // tail: trails low behind when walking, fans up into a half wheel when strutting
+  if(fan>.05){c.fillStyle=D('#3a2618');c.beginPath();c.moveTo(-3,-8);for(let i=0;i<=8;i++){const a=Math.PI*(.55+i/8*.9)*fan+(1-fan)*Math.PI*.95,r=10*fan+3;c.lineTo(-3+Math.cos(a)*r*.55,-8-Math.sin(a)*r);}c.closePath();c.fill();
+    c.strokeStyle=D('#cdbb9e');c.lineWidth=.9;c.beginPath();for(let i=0;i<=8;i++){const a=Math.PI*(.55+i/8*.9)*fan+(1-fan)*Math.PI*.95,r=10*fan+2;const px=-3+Math.cos(a)*r*.55,py=-8-Math.sin(a)*r;i?c.lineTo(px,py):c.moveTo(px,py);}c.stroke();}
+  else{c.fillStyle=D('#3a2618');c.beginPath();c.moveTo(-3,-8.5);c.lineTo(-9,-6);c.lineTo(-8.5,-4.6);c.lineTo(-3,-5.5);c.closePath();c.fill();}
+  // body
+  c.fillStyle=D('#4a3020');c.beginPath();c.ellipse(0,-7.5,4.6+fan*.8,3.4+fan*.6,-.1,0,TAU);c.fill();
+  c.fillStyle=D('#6b4a2a');c.beginPath();c.ellipse(-.6,-8.6,2.6,1.4,-.2,0,TAU);c.fill();c.fillStyle=D('#2a1a10');c.fillRect(-3,-6.2,4,.7);
+  // neck and head: forward and down to peck, pulled back and puffed in a strut, stretched out to gobble
+  const hx=3.4+pk*1.6-fan*1.6+gb*1.4,hy=-12.5+pk*8.5+fan*1.2+gb*.6;
+  c.strokeStyle=D('#9a5a4a');c.lineWidth=1.3;c.beginPath();c.moveTo(3,-9);c.quadraticCurveTo(hx-.4,hy+2.5,hx,hy);c.stroke();
+  c.fillStyle=D(fan>.5?'#c9d8ee':'#8fa8c8');c.beginPath();c.ellipse(hx,hy,1.25,1.1,0,0,TAU);c.fill();
+  c.fillStyle=D('#c23a32');c.beginPath();c.ellipse(hx+.1,hy+1.6,.6,1+fan*.5,0,0,TAU);c.fill();
+  c.fillStyle=D('#c9b48a');c.beginPath();c.moveTo(hx+1.1,hy-.3);c.lineTo(hx+2.2+gb*.3,hy+.2);c.lineTo(hx+1.1,hy+.5);c.closePath();c.fill();
+  c.fillStyle=D('#c23a32');c.beginPath();c.ellipse(hx+1.4,hy+.6+fan*.8,.35,.6+fan*.9,0,0,TAU);c.fill();
+  c.fillStyle='#000';c.beginPath();c.arc(hx+.3,hy-.2,.3,0,TAU);c.fill();
+  // beard hanging from the chest
+  c.strokeStyle=D('#1a120c');c.lineWidth=.6;c.beginPath();c.moveTo(3.2,-7.8);c.lineTo(3.6,-5.4+pk*.5);c.stroke();
+  c.restore();}
+function turkeyStart(){if(turkeyOn()&&!TK.raf){TK.next=performance.now()+3500+Math.random()*3000;TK.raf=requestAnimationFrame(turkeyFrame);}}
+
 function currentScreen(){return SCREENS.find(s=>!$('#'+s).hidden)||null;}
 function back(){const prev=G.stack.pop();if(prev){show(prev);render_(prev);}else if(G.mode==='play')resume();else show('menu');SFX.ui();}
 // ---------- online leaderboard (Supabase): each player's biggest of each species ----------
@@ -7860,8 +8024,17 @@ function tourEnter(te){if(G.tour||!te)return;if(new Date(te.ends)<=Date.now()){t
   G.mode='play';G.paused=false;G.stack=[];show(null);inGameUI(true);G.spawnT=6;updateHUD(true);refreshControls();
   toast(te.name,`${SPMAP[te.species].name} · ${SETUPS[te.rod].short} only`);G.tour.t0=Date.now();ev('tour',{act:'enter',tid:te.tid});
   if(!S.dev)tourRpc('tourney_join',{p_tid:te.tid,p_name:(S.name||'Angler').slice(0,20),p_look:lookStr(),p_lv:lvlInfo().l}).then(()=>{if(G.tour&&G.tour.ev===te)G.tour.joined=true;}).catch(()=>{});}
+// Leaving and re-entering must not re-roll the water, or anglers could keep reloading until a giant shows up.
+// The starting stock is seeded by event, angler and half-hour of real time: come back within the same half hour
+// (or reload the app) and the same fish are there. Fish still come and go normally while you fish.
+// Starts with the events after Boyoma Tigerfish, so that one runs the week out under the rules it began with.
+const TOUR_SEED_FROM=Date.parse('2026-11-30T00:00:00Z'),TOUR_BLOCK=30*60e3;
+function seededRandom(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+function tourStock(){const T=G.tour;if(!T||Date.parse(T.ev.starts)<TOUR_SEED_FROM){repopulate();return;}
+  const seed=Math.floor(tourHash(T.ev.tid+'|'+sbPid()+'|'+Math.floor(Date.now()/TOUR_BLOCK))*4294967296),mr=Math.random;Math.random=seededRandom(seed);
+  try{repopulate();}finally{Math.random=mr;}}
 function tourReset(){if(G.fight){G.fight.f.state='wander';endFight();}G.fish=[];G.parts=[];G.ripples=[];G.bubble=null;G.lure.state='ready';G.lure.fish=null;G.lure.bare=false;G.net=null;G.cam=0;G.pan=null;G.schoolHint=null;G.dry=0;G.pending=null;G.hatch=null;ROPE.pts=null;
-  if(LOC().ocean)G.seaX=seaStart();resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}}
+  if(LOC().ocean)G.seaX=seaStart();resize();if(G.tour)tourStock();else repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}}
 function tourLeave(){const T=G.tour;if(!T)return;ev('tour',{act:'leave',tid:T.ev.tid,min:+((Date.now()-(T.t0||Date.now()))/6e4).toFixed(1)});const sq=S.sessQ||[];G.tour=null;G.tcatch=null;S=JSON.parse(T.bak);for(const b of sq)queueSession(b);S.dev=!!window.DEV_BUILD;S.tRun=new Date().toDateString()+'|'+T.ev.tid;
   document.body.classList.remove('tour');tourReset();save();
   G.mode='menu';G.paused=false;G.stack=[];inGameUI(false);show('menu');renderMenu();updateHUD(true);refreshControls();}
@@ -8006,7 +8179,7 @@ function tutShow(){const st=TUT[G.tut],hole=$('#tutHole'),card=$('#tutCard');$('
   else{hole.className='tut-hole none';Object.assign(hole.style,{left:'50%',top:'40%'});card.style.top='34%';card.style.bottom='';}}
 $('#tutNext').onclick=()=>{SFX.ui();if(G.tut>=TUT.length-1)tutEnd();else{G.tut++;tutShow();}};
 $('#tutSkip').onclick=()=>{SFX.ui();tutEnd();};
-function startGame(){
+function startGame(){thanksGift();
   // Leaderboard: bests caught before it existed count too. (Old Nick saves came with a handed-out Fish Log: drop it.)
   // The Moth Fly became fly-rod only. Anglers without a fly rod get their coins back for any they had.
   // Respect started after many players had already been releasing fish; give them a head start from what they let go.
@@ -8349,6 +8522,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.25", "Thanksgiving", ["A wild turkey drops by the title screen on Thanksgiving", "Wild turkeys now wander the far bank at wooded waters", "Everyone who plays on Thanksgiving gets a Pilgrim Hat", "Leaving and re-entering a tournament no longer restocks the fish"]],
   ["v1.24", "Better stats", ["Tournament lures start at the size that fits the target fish", "With stats sharing on, the game reports catches, lost fish, purchases and coins to the stats page"]],
   ["v1.23", "Bait off the board", ["Herring and mackerel no longer have leaderboards", "Fishing a tournament no longer shows your respect as 0 in the player stats", "Tournaments start you on the hook that fits the target fish"]],
   ["v1.22", "Second chances", ["Fish that miss the hook bite again after a few minutes, and spooked schools move on"]],
@@ -8725,7 +8899,8 @@ const LOOKS={
     guidehat:{name:'Guide\u2019s Wide-Brim',price:600,resp:'Guide',col:'#b8a77a',desc:'Sun-faded from a thousand days on the water.'},
     legendhat:{name:'Legend\u2019s Hat',price:1200,resp:'Legend',col:'#2e2a26',desc:'Dark felt with a gold band. People whisper when you walk down the dock.'},
     cowboy:{name:'Cowboy Hat',price:600,col:'#7a4a24',desc:'Wide brim, big attitude.'},
-    skipper:{name:'Skipper Cap',price:900,col:'#f0eee6',desc:'Every boat needs a captain.'}},
+    skipper:{name:'Skipper Cap',price:900,col:'#f0eee6',desc:'Every boat needs a captain.'},
+    pilgrim:{name:'Pilgrim Hat',price:0,gift:'Thanksgiving 2026',col:'#232020',desc:'Tall, black and buckled. A Thanksgiving gift to everyone who came fishing. Turkeys can\u2019t help gobbling at whoever wears it.'}},
   shirt:{denim:{name:'Denim Shirt',price:0,col:'#3d5a7a',desc:'The one you always wear.'},
     tee:{name:'White Tee',price:80,col:'#e8e6dc',desc:'Clean. For now.'},
     flannel:{name:'Red Flannel',price:120,col:'#a8322a',pat:'check',desc:'A classic.'},
@@ -8740,7 +8915,7 @@ const LOOKS={
     cane:{name:'Split-Cane Finish',price:900,resp:'Guide',col:'#b07a3a',desc:'Glowing amber cane, like the old masters fished.'},
     gold:{name:'Golden Rod',price:3000,quests:25,col:'#f0c43a',desc:'For the angler who has done it all.'}}};
 function look(){const L=S.look||{};return{hat:LOOKS.hat[L.hat]?L.hat:'straw',shirt:LOOKS.shirt[L.shirt]?L.shirt:'denim',rod:LOOKS.rod[L.rod]?L.rod:'stock'};}
-function ownsLook(slot,id){return LOOKS[slot][id].price===0||!!(S.owned&&S.owned['look_'+slot+'_'+id]);}
+function ownsLook(slot,id){const it=LOOKS[slot][id];return(it.price===0&&!it.gift)||!!(S.owned&&S.owned['look_'+slot+'_'+id]);}
 // The angler, standing on the bank facing the water (to the right). Drawn with real proportions and light from the
 // upper right: boots, trousers with a bent front knee, a shirt with shoulders, collar and belt (the chosen pattern
 // clipped onto it), a neck, and a head in profile with nose, chin, ear, eye and a bit of hair below the hat. The hat
@@ -8875,6 +9050,12 @@ function drawHat(c,id,ax,y,D){const col=D(LOOKS.hat[id].col),dark='rgba(0,0,0,.3
   else if(id==='cowboy'||id==='legendhat'){c.beginPath();c.moveTo(ax-5,y-42.5);c.lineTo(ax-5.6,y-50);c.quadraticCurveTo(ax,y-47,ax+5.6,y-50);c.lineTo(ax+5,y-42.5);c.closePath();c.fill();
     c.beginPath();c.moveTo(ax-12,y-45);c.quadraticCurveTo(ax-8,y-41.5,ax,y-42);c.quadraticCurveTo(ax+8,y-41.5,ax+12,y-45);c.quadraticCurveTo(ax+8,y-39.5,ax,y-40);c.quadraticCurveTo(ax-8,y-39.5,ax-12,y-45);c.fill();
     c.fillStyle=id==='legendhat'?D('#e0b030'):dark;c.fillRect(ax-5.2,y-44,10.4,1.4);}
+  else if(id==='pilgrim'){// capotain: tall crown narrowing a little to a flat top, a flat brim, a band with a square buckle
+    c.beginPath();c.moveTo(ax-11.5,y-41.2);c.quadraticCurveTo(ax,y-43.4,ax+11.5,y-41.2);c.quadraticCurveTo(ax,y-39.2,ax-11.5,y-41.2);c.closePath();c.fill();
+    poly([ax-6.4,y-42,ax-5.3,y-52.5,ax+5.3,y-52.5,ax+6.4,y-42]);c.beginPath();c.ellipse(ax,y-52.5,5.3,1.3,0,0,TAU);c.fill();
+    c.fillStyle="rgba(255,255,255,.12)";poly([ax-4.6,y-43,ax-3.9,y-51.6,ax-2.5,y-51.6,ax-3,y-43]);
+    c.fillStyle=D('#3a2a1c');poly([ax-6.3,y-45.6,ax+6.3,y-45.6,ax+6.4,y-42.6,ax-6.4,y-42.6]);
+    c.strokeStyle=D('#cfd3d6');c.lineWidth=.9;c.strokeRect(ax-1.9,y-45.5,3.8,2.8);c.fillStyle=D('#cfd3d6');c.fillRect(ax-.25,y-45,.5,1.8);}
   else if(id==='skipper'){poly([ax-7.5,y-48.5,ax+7.5,y-48.5,ax+6.4,y-42.5,ax-6.4,y-42.5]);c.fillStyle=D('#1d2328');c.fillRect(ax-6.4,y-43.6,12.8,1.6);c.fillRect(ax+1,y-42.4,9,2);c.fillStyle=D('#e0b030');c.fillRect(ax-1.5,y-46.8,3,2);}
   else{// straw hat: a brim that dips a little front and back, a crown with a pinched top, a dark band, and the weave showing
     const brim=()=>{c.beginPath();c.moveTo(ax-10.6,y-41.4);c.quadraticCurveTo(ax-6,y-43.2,ax,y-43);c.quadraticCurveTo(ax+6,y-43.2,ax+10.8,y-41.2);c.quadraticCurveTo(ax+6,y-39.6,ax,y-39.9);c.quadraticCurveTo(ax-6,y-39.6,ax-10.6,y-41.4);c.closePath();};
@@ -8905,14 +9086,14 @@ function renderOutfit(box,row,pill,buyHtml){
   const done=(S.quests&&S.quests.total)||0,cur=look();
   for(const [slot,label] of [['hat','Hats'],['shirt','Shirts'],['rod','Rod finish']]){
     const h=document.createElement('div');h.className='label shop-sub';h.textContent=label;box.append(h);
-    for(const [id,it] of Object.entries(LOOKS[slot])){let a;
+    for(const [id,it] of Object.entries(LOOKS[slot])){let a;if(it.gift&&!ownsLook(slot,id))continue;
       const isRod=slot==='rod';
       if(cur[slot]===id)a=pill('on',isRod?'On your rods':'Wearing',()=>{},true);
       else if(ownsLook(slot,id))a=pill('equip',isRod?'Apply':'Wear',()=>{S.look=Object.assign(look(),{[slot]:id});save();SFX.ui();renderShop();});
       else if(it.quests&&done<it.quests)a=pill('buy',`${done}/${it.quests} quests`,()=>{},true);
       else if(it.resp&&(S.respect||0)<rankNeed(it.resp))a=pill('buy',`Respect: ${it.resp}`,()=>{},true);
       else a=pill('buy',buyHtml(it.price),()=>buy(()=>{S.owned['look_'+slot+'_'+id]=1;S.look=Object.assign(look(),{[slot]:id});},it.price,'look:'+slot+':'+id),S.coins<it.price);
-      row(lookIcon(slot,id),it.name,it.desc,it.quests?`Unlocks after ${it.quests} quests`:it.resp?`Earned at ${it.resp} respect`:'',[a]);}}}
+      row(lookIcon(slot,id),it.name,it.desc,it.gift?`${it.gift}`:it.quests?`Unlocks after ${it.quests} quests`:it.resp?`Earned at ${it.resp} respect`:'',[a]);}}}
 
 document.querySelectorAll('.ver-tag').forEach(e=>e.textContent='Snag & Brag '+VERSION);
 
@@ -8924,7 +9105,7 @@ function start(data){
   recoverSessions();
   resize();repopulate();for(const f of G.fish){f.alpha=1;f.fz=0;}ensureQuests();updateQuestBtn();
   show('menu');renderMenu();inGameUI(false);updateHUD(true);refreshControls();
-  setTimeout(tourBoot,2500);
+  setTimeout(tourBoot,2500);turkeyStart();thanksGift();
   requestAnimationFrame(frame);
 }
 // When the layout really does change (first load, turning the phone), everything in the water keeps its place relative
