@@ -1237,7 +1237,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.27a';
+const VERSION='v1.28a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -2790,8 +2790,11 @@ function drawHarness(c,dk,ax,y,t){const K=col=>rgbStr(mix(col,'#161a1e',dk*.75))
 function tip(){
   const hx=44,hy=dockY()-30+seatDrop();let ang=-.95,len=curSetup().len;
   const F=G.fight,L=G.lure;
-  if(G.fc){const e=G.fc.s<.5?2*G.fc.s*G.fc.s:1-2*(1-G.fc.s)*(1-G.fc.s);ang=G.fc.ph==='back'?lerp(-.8,-2.15,Math.min(1,e*1.4)):lerp(-2.15,-.75,Math.min(1,e*1.4));}
-  else if(G.charging)ang=lerp(-1.2,-2.3,G.power);
+  // fly rod: the rod makes its stroke in the first half and stops; the line follows and unrolls after it
+  const ez=r=>r<.5?2*r*r:1-2*(1-r)*(1-r);
+  if(G.fc){const e=ez(clamp(G.fc.s/.5,0,1));ang=G.fc.ph==='back'?lerp(-.9,-2.15,e):lerp(-2.15,-.8,e);}
+  else if(L.state==='flying'&&curSetup().fly&&G.fcCast)ang=lerp(-2.15,-.85,ez(clamp(L.ft/(L.fd*.4),0,1)));
+  else if(G.charging)ang=curSetup().fly?-1:lerp(-1.2,-2.3,G.power);// a fly caster stands ready while picking the power; the false casts start on release
   else if(F){ang=-.62+F.tension*.42+G.input.tilt*.35;}
   else if(L.vert&&L.state==='water')ang=G.input.reel?-.62:-.45;
   else if(L.state==='water'&&G.input.reel)ang=-.8;
@@ -2864,14 +2867,14 @@ function cast(){spookAtBoat();
   L.rockLuck=rand(.4,1.6);L.onRock=null;
   if(kiteOn()){L.state='water';G.sess.casts++;L.bare=false;L.fish=null;L.kite=true;L.x=Math.min(WX-40,DOCKX+340+rand(0,80));landLure();L.y=SURF+1;SFX.plip();return;}
   L.state='flying';L.sk=null;L.leash=null;L.swimAng=null;L.ldr=null;G.sess.casts++;L.bare=false;L.flung=LURES[S.lure].fling&&p>.8&&Math.random()<.4;L.sx=t.x;L.sy=t.y;L.tx=castTarget(p);L.ft=0;L.fd=.45+p*.55;L.arc=40+p*90;L.x=t.x;L.y=t.y;L.fish=null;
-  if(curSetup().fly){L.fd=.7+p*.5;L.bl=G.fcLen?G.fcLen*.6:30+p*90;}
+  if(curSetup().fly){L.fd=.7+p*.5;L.bl=G.fcLen?G.fcLen*.85:30+p*90;}
   SFX.cast();
 }
 function landLure(){
-  const L=G.lure;L.state='water';L.y=SURF+1;G.bob=null;L.vert=vertLure();L.dropping=L.vert;L.dropHold=false;  if(isBait()&&rig().type==='bobber'){const r=rig(),dp=r.depth*pxPerFt();G.bob={x:L.x,th:r.bob==='fixed'?1.1:0,out:r.bob==='fixed'?dp:0,tilt:r.bob==='slip'?1:0};if(r.bob==='fixed')L.x+=Math.min(dp*.9,40);}L.lastTwitch=G.t-3;gainXP(1);if(L.flung){L.flung=false;L.bare=true;useBait();toast('The liver flew off the hook','Soft bait. Cast a little gentler');refreshControls();}splash(L.x,curSetup().fly?.3:LURES[S.lure].float?.6:.8);
+  const L=G.lure;L.state='water';G.fcCast=false;L.y=SURF+1;G.bob=null;L.vert=vertLure();L.dropping=L.vert;L.dropHold=false;  if(isBait()&&rig().type==='bobber'){const r=rig(),dp=r.depth*pxPerFt();G.bob={x:L.x,th:r.bob==='fixed'?1.1:0,out:r.bob==='fixed'?dp:0,tilt:r.bob==='slip'?1:0};if(r.bob==='fixed')L.x+=Math.min(dp*.9,40);}L.lastTwitch=G.t-3;gainXP(1);if(L.flung){L.flung=false;L.bare=true;useBait();toast('The liver flew off the hook','Soft bait. Cast a little gentler');refreshControls();}splash(L.x,curSetup().fly?.3:LURES[S.lure].float?.6:.8);
   for(const f of G.fish){if(f.state==='wander'&&dist(f.x,f.y,L.x,L.y)<(f.sp.spooky?70:26)+(isBait()?(rig().type==='bobber'?12:['bank','egg'].includes(rigSinker())?8:0):0)&&Math.random()<(f.sp.spooky?.65:.3)*(1-.85*farZ(f.x))*(curSetup().fly?.35:1)&&!(S.lure==='popper'||S.lure==='frog')){flee(f,3);} }
 }
-function retrieve(){const L=G.lure;L.bare=false;L.kite=false;L.vert=false;L.dropping=false;L.string=[];G.bob=null;if(L.fish&&L.fish.state!=='fight'){L.fish.state='wander';newWanderTarget(L.fish);}L.fish=null;L.state='ready';refreshControls();}
+function retrieve(){const L=G.lure;L.lift=false;L.bare=false;L.kite=false;L.vert=false;L.dropping=false;L.string=[];G.bob=null;if(L.fish&&L.fish.state!=='fight'){L.fish.state='wander';newWanderTarget(L.fish);}L.fish=null;L.state='ready';refreshControls();}
 // Fly rod: pick the line up off the water to cast again. Ripping it off the surface can spook fish close to the fly.
 function pickUp(){const L=G.lure;if(L.state!=='water'||G.fight)return;
   for(const f of G.fish)if(f.state!=='fight'&&dist(f.x,f.y,L.x,L.y)<45&&Math.random()<.4)flee(f,2);
@@ -2900,9 +2903,9 @@ function updateLure(dt){G.lure.ox=G.lure.x;G.lure.oy=G.lure.y;
   L.jig=Math.max(0,L.jig-dt);if(L.state==='water'&&!L.bare&&(isLive()||S.lure==='cricket'||S.lure==='shrimp')&&Math.random()<dt*2)L.jig=.15;
   if(L.state==='flying'){L.ft+=dt;const k=Math.min(1,L.ft/L.fd);
     // A fly cast: the loop rolls out ahead and the fly trails on the top leg until the line turns over and lays it down.
-    if(curSetup().fly){const t=tip();L.lpx=lerp(t.x,L.tx,Math.min(1,k*1.15));L.lpy=lerp(t.y,SURF-5,k);L.lph=3+20*(1-k);L.x=lerp(L.sx-(L.bl||60),L.tx,Math.pow(k,1.7));L.y=Math.min(SURF,L.lpy-L.lph+Math.max(0,k-.85)/.15*L.lph);}
+    if(curSetup().fly){const t=tip(),u=G.fcCast?clamp((k-.15)/.85,0,1):k;L.lpx=lerp(t.x,L.tx,Math.min(1,u*1.15));L.lpy=lerp(t.y,SURF-5,u);L.lph=3+20*Math.min(1,u*5)*(1-u);L.x=lerp(L.sx-(L.bl||60),L.tx,Math.pow(u,1.7));L.y=Math.min(SURF,L.lpy-L.lph+Math.max(0,u-.85)/.15*L.lph);}
     else{L.x=lerp(L.sx,L.tx,k);L.y=lerp(L.sy,SURF,k)-Math.sin(k*Math.PI)*L.arc;}if(k>=1)landLure();return;}
-  if(L.state!=='water')return;
+  if(L.state!=='water'||L.lift)return;
   const bot=bottomAt(L.x)-3;L.moving=false;
   if(G.bob&&L.fish&&L.fish.state==='bite')G.bob.x+=(L.x-G.bob.x)*Math.min(1,dt*1.5);
   if(isBait()&&!(L.fish&&L.fish.state==='bite')&&rig().type==='bobber'){
@@ -3033,7 +3036,7 @@ function wiseFor(sp){return sp.wary?rand(300,480):PREDATORS.has(sp.id)?rand(120,
 function flee(f,cool=8){f.state='flee';f.timer=2;f.cool=cool;const L=G.lure;const away=Math.sign(f.x-(L.x||f.x))||1;f.tx=clamp(f.x+away*120,fxMin(),WX-10);const [a,b]=bandRange(f.sp,f.tx);f.ty=rand(a,b);if(L.fish===f)L.fish=null;}
 function spook(f,msg){flee(f,8);f.wise=true;if(msg)toast(msg);SFX.lose();refreshControls();}
 function checkNotice(f,dt){
-  const L=G.lure,sp=f.sp;if(f.wise||L.bare||!sp.lures.includes(S.lure))return;
+  const L=G.lure,sp=f.sp;if(f.wise||L.bare||L.lift||!sp.lures.includes(S.lure))return;
   if(L.fish&&L.fish!==f&&L.fish.L>f.L*1.7&&dist(f.x,f.y,L.x,L.y)<L.fish.L*2+40)return;
   const upTop=sp.rises&&LURES[S.lure].float&&L.y<SURF+6;
   // A rising fish spots a bug on top from well below, so depth counts for less than distance across.
@@ -3088,7 +3091,7 @@ function updateFish(f,dt){
       if(G.mode==='play'&&L.state==='water'&&f.cool<=0)checkNotice(f,dt);
       break;
     case'follow':
-      if(G.mode!=='play'||L.state!=='water'||L.bare){f.state='wander';newWanderTarget(f);break;}
+      if(G.mode!=='play'||L.state!=='water'||L.bare||L.lift){f.state='wander';newWanderTarget(f);break;}
       {const a=f.fo+G.t*.9,r=f.L*.6+20+Math.sin(G.t*1.7+f.fo)*6;tx=L.x+Math.cos(a)*r;ty=clamp(L.y+Math.sin(a)*12,SURF+4,bottomAt(L.x)-4);}
       spd=Math.max(sp.speed*.75,L.moving?curReel().speed*1.15:0);f.face=L.x>f.x?1:-1;f.t2+=dt;
       if(f.look){if(f.t2>f.lookT){f.look=false;f.state='wander';f.cool=rand(20,45);newWanderTarget(f);}break;}
@@ -3137,7 +3140,7 @@ function updateFish(f,dt){
       if(f.timer<=0){f.timer=.35;
         f.chaseCD=Math.max(0,(f.chaseCD||0)-.35);if(!f.chaseCD)for(const o of G.fish){if(o===f||o.dead||o.bed||o.alpha<.5||o.state==='fight'||o===L.fish)continue;
           if(Math.abs(o.x-bd.x)<bd.r+18&&o.y>bd.y-40&&o.L<f.L*1.6){f.chase=o;f.ct=.6;f.chaseCD=rand(2.5,4);fleeFrom(o,f,1.5);break;}}
-        if(G.mode==='play'&&L.state==='water'&&!L.fish&&!L.bare&&f.cool<=0&&Math.abs(L.x-bd.x)<bd.r+16&&L.y>bd.y-36){f.state='approach';L.fish=f;f.t2=0;f.strike=true;refreshControls();}}
+        if(G.mode==='play'&&L.state==='water'&&!L.fish&&!L.bare&&!L.lift&&f.cool<=0&&Math.abs(L.x-bd.x)<bd.r+16&&L.y>bd.y-36){f.state='approach';L.fish=f;f.t2=0;f.strike=true;refreshControls();}}
       break;}
     case'flee':f.timer-=dt;spd=sp.speed*1.25;if(f.timer<=0){f.state='wander';newWanderTarget(f);}break;
     case'leave':if(f.exitDir){tx=f.exitDir>0?G.cam+W+420:G.cam-420;ty=f.y;spd=sp.speed*(f.fast?.95:.55);if(f.x>G.cam+W+260||f.x<G.cam-260)f.dead=true;break;}if(f.exit==='side'){tx=WX+60;ty=f.y;spd=sp.speed*.55;if(f.x>WX-45)f.fz=Math.min(1,(f.fz||0)+dt*1.6);}else{tx=f.x+f.face*30;ty=f.y+(f.y<SURF+30?6:0);spd=sp.speed*.3;f.fz=Math.min(1,(f.fz||0)+dt*.4);}f.alpha=1-f.fz;if(f.fz>=1)f.dead=true;break;
@@ -3552,7 +3555,7 @@ function render(){
   c.save();c.translate(-cam,0);
   if(G.mode==='play'){
     if(L.fish&&L.fish.state==='bite'&&L.state==='water'){const bx=L.x,by=SURF-26+Math.sin(G.t*30)*1.5;c.fillStyle='#f2a93b';c.strokeStyle='#2a1903';c.lineWidth=2;c.beginPath();c.arc(bx,by,11,0,TAU);c.fill();c.stroke();c.fillStyle='#2a1903';c.font='22px "Lilita One",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('!',bx,by+1);c.textBaseline='alphabetic';}
-    if(G.charging){const t=tip();let cx=t.hx+(G.fc?84:6),cy=t.hy-(G.fc?92:70);const top=(60*UI)/SC+26;if(cy<top){cy=top;cx=Math.max(cx,DOCKX+44);}c.lineWidth=6;c.lineCap='round';c.strokeStyle='rgba(0,0,0,.45)';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*2.2);c.stroke();c.strokeStyle=G.power>.92?'#ffe08a':'#f2a93b';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*.8+Math.PI*1.4*G.power);c.stroke();c.fillStyle='#e1ead2';c.font='600 10px "IBM Plex Mono",monospace';c.textAlign='center';c.fillText(Math.round(G.power*100)+'%',cx,cy+4);}
+    if(G.charging){const t=tip();let cx=t.hx+(G.fc?84:6),cy=t.hy-(G.fc?92:70);const top=(60*UI)/SC+26;if(cy<top){cy=top;cx=Math.max(cx,DOCKX+44);}cx=clamp(cx,cam+40,cam+W-40);c.lineWidth=6;c.lineCap='round';c.strokeStyle='rgba(0,0,0,.45)';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*2.2);c.stroke();c.strokeStyle=G.power>.92?'#ffe08a':'#f2a93b';c.beginPath();c.arc(cx,cy,22,Math.PI*.8,Math.PI*.8+Math.PI*1.4*G.power);c.stroke();c.fillStyle='#e1ead2';c.font='600 10px "IBM Plex Mono",monospace';c.textAlign='center';c.fillText(Math.round(G.power*100)+'%',cx,cy+4);}
     if(G.fight){const F=G.fight,f=F.f,bx=f.x,by=f.y-f.L*SHAPES[f.sp.shape].h*.5-18;
       const jump=F.phase==='surge'||F.phase==='air';const col=jump?'#8cc6d8':F.phase==='run'||F.phase==='bolt'?'#e65a3d':F.phase==='tell'?(Math.sin(G.t*40)>0?'#f2a93b':'#e65a3d'):'#86ab5c';
       c.fillStyle=col;c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=1.5;c.beginPath();c.arc(bx,by,9,0,TAU);c.fill();c.stroke();
@@ -5084,7 +5087,7 @@ function drawLine(c){
   if(L.state==='ready'){lx=t.x;ly=t.y+14+Math.sin(G.t*2)*1;}
   else{lx=L.x;ly=L.y;if(L.jig>0){lx+=Math.sin(G.t*60)*1.4;ly+=Math.sin(G.t*47)*1.4;}}
   const lineCol=darkness()>.5?'rgba(230,235,220,.5)':'rgba(240,245,235,.7)';
-  if(curSetup().fly&&(L.state==='flying'||G.charging||G.fc)){drawFlyLine(c,t,L);return;}
+  if(curSetup().fly&&(L.state==='flying'||G.fc)){drawFlyLine(c,t,L);return;}
   if(L.vert&&L.state==='water'&&S.lure==='seacut'){const dk=darkness();c.strokeStyle=lineCol;c.lineWidth=.7;c.beginPath();c.moveTo(t.x,t.y);c.quadraticCurveTo((t.x+L.x)/2,Math.max(t.y,SURF)+6,L.x,L.y);c.stroke();
     c.fillStyle=rgbStr(mix('#6a6e72','#0a1418',dk*.7));c.beginPath();c.ellipse(L.x,L.y+1.5,1.6,2.6,0,0,TAU);c.fill();   // bank sinker
     const bx=L.x+5,by=L.y-9;c.lineWidth=.5;c.beginPath();c.moveTo(L.x,by-2);c.lineTo(bx,by);c.stroke();   // dropper loop to the hook
@@ -5119,9 +5122,10 @@ function drawLine(c){
 // Fly line: thicker and brighter than mono. Holding to cast throws a back-cast behind you; on release the loop rolls out over the water.
 function drawFlyLine(c,t,L){
   let fx,fy;c.strokeStyle=darkness()>.5?'rgba(238,226,160,.6)':'rgba(246,232,150,.92)';c.lineWidth=1.3;c.lineCap='round';c.beginPath();c.moveTo(t.x,t.y);
-  if(G.fc&&L.state!=='flying'){const F=G.fc,s2=Math.min(1,F.s),dir=F.ph==='back'?-1:1,endX=t.x+dir*F.len*(dir<0?.6:1),airY=t.y-5;
-    const lx=lerp(t.x,endX,Math.min(1,s2*1.15)),ly=airY-5*Math.sin(s2*Math.PI),h=3+16*(1-s2);
-    fx=lerp(F.from.x,endX,Math.pow(s2,1.7));fy=s2<.85?lerp(F.from.y,ly-h,Math.min(1,s2*1.8)):lerp(ly-h,airY,(s2-.85)/.15);
+  if(G.fc&&L.state!=='flying'){const F=G.fc,s2=Math.min(1,F.s),dir=F.ph==='back'?-1:1,endX=t.x+dir*F.len*(dir<0?.85:1),airY=t.y-5;
+    // the line lags the rod: it only starts to roll out once the rod is well into its stroke
+    const u=clamp((s2-.18)/.82,0,1),lx=lerp(t.x,endX,Math.min(1,u*1.1)),ly=airY-5*Math.sin(u*Math.PI),h=3+16*Math.min(1,u*5)*(1-u*.8);
+    fx=lerp(F.from.x,endX,Math.pow(u,1.7));fy=u<.85?lerp(F.from.y,ly-h,F.pick?clamp((u-.25)/.45,0,1):Math.min(1,u*1.8)):lerp(ly-h,airY,(u-.85)/.15);
     c.quadraticCurveTo((t.x+lx)/2,ly+3,lx,ly);if(dir*(fx-lx)<-2){c.bezierCurveTo(lx+dir*h*.7,ly,lx+dir*h*.7,ly-h,lx,ly-h);}c.lineTo(fx,fy);
     c.stroke();drawLure(c,S.lure,fx,fy,SIZES[lureVar().size].draw,lureColor(),dir>0?0:Math.PI);return;}
   if(L.state==='flying'){const lx=L.lpx,ly=L.lpy,h=L.lph;c.quadraticCurveTo((t.x+lx)/2,ly+4,lx,ly);
@@ -7600,9 +7604,9 @@ function update(dt){bankTurkeyTick(dt);bearTick(dt);fallsTick(dt);lipBearTick(dt
   // Once you pick the power it keeps going until the next back cast ends, then the forward stroke is the real cast.
   if(G.fc&&!G.charging&&G.fc.sel==null)G.fc=null;
   if(G.fc){const F=G.fc,t=tip();F.s+=dt/F.T;
-    if(F.s>=1){if(F.ph==='back'){if(F.sel!=null&&!(F.left>0)){G.power=F.sel;G.fcLen=F.len;G.fc=null;G.charging=false;cast();G.fcLen=null;refreshControls();}
-        else{if(F.left>0)F.left--;F.ph='fwd';F.from={x:t.x-F.len*.6,y:t.y-4};F.s=0;}}
-      else{F.ph='back';F.from={x:t.x+F.len,y:t.y-4};F.len=F.tgt?Math.min(F.tgt,F.len+F.step):Math.min(170,F.len+28);F.s=0;F.T=.45+F.len/450;}}
+    if(F.s>=1){if(F.ph==='back'){if(F.sel!=null&&!(F.left>0)){G.power=F.sel;G.fcLen=F.len;G.fc=null;G.charging=false;G.fcCast=true;cast();G.fcLen=null;refreshControls();}
+        else{if(F.left>0)F.left--;F.pick=false;F.ph='fwd';F.from={x:t.x-F.len*.85,y:t.y-4};if(F.tgt)F.len=Math.min(F.tgt,F.len+F.step);F.s=0;F.T=.4+F.len/700;}}
+      else{F.ph='back';F.from={x:t.x+F.len,y:t.y-4};F.len=F.tgt?Math.min(F.tgt,F.len+F.step):Math.min(170,F.len+28);F.s=0;F.T=.4+F.len/700;}}
     if(G.mode!=='play'||G.lure.state!=='ready')G.fc=null;}
   updateLure(dt);updateNet(dt);
   fishSocial(dt);for(const f of G.fish)updateFish(f,dt);penNet(dt);
@@ -7737,7 +7741,7 @@ function actionDown(){
   else if(L.state==='water'){
     if(L.fish&&L.fish.state==='bite')return;
     // Fly rod: RECAST lifts the line off the water; hold for power and let go, the same as the first cast.
-    if(curSetup().fly){const fx=L.x,fy=L.y;pickUp();G.flyFrom={x:fx,y:Math.min(fy,SURF)};G.charging=true;G.chargeT=0;G.power=0;refreshControls();return;}
+    if(curSetup().fly){if(G.fight)return;if(L.fish&&L.fish.state!=='fight'){L.fish.state='wander';newWanderTarget(L.fish);}L.fish=null;L.lift=true;G.charging=true;G.chargeT=0;G.power=0;refreshControls();return;}
     twitch();
   }
 }
@@ -7752,10 +7756,12 @@ function hookDown(){
   else{toast('Nothing on yet');SFX.ui();}
 }
 function actionUp(){if(G.tapCast==='armed'){G.tapCast='free';return;}if(G.tapCast)return;releaseCast();}
-function releaseCast(){if(G.charging){G.charging=false;if(G.power<.06){G.flyFrom=null;return;}
+function releaseCast(){if(G.charging){G.charging=false;if(G.power<.06){G.flyFrom=null;G.lure.lift=false;return;}
+    let pick=null;if(G.lure.lift){const L=G.lure;pick={x:L.x,y:Math.min(L.y,SURF)};for(const f of G.fish)if(f.state!=='fight'&&dist(f.x,f.y,L.x,L.y)<45&&Math.random()<.4)flee(f,2);ripple(L.x,.6);SFX.plip();retrieve();G.slowBack=true;}
     // fly rod: the power is picked; the angler false casts, back and forward over the water, then the last forward stroke is the cast
-    if(curSetup().fly&&G.lure.state==='ready'&&!netSel()){const t=tip(),fr=G.flyFrom||{x:t.x,y:t.y+14};G.flyFrom=null;// false casts before it goes out: one for a short cast, up to three for a long one, shooting a good length of line each time
-      const n=1+Math.round(G.power*2),tgt=40+G.power*130;G.fc={ph:'back',s:0,len:40,T:.5,from:fr,sel:G.power,left:n,tgt,step:(tgt-40)/n};refreshControls();return;}if(netSel()&&G.lure.state==='ready')throwNet(G.power);else cast();refreshControls();}}
+    if(curSetup().fly&&G.lure.state==='ready'&&!netSel()){const t=tip(),fr=pick||{x:t.x,y:t.y+14};G.flyFrom=null;// the line has been hanging from the tip while the power was picked// false casts before it goes out: one for a short cast, up to three for a long one. Each carries more line, from about a
+      // third of the cast to about four fifths of it on the last back cast; the final stroke shoots the rest.
+      const n=1+Math.round(G.power*2),D=Math.max(60,DOCKX+34+G.power*castReachNow()-t.x),len0=Math.max(40,D*.35),tgt=Math.max(len0,D*.85);G.fc={ph:'back',s:0,len:len0,T:.4+Math.max(len0,pick?(pick.x-t.x)*.6:0)/700,from:fr,pick:!!pick,sel:G.power,left:n,tgt,step:(tgt-len0)/(2*n)};refreshControls();return;}if(netSel()&&G.lure.state==='ready')throwNet(G.power);else cast();refreshControls();}}
 function holdBtn(el,down,up){
   el.addEventListener('pointerdown',e=>{e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}el.classList.add('down');down();});
   const end=e=>{if(!el.classList.contains('down'))return;el.classList.remove('down');up();};
@@ -8918,6 +8924,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.28", "Fly casting", ["False casts carry more line each stroke, building up to most of the final cast", "The angler stands ready while you pick the power", "The rod leads and the line follows it on every stroke", "Recasting picks the line up off the water into the back cast, and the power meter stays on screen"]],
   ["v1.27", "Kenai River", ["New place at level 22: the Kenai River in Alaska, with king, sockeye, coho and pink salmon runs by season", "Rainbows, Dolly Varden and grayling live there all year", "A waterfall where salmon leap during the runs and a bear fishes from the rocks", "Summer nights stay light, and clear fall and winter nights bring the northern lights", "New bait: cured salmon roe"]],
   ["v1.27", "Leaderboard", ["Each board now has This month and All-time", "Your place and the anglers just above and below you show when you're outside the top 10", "Past months keep their top 3", "Every species can now grow a rare trophy size, so no board tops out"]],
   ["v1.27", "Where & When", ["Places are now a compact list: where you are, your places, the next to unlock, then the rest", "A Go button on each place travels there without opening its card", "Where & When no longer stalls while it redraws the place pictures: each is made once a season and kept"]],
