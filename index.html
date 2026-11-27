@@ -1301,7 +1301,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.30a';
+const VERSION='v1.30b';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -3116,12 +3116,14 @@ function updateLure(dt){G.lure.ox=G.lure.x;G.lure.oy=G.lure.y;
 }
 let SNAG_HIT=.1,SNAG_SIT=.08;
 function snagCheck(dt,bot,heavy){const L=G.lure,sg=LOC().snags||0;if(!sg||L.fish||L.y<bot-1.5||L.state!=='water')return false;
-  // Rocks: one roll as the lure first touches a boulder (dragging it in snags more than letting it settle), then only a small
-  // chance while it sits there. Each cast gets its own luck, and a snag can still pop free.
+  // Rocks: one roll as the lure first touches a boulder (dragging it in snags more than letting it settle). After that it's
+  // moving that snags: reeling drags the rig into cracks and wood, and current rolls it along. A rig left still on the
+  // bottom of still water rarely hangs up, so a long soak isn't a near-certain loss. Each cast gets its own luck, and a
+  // snag can still pop free.
   let rock=null;for(const k of cboulders)if(Math.abs(L.x-k.x)<k.r+(L.onRock===k?14:5)){rock=k;break;}
-  let p=0;
-  if(rock){if(L.onRock!==rock){L.onRock=rock;p=SNAG_HIT*(heavy?1.4:1)*(G.input.reel?1.25:.8)*(L.rockLuck??1);}else p=(G.input.reel?.02:SNAG_SIT)*dt;}
-  else{L.onRock=null;p=(heavy?.06*sg:.02*sg)*(G.input.reel?2:1)*dt;}
+  const still=G.input.reel?1:LOC().current?.5:.06;let p=0;
+  if(rock){if(L.onRock!==rock){L.onRock=rock;p=SNAG_HIT*(heavy?1.4:1)*(G.input.reel?1.25:.8)*(L.rockLuck??1);}else p=(G.input.reel?.02:SNAG_SIT*still)*dt;}
+  else{L.onRock=null;p=(heavy?.06*sg:.02*sg)*(G.input.reel?2:still)*dt;}
   if(!isBait()&&LURES[S.lure].weedless)p*=LURES[S.lure].weedless;
   if(Math.random()>=p)return false;
   if(Math.random()<.35){L.y-=8;L.onRock=rock;toast('Hung up for a second','It popped free');vib(25);return false;}
@@ -3994,8 +3996,11 @@ function drawAlpineShore(c,cam,dk,Z){const K=(col,a=1)=>rgbStr(mx(col,'#060c10',
 // ---- Pelican Point: open Gulf to the horizon, a barrier island with a lighthouse, a rig and a shrimp boat far out ----
 // The far side of the open sea: the north shore of PEI a few miles off, a low line of red sandstone cliffs topped with
 // green fields and a white lighthouse, then open Gulf to the east. At that distance it's a thin band on the horizon.
+// In fog, far water and mountains are drawn see-through to fade them into the haze. This lays the fogged sky under
+// them first, solid, so the moon, sun and stars behind never show through.
+function fogUnderlay(c,h,fill){const [st,sb]=skyCols(h),g=c.createLinearGradient(0,0,0,SURF);g.addColorStop(0,rgbStr(mx(st,'#bec8c8',.25)));g.addColorStop(1,rgbStr(mx(sb,'#bec8c8',.25)));const fs=c.fillStyle;c.fillStyle=g;fill();c.fillStyle=fs;}
 function drawOceanBack(c,cam,dk,fog,rain,h){const K=(col,a=1)=>rgbStr(mx(col,'#0d1622',dk*.85),a*(fog?.4:1)),hz=SURF-13,wc=LOC().water[0];
-  let g=c.createLinearGradient(0,hz,0,SURF);g.addColorStop(0,K(mx(wc,'#b4c8d0',.6)));g.addColorStop(1,K(mx(wc,'#5e8c94',.2)));c.fillStyle=g;c.fillRect(0,hz,W,SURF-hz+1);
+  let g=c.createLinearGradient(0,hz,0,SURF);g.addColorStop(0,K(mx(wc,'#b4c8d0',.6)));g.addColorStop(1,K(mx(wc,'#5e8c94',.2)));if(fog)fogUnderlay(c,h,()=>c.fillRect(0,hz,W,SURF-hz+1));c.fillStyle=g;c.fillRect(0,hz,W,SURF-hz+1);
   c.fillStyle=`rgba(255,255,255,${(fog?.1:.26)*(1-dk*.7)})`;for(let i=0;i<46;i++){const y=hz+1+((i*7)%12),x=((i*83.1-cam*(.1+(y-hz)/30)+G.t*(1+i%3))%(W+40)+W+40)%(W+40)-20;c.fillRect(x,y,3+(i%4)*2*(y-hz)/14,.6);}
   if(fog)return;
   // the island, only on the western part of the horizon
@@ -4009,7 +4014,7 @@ function drawOceanBack(c,cam,dk,fog,rain,h){const K=(col,a=1)=>rgbStr(mx(col,'#0
   c.restore();}
 function drawSeaBack(c,cam,dk,fog,rain,h){const K=(col,a=1)=>rgbStr(mx(col,'#0d1622',dk*.85),a*(fog?.55:1)),hz=SURF-15,wc=LOC().water[0];
   // far water
-  let g=c.createLinearGradient(0,hz,0,SURF);g.addColorStop(0,K(mx(wc,'#b8d4dc',.55)));g.addColorStop(1,K(mx(wc,'#6aa8a8',.25)));c.fillStyle=g;c.fillRect(0,hz,W,SURF-hz+1);
+  let g=c.createLinearGradient(0,hz,0,SURF);g.addColorStop(0,K(mx(wc,'#b8d4dc',.55)));g.addColorStop(1,K(mx(wc,'#6aa8a8',.25)));if(fog)fogUnderlay(c,h,()=>c.fillRect(0,hz,W,SURF-hz+1));c.fillStyle=g;c.fillRect(0,hz,W,SURF-hz+1);
   c.fillStyle=`rgba(255,255,255,${(fog?.12:.3)*(1-dk*.7)})`;for(let i=0;i<40;i++){const y=hz+1+((i*7)%13),x=((i*83.1-cam*(.1+(y-hz)/30)+G.t*(1+i%3))%(W+40)+W+40)%(W+40)-20;c.fillRect(x,y,3+(i%4)*2*(y-hz)/14,.6);}
   // barrier island: low dunes, sea oats, a few cabbage palms, and the lighthouse
   c.save();c.translate(-cam*.12,0);const ix0=-40,ix1=TW*1.05;
@@ -8782,17 +8787,18 @@ function drawHala(c,x,y,h,K,ph){c.strokeStyle=K('#5a4c3c');c.lineCap='round';c.l
   const tips=[[x-h*.3,y-h*.8],[x+h*.05,y-h*.95],[x+h*.32,y-h*.75]];c.lineWidth=Math.max(.45,h*.045);c.beginPath();for(const [bx,by] of tips){c.moveTo(x,y-h*.22);c.quadraticCurveTo(x+(bx-x)*.2,y-h*.6,bx,by);}c.stroke();
   for(const [bx,by] of tips){c.strokeStyle=K('#3e5a34');c.lineWidth=Math.max(.3,h*.02);c.beginPath();for(let k=0;k<9;k++){const a=-Math.PI*.95+k*Math.PI*.9/8+Math.sin(G.t+ph)*.04,L=h*(.22+.06*Math.sin(k*2+ph));c.moveTo(bx,by);c.quadraticCurveTo(bx+Math.cos(a)*L*.6,by+Math.sin(a)*L*.6,bx+Math.cos(a)*L,by+Math.sin(a)*L*.7+L*.25);}c.stroke();}}
 function drawKauBack(c,cam,dk,fog,rain,h){const wm=warmth(h),vog=.18+.5*kilaueaOn(),hz=SURF-12;
+  const fogUnder=()=>{if(fog)fogUnderlay(c,h,()=>c.fill());};
   const K=(col,a=1,haze=0)=>{let v=mx(col,rain?'#9aa6ae':'#b9c6cc',haze);v=mx(v,'#d8c79a',vog*haze*.35);if(wm)v=v.map((q,i)=>lerp(q,[236,150,110][i],wm*.3*(1-dk)*haze));return rgbStr(mx(v,'#0d1622',dk*.86),a*(fog?.5:1));};
   // Mauna Loa: a shield volcano 13,679 ft high, so broad its top is a long gentle curve. Lava flows streak its flanks.
   c.save();c.translate(-cam*.04,0);{const cx=W*.42,R=W*1.25,Hm=SURF*.4,top=x=>hz-Hm*Math.pow(Math.max(0,1-Math.pow((x-cx)/R,2)),1.7)+2*(fFbm(x*.02)-.5);
-    {const mg=c.createLinearGradient(0,hz-Hm,0,hz);mg.addColorStop(0,K('#8e98b2',1,.66));mg.addColorStop(1,K('#6c7896',1,.55));c.fillStyle=mg;}c.beginPath();c.moveTo(cx-R,hz);for(let x=cx-R;x<=cx+R;x+=6)c.lineTo(x,top(x));c.lineTo(cx+R,hz);c.closePath();c.fill();
+    {const mg=c.createLinearGradient(0,hz-Hm,0,hz);mg.addColorStop(0,K('#8e98b2',1,.66));mg.addColorStop(1,K('#6c7896',1,.55));c.fillStyle=mg;}c.beginPath();c.moveTo(cx-R,hz);for(let x=cx-R;x<=cx+R;x+=6)c.lineTo(x,top(x));c.lineTo(cx+R,hz);c.closePath();fogUnder();c.fill();
     c.save();c.clip();
       // snow on the summit some winters
       if(seasonIdx()===3&&fHash(Math.floor((S.yday||0)/28)*3.1+7)<.75){c.fillStyle=K('#f2f4f6',.9,.35);c.beginPath();for(let x=cx-R*.16;x<=cx+R*.16;x+=4)c.lineTo(x,top(x)-.5);for(let x=cx+R*.16;x>=cx-R*.16;x-=4)c.lineTo(x,top(x)+3+5*Math.pow(1-Math.abs(x-cx)/(R*.16),.6)*fNoise(x*.09));c.closePath();c.fill();}c.restore();
     // Kīlauea: a low shield on Mauna Loa's flank, nearer to you, its summit caldera a shallow notch
     const kx=cx+R*.22,kh=Hm*.3,kw=R*.42,kt=x=>hz-kh*Math.pow(Math.max(0,1-Math.pow((x-kx)/kw,2)),1.4)+(Math.abs(x-kx)<9?1.6*(1-Math.abs(x-kx)/9):0);
     {const mg=c.createLinearGradient(0,hz-kh,0,hz);mg.addColorStop(0,K('#7e88a2',1,.58));mg.addColorStop(1,K('#64708c',1,.5));c.fillStyle=mg;}
-    c.beginPath();c.moveTo(kx-kw,hz);for(let x=kx-kw;x<=kx+kw;x+=5)c.lineTo(x,kt(x));c.lineTo(kx+kw,hz);c.closePath();c.fill();
+    c.beginPath();c.moveTo(kx-kw,hz);for(let x=kx-kw;x<=kx+kw;x+=5)c.lineTo(x,kt(x));c.lineTo(kx+kw,hz);c.closePath();fogUnder();c.fill();
     const ky=kt(kx)+1.5,on=kilaueaOn();if(on>0&&!fog){const nt=clamp((dk-.15)/.6,0,1);
       // the plume: a column of gas and tephra over the vent that the trades bend over and carry off down the coast
       for(let i=0;i<44;i++){const u=i/43,px=kx-Math.pow(u,1.5)*110+Math.sin(G.t*.35+i*.9)*1.2,py=ky-2-u*SURF*.24*(1-u*.3),r=2+u*12;
@@ -10752,6 +10758,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.30b", "Fixes", ["Bait left sitting on the bottom rarely snags now; snags come from reeling and current", "The moon no longer shows through Mauna Loa in fog"]],
   ["v1.30", "Flies and the Field Guide", ["Fifteen new flies, from the Parachute Adams to the Crazy Charlie", "Saltwater flies for redfish, bonefish, sheepshead and jacks", "Hoppers work best late summer, egg flies when the salmon spawn", "Flies have their own shop tab", "The fly box splits into Dries, Nymphs, Streamers and Top & salt", "New Field Guide in the pause menu: fish, wildlife, tackle and places", "Fish pages fill in when you catch one, wildlife when you fish its place, tackle when you buy it", "Tap a fish in the Fish Log to open its page", "Highline Lake’s goat is now a bighorn ram", "Pelicans no longer fly over Hawaiʻi, and macaws stay in the Amazon"]],
   ["v1.29", "Kaʻū Coast, Hawaiʻi", ["New place at level 29: black lava ledges on Hawaiʻi Island, below Mauna Loa and Kīlauea", "A living reef: coral heads, reef fish, uhu, morays, an eagle ray, a whitetip shark and honu", "Surf surges up the lava ledge you fish from", "The plane's banner speaks Hawaiian here", "Nine new fish, from āholehole to giant ulua, and a legend", "Tako (octopus) bait", "Moi season is closed in summer, so they go back", "Fixed the bottom of the water hiding under the buttons when an app toolbar appears after loading"]],
   ["v1.28", "Fly casting", ["False casts carry more line each stroke, building up to most of the final cast", "The angler stands ready while you pick the power", "The rod leads and the line follows it on every stroke", "Recasting picks the line up off the water into the back cast, and the power meter stays on screen"]],
