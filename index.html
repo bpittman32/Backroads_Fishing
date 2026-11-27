@@ -1146,6 +1146,12 @@ P.sargassum=(c,H,seed)=>{const r=rng(seed);const br=(x,y,a,len,d)=>{const ex=x+M
     if(d>0)for(let i=0;i<2;i++)br(ex,ey,a+(i?.5:-.5)+(r()-.5)*.4,len*.75,d-1);};
   for(let k=0;k<8;k++){const a=k<5?Math.PI*(.12+r()*.76):(r()<.5?.05:Math.PI-.05)+(r()-.5)*.1;br((r()-.5)*H*.3,H*.01+r()*H*.02,a,H*.11,3);}};
 // Riverweed (Podostemaceae) clinging to rocks in the Congo rapids: flat lobed crusts with short leafy tufts, olive to wine-red (base line = rock top)
+// Red limu: bushy branched red seaweed growing on the rocks; honu graze it.
+P.limu=(c,H,seed)=>{const r=rng(seed);const br=(x,y,a,len,d)=>{const ex=x+Math.cos(a)*len,ey=y+Math.sin(a)*len;c.strokeStyle=mixc('#6a1e22','#b04a3a',r(),.95);c.lineWidth=Math.max(.5,H*.012*(3-d));c.beginPath();c.moveTo(x,y);c.quadraticCurveTo((x+ex)/2+(r()-.5)*len*.3,(y+ey)/2,ex,ey);c.stroke();
+    // little spines along the branches
+    c.strokeStyle=mixc('#8a2a2a','#d0705a',r(),.8);c.lineWidth=Math.max(.3,H*.005);for(let k=0;k<4;k++){const u=.3+k*.18,bx=lerp(x,ex,u),by=lerp(y,ey,u),sa=a+(k%2?1:-1)*1.2;c.beginPath();c.moveTo(bx,by);c.lineTo(bx+Math.cos(sa)*H*.03,by+Math.sin(sa)*H*.03);c.stroke();}
+    if(d<3)for(let j=0;j<2+(d<1?1:0);j++)br(ex,ey,a+(r()-.5)*1.3,len*(.55+r()*.2),d+1);};
+  for(let i=0;i<4+Math.floor(r()*3);i++)br((r()-.5)*H*.2,0,-Math.PI/2+(r()-.5)*1.4,H*(.3+r()*.15),0);};
 P.riverweed=(c,H,seed)=>{const r=rng(seed),W=H*2;
   for(let i=0;i<40;i++){const x=(r()-.5)*W,y=-H*.02*r(),rw=H*(.06+.08*r()),rh=H*(.025+.03*r());c.fillStyle=mixc('#3a4a1e','#7a3a30',r()*.7,.9);c.beginPath();
     for(let k=0;k<=10;k++){const a=Math.PI+k/10*Math.PI,rr=1+.25*Math.sin(k*2.7+i);c.lineTo(x+Math.cos(a)*rw*rr,y+Math.sin(a)*rh*rr);}c.closePath();c.fill();}
@@ -1237,7 +1243,7 @@ window.PLANTS={P,sprite,drawBent,lilyPad,victoria,fouling,riverweedOnRock};
 (()=>{
 'use strict';
 // Version: bump the number on every published update. a = alpha (still adding features), b = beta (features done, polishing), no letter = finished release.
-const VERSION='v1.28a';
+const VERSION='v1.29a';
 /* Snag & Brag (formerly Backroads Fishing, originally Mossback Pond) — map of this script
    DATA            species, lures, baits, rigs, gear, rod setups, trophies
    SAVE            localStorage key 'mossback-pond-v1' (kept from the old name so saves carry over)
@@ -1302,11 +1308,12 @@ const LURES={
   nymph:{name:'Bead-head Nymph',desc:'A small, buggy fly with a brass bead. Sinks slowly like a hatching insect, and fish eat these more than anything on top. Fly rod only.',price:30,sink:20,float:false,rise:.5,color:'#8a5a32',flyOnly:true},
   bugger:{name:'Woolly Bugger',desc:'A marabou-tailed streamer that pulses when you strip it. Looks like a leech, minnow or crayfish. Fly rod only.',price:35,sink:24,float:false,rise:.38,color:'#5c6a2c',flyOnly:true},
   ghost:{name:'Grey Ghost Streamer',desc:'Carrie Stevens\u2019 classic Maine streamer: grey hackle wings over a silver-ribbed orange body, tied long to look like a smelt. Let it sink a few feet, then strip it back fast. Trout, smallmouth and pike chase it down. Fly rod only.',price:45,sink:20,float:false,rise:.4,color:'#a3a596',flyOnly:true},
+  tako:{name:'Tako (Octopus)',desc:'A whole small octopus, the classic Hawaiian bait for ulua. Tough enough to soak on the bottom all night.',price:24,pack:4,sink:36,float:false,rise:.1,color:'#9a6a74',bait:true,soft:1.8},
   roe:{name:'Cured Salmon Roe',desc:'A clump of cured salmon eggs tied up in a little mesh bag. Salmon, rainbows and Dolly Varden can\u2019t leave it alone.',price:10,pack:10,sink:30,float:false,rise:.15,color:'#f2602e',bait:true,soft:1.1},
   shrimp:{name:'Live Shrimp',desc:'Kicking live shrimp from the bait shop. Nearly everything in salt water eats it. Freshwater fish don\u2019t know what it is.',price:16,pack:8,sink:16,float:false,rise:.35,color:'#d9c3a6',bait:true,soft:1.3},
   prop:{name:'Prop Bait',desc:'A topwater stick with spinning props that churn the surface. Peacock bass explode on it.',price:85,sink:0,float:true,rise:0,color:'#e8dcc0'}
 };
-const BAIT_ORDER=['worm','cricket','minnow','liver','dough','corn','roe','shrimp'];
+const BAIT_ORDER=['worm','cricket','minnow','liver','dough','corn','roe','shrimp','tako'];
 const LURE_ORDER=['popper','buzz','prop','frog','mouse','spinner','spinnerbait','spoon','crank','jerk','lipless','swim','jig','plastic','grub','cjig','fly','dryfly','popbug','nymph','bugger','ghost'];
 // Shop sections: a header goes in front of the first lure of each group.
 const LURE_GROUP={popper:'Topwater',spinner:'Moving baits',jig:'Bottom & jigs',fly:'Flies'};
@@ -1386,7 +1393,7 @@ function tierCost(id,t){const b=SETUPS[id].price||120;return Math.round((t===1?.
 function curRod(){const u=curSetup(),t=curTier();return{grace:u.grace+.12*t,damp:u.power===1?.7:u.power===3?.85:1};}
 function curReel(){const u=curSetup();return{speed:u.speed*(1+.12*curTier())*(G.sea?.35+.65*G.sea.arms:1)};}
 function curLine(){const u=curSetup();return{f:u.f*(1-.08*curTier()),vis:u.vis};}
-function tackleWeight(id=S.lure){const lu=LURES[id];if(!lu)return 1;if(lu.bait){const r=rig();const sk={none:0,split:.8,egg:3,teardrop:2.5,bank:4}[rigSinker()]||0;const base={worm:1,cricket:.5,minnow:1.5,cutbait:1.3,livebait:ownLive()?.5+ownLive().len/7:1.5,liver:1.5,dough:1.5,corn:1,roe:1.1,shrimp:1.2}[id]||1;return base+sk+(r.type==='bobber'?1:0);}
+function tackleWeight(id=S.lure){const lu=LURES[id];if(!lu)return 1;if(lu.bait){const r=rig();const sk={none:0,split:.8,egg:3,teardrop:2.5,bank:4}[rigSinker()]||0;const base={worm:1,cricket:.5,minnow:1.5,cutbait:1.3,livebait:ownLive()?.5+ownLive().len/7:1.5,liver:1.5,dough:1.5,corn:1,roe:1.1,shrimp:1.2,tako:2.2}[id]||1;return base+sk+(r.type==='bobber'?1:0);}
   const base={dryfly:.2,popbug:.4,nymph:.3,bugger:.6,ghost:.5,spinner:2,spoon:3,popper:2.5,crank:3,jig:2.5,fly:.5,frog:4.5,mouse:2.2,plastic:2,spinnerbait:3,buzz:3.5,jerk:2.2,lipless:3,grub:1.2,cjig:.6,swim:4.5,prop:3}[id]||2;return base*({small:.7,reg:1,large:1.4}[lureVar(id).size]||1);}
 function castFit(){const u=curSetup(),w=tackleWeight();if(w<u.cast[0])return{m:Math.max(.45,Math.pow(w/u.cast[0],.7)),why:'light'};if(w>u.cast[1])return{m:Math.max(.5,Math.pow(u.cast[1]/w,.8)),why:'heavy'};return{m:1,why:''};}
 // The fly rod casts flies only, and flies need the fly rod.
@@ -1461,7 +1468,7 @@ function rigOrderText(r){const out=[];if(r.type==='bobber')out.push(GEAR.bobbers
   if(r.type==='carolina')out.push('Egg sinker','Swivel','Leader');if(r.type==='threeway')out.push('Three-way swivel','Bank sinker on dropper','Leader');
   out.push('Hook + bait');if(r.type==='dropshot')out.push('Leader','Teardrop sinker');return out.join(' → ');}
 
-const SHAPES={turtle:{h:.42,k:1.2e-4},walleye:{h:.22,k:1.15e-5},round:{h:.5,k:2.4e-5},perch:{h:.32,k:1.3e-5},bass:{h:.34,k:1.5e-5},long:{h:.24,k:1.1e-5},cat:{h:.24,k:1e-5},pike:{h:.16,k:.6e-5},carp:{h:.36,k:1.6e-5},eel:{h:.08,k:.25e-5},koi:{h:.3,k:1.4e-5},crappie:{h:.44,k:1.5e-5},bowfin:{h:.22,k:1.2e-5},bullhead:{h:.3,k:1.3e-5},gar:{h:.15,k:6e-6},mack:{h:.2,k:.9e-5},flounder:{h:.46,k:1.3e-5},goliath:{h:.27,k:1.45e-5},tigerfish:{h:.23,k:1.2e-5},nileperch:{h:.33,k:1.55e-5},vundu:{h:.21,k:1.1e-5},africanpike:{h:.16,k:.9e-5},butterflyfish:{h:.18,k:.9e-5},distichodus:{h:.33,k:2e-5},redbreast:{h:.38,k:2.4e-5},nembwe:{h:.29,k:1.7e-5},sprat:{h:.2,k:.85e-5},shad:{h:.32,k:1.6e-5},pinfish:{h:.38,k:1.9e-5},mullet:{h:.2,k:1.3e-5}};
+const SHAPES={ulua:{h:.33,k:1.55e-5},omilu:{h:.28,k:1.48e-5},oio:{h:.18,k:1.2e-5},moi:{h:.22,k:1.3e-5},aholehole:{h:.29,k:1.48e-5},menpachi:{h:.37,k:2e-5},kumu:{h:.23,k:1.6e-5},roi:{h:.29,k:1.6e-5},taape:{h:.29,k:1.33e-5},turtle:{h:.42,k:1.2e-4},walleye:{h:.22,k:1.15e-5},round:{h:.5,k:2.4e-5},perch:{h:.32,k:1.3e-5},bass:{h:.34,k:1.5e-5},long:{h:.24,k:1.1e-5},cat:{h:.24,k:1e-5},pike:{h:.16,k:.6e-5},carp:{h:.36,k:1.6e-5},eel:{h:.08,k:.25e-5},koi:{h:.3,k:1.4e-5},crappie:{h:.44,k:1.5e-5},bowfin:{h:.22,k:1.2e-5},bullhead:{h:.3,k:1.3e-5},gar:{h:.15,k:6e-6},mack:{h:.2,k:.9e-5},flounder:{h:.46,k:1.3e-5},goliath:{h:.27,k:1.45e-5},tigerfish:{h:.23,k:1.2e-5},nileperch:{h:.33,k:1.55e-5},vundu:{h:.21,k:1.1e-5},africanpike:{h:.16,k:.9e-5},butterflyfish:{h:.18,k:.9e-5},distichodus:{h:.33,k:2e-5},redbreast:{h:.38,k:2.4e-5},nembwe:{h:.29,k:1.7e-5},sprat:{h:.2,k:.85e-5},shad:{h:.32,k:1.6e-5},pinfish:{h:.38,k:1.9e-5},mullet:{h:.2,k:1.3e-5}};
 const SPECIES=[
   {id:'bluegill',locs:['pond','lake','bayou'],name:'Bluegill',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.05,.5],lures:['cricket','worm','spinner','fly','dryfly','popbug','nymph'],likes:'twitch',power:.22,speed:38,end:.6,bite:.75,rar:10,len:[12,25],price:10,shape:'round',col:'#4f7fa8',belly:'#e8a83a',mark:'bar',school:[4,7],nibbles:[2,4],rises:true,hint:'Small schools near the weeds. Feeds hardest at dawn and dusk and nibbles a few times before it bites.'},
   {id:'pumpkinseed',name:'Pumpkinseed',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.02,.4],lures:['cricket','worm','fly','spinner','dryfly','popbug','nymph'],likes:'still',power:.2,speed:36,end:.6,bite:.75,rar:8,len:[10,22],price:11,shape:'round',col:'#6f7d45',belly:'#f0a030',mark:'pumpkin',school:[2,3],nibbles:[2,4],rises:true,hint:'Pairs and small groups tucked in the weeds. Feeds all day, most in the afternoon. Small hook, still worm.'},
@@ -1527,6 +1534,17 @@ const SPECIES=[
   {id:'mackerel',locs:['pier'],name:'Spanish Mackerel',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','rain'],band:[0,.45],lures:['spoon','jig','minnow','spinner','jerk','swim','shrimp'],likes:'move',power:.48,speed:125,end:.9,bite:.5,rar:6,len:[30,70],price:22,shape:'mack',col:'#3f7a8c',belly:'#f2f4f2',mark:'mackerel',school:[4,7],seas:[1,1.2,1,.1],nibbles:[1,1],jumps:.35,hint:'Lightning-fast schools that slash through bait in the daytime. Burn a shiny spoon past them. Razor teeth cut light line in a blink.'},
   {id:'pompano',locs:['pier'],name:'Florida Pompano',times:['dawn','day'],peak:['day'],off:.8,weather:['clear','fog'],band:[.75,1],lures:['shrimp','jig','grub','worm'],likes:'twitch',power:.45,speed:75,end:1,bite:.5,rar:5,len:[25,50],price:38,shape:'crappie',col:'#b7bfc3',belly:'#f2d34c',mark:'pompano',school:[2,4],seas:[1.3,1,1.1,.3],nibbles:[1,2],hint:'Silver with a yellow belly and fins, and the best eating fish on the pier. Bumps along the sand eating sand fleas. A small hopping jig or a bit of shrimp on the bottom.'},
   {id:'hardhead',locs:['pier'],name:'Hardhead Catfish',times:['dawn','day','dusk','night'],peak:['night'],off:.9,weather:['clear','rain','fog'],band:[.75,1],lures:['shrimp','worm','liver','minnow','dough'],likes:'still',power:.35,speed:45,end:.9,bite:.85,rar:9,len:[20,45],price:4,shape:'cat',col:'#787a78',belly:'#ece9e2',mark:'none',scent:true,deep:true,school:[3,6],seas:[1,1.2,1,.4],nibbles:[1,2],hint:'The pier pest. Gangs of them steal bait off the bottom, they croak when you land them, and their spines sting. Nobody wants one, but they bite all day.'},
+  // Kaʻū coast, Hawaiʻi Island. Sizes from FishBase and the Hawaiʻi state records (Hawaii Fishing News); habits from DAR and local shore-fishing practice.
+  {id:'ulua',locs:['kau'],name:'Ulua',en:'Giant Trevally',times:['dawn','dusk','night'],peak:['night','dusk'],off:.75,weather:['clear','rain','fog'],band:[.35,1],rest:[.6,1],lures:['tako','livebait','cutbait','popper','minnow','jerk','swim'],likes:'still',power:1.3,speed:130,end:3.2,bite:.3,rar:3,len:[40,115],price:150,shape:'ulua',col:'#7a8590',belly:'#eceeec',mark:'none',school:[1,2],seas:[1,1.1,1.1,.9],nibbles:[1,1],runs:1.9,hint:'Giant trevally. The fish Hawaiʻi’s shore casters live for. Smaller ones, under ten pounds, are called pāpio. Big ulua hunt the ledges at night, and the classic way is a whole octopus (tako) on a slide-bait rig, left to soak with a bell on the rod. When one takes it, it bolts for the rocks to cut you off. At dawn and dusk they’ll smash a popper.'},
+  {id:'omilu',locs:['kau'],name:'ʻŌmilu',en:'Bluefin Trevally',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[0,.7],lures:['popper','minnow','jerk','jig','spoon','swim','livebait','shrimp','fly'],likes:'move',power:.8,speed:120,end:1.6,bite:.5,rar:6,len:[30,72],price:40,shape:'omilu',col:'#8a9a8e',belly:'#eef0ee',mark:'none',school:[2,5],seas:[1,1.1,1,.9],nibbles:[1,1],runs:1.4,hint:'Bluefin trevally. Brassy and blue-spotted, with fins of electric blue. Hunts the edges of the reef in small packs by day and comes to anything shiny and fast. Whip a lure along the ledge at first light.'},
+  {id:'oio',locs:['kau'],name:'ʻŌʻio',en:'Bonefish',times:['dawn','day','dusk','night'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.88,1],lures:['shrimp','tako','cutbait','jig','grub','fly'],likes:'still',power:.9,speed:140,end:1.5,bite:.38,rar:5,len:[40,70],price:55,shape:'oio',col:'#b0bcc0',belly:'#f6f8f8',mark:'none',school:[1,3],seas:[1,1,1,1],wary:true,nibbles:[1,2],runs:2.1,hint:'Bonefish. A silver ghost of the sand channels, rooting in the sand for crabs and shrimp with its pointed snout. Very spooky. Leave a bait still on the sand and wait; when it runs, it runs farther and faster than anything its size.'},
+  {id:'moi',locs:['kau'],name:'Moi',en:'Pacific Threadfin',times:['dawn','dusk','night'],peak:['dawn'],off:.7,weather:['clear','rain','fog'],band:[.6,1],lures:['shrimp','cutbait','grub','jig','fly'],likes:'still',power:.55,speed:85,end:1.1,bite:.5,rar:6,len:[25,48],price:45,shape:'moi',col:'#9aa4aa',belly:'#f2f4f4',mark:'none',school:[3,6],seas:[1,1.2,1,.9],closed:[1],nibbles:[1,2],hint:'Pacific threadfin. Once kept for Hawaiian royalty. Schools roam the white water over sand at dawn, feeling for food with the six threads under each fin. Shrimp on the bottom. The season is closed June to August while they spawn, so any you catch then go back.'},
+  {id:'aholehole',locs:['kau'],name:'Āholehole',en:'Hawaiian Flagtail',times:['dusk','night','dawn'],peak:['night'],off:.6,weather:['clear','rain','fog'],band:[.15,.8],lures:['shrimp','fly','nymph','grub','jig','cutbait'],likes:'twitch',power:.3,speed:75,end:.7,bite:.6,rar:8,len:[14,25],price:10,shape:'aholehole',col:'#b8c4c0',belly:'#f4f6f4',mark:'none',school:[4,8],seas:[1.1,.9,1,1.1],nibbles:[1,3],hint:'Hawaiian flagtail. A bright silver schooling fish with big eyes, found only in Hawaiʻi. Hides in the surge holes by day and comes out at night. A small fly or a bit of shrimp twitched near the rocks. Ulua love them as live bait.'},
+  {id:'menpachi',locs:['kau'],name:'Menpachi',en:'Bigscale Soldierfish',times:['dusk','night'],peak:['night'],off:.5,weather:['clear','rain','fog'],band:[.5,1],rest:[.75,1],lures:['shrimp','fly','nymph','grub','cutbait'],likes:'still',power:.25,speed:60,end:.6,bite:.6,rar:7,len:[15,24],price:12,shape:'menpachi',col:'#c43c26',belly:'#e8a08a',mark:'none',school:[4,7],seas:[1,1,1,1],nibbles:[1,2],hint:'Bigscale soldierfish. Red, with enormous dark eyes. Packs into the lava caves by day and comes out after dark to feed. Fish a little shrimp close to the ledge at night.'},
+  {id:'kumu',locs:['kau'],name:'Kūmū',en:'Whitesaddle Goatfish',times:['dawn','day','dusk'],peak:['day'],off:.75,weather:['clear','rain','fog'],band:[.9,1],lures:['shrimp','tako','cutbait','grub'],likes:'still',power:.45,speed:70,end:1,bite:.45,rar:5,len:[22,40],price:45,shape:'kumu',col:'#c0506a',belly:'#f0c4b8',mark:'none',school:[1,3],seas:[1.1,1,1,1],nibbles:[2,3],hint:'Whitesaddle goatfish. Rosy red with a white saddle by the tail, and two long barbels under the chin that it drags through the sand to find food. Found only in Hawaiʻi, and prized for the table. Shrimp or a bit of tako on the sand next to the reef.'},
+  {id:'roi',locs:['kau'],name:'Roi',en:'Peacock Grouper',times:['dawn','day','dusk'],peak:['dawn','dusk'],off:.8,weather:['clear','rain','fog'],band:[.55,1],rest:[.75,1],lures:['minnow','shrimp','cutbait','livebait','jig','grub','plastic','swim','tako'],likes:'move',power:.6,speed:80,end:1.1,bite:.7,rar:8,len:[22,45],price:4,shape:'roi',col:'#4a382c',belly:'#74604f',mark:'none',ambush:true,school:[1,2],seas:[1,1,1,1],nibbles:[1,1],hint:'Peacock grouper. Brown and covered in tiny blue spots. Brought here from Moʻorea in 1956 to help the fishing, it became the reef’s top predator instead, eating the native fish. Hits almost anything near the rocks. Hardly anyone eats them (they can carry ciguatera), but taking them helps the reef.'},
+  {id:'taape',locs:['kau'],name:'Taʻape',en:'Bluestripe Snapper',times:['day','dusk','night'],peak:['dusk'],off:.8,weather:['clear','rain','fog'],band:[.4,.95],lures:['shrimp','cutbait','jig','grub','tako'],likes:'still',power:.3,speed:70,end:.7,bite:.8,rar:9,len:[18,32],price:3,shape:'taape',col:'#e8c032',belly:'#f4eed0',mark:'none',school:[5,9],seas:[1,1,1,1],nibbles:[2,4],hint:'Bluestripe snapper. Yellow with four blue stripes, in big schools over the reef. Brought to Hawaiʻi in 1958, it crowds out native snappers. A bait thief: it picks at shrimp till the hook is bare. Fine as cut bait for ulua.'},
+  {id:'kaugiant',locs:['kau'],name:'The Kaʻū Giant',en:'Giant trevally',times:['night'],peak:['night'],weather:['clear','rain','fog'],band:[.6,1],rest:[.8,1],lures:['tako','livebait'],likes:'still',power:1.55,speed:140,end:4.2,bite:.22,rar:.35,len:[135,165],price:600,shape:'ulua',col:'#3a4046',belly:'#c8ccca',mark:'none',legend:true,legendName:'A hundred-pound ulua!',school:[1,1],seas:[1,1,1,1],nibbles:[1,1],runs:2.2,hint:'An old male ulua gone nearly black, as long as a man is tall, said to hunt the ledges below the point on dark nights. Shore anglers wait years for a hundred-pounder. A whole tako soaked overnight, and the heaviest tackle you own.'},
   // Boyoma Falls, the Congo at Kisangani
   {id:'shad',locs:['river','bayou'],name:'Gizzard Shad',times:['dawn','day','dusk','night'],peak:['dawn','dusk'],off:.85,weather:['clear','rain','fog'],band:[0,.55],rest:[.3,.7],lures:[],netOnly:true,likes:'move',power:.2,speed:85,end:.4,bite:.3,rar:9,len:[8,32],price:1,shape:'shad',col:'#3e6274',belly:'#f2f4f2',mark:'none',school:[6,10],seas:[1,1,1.2,.8],nibbles:[1,1],hint:'A deep-bodied river herring with a dark shoulder spot and a long trailing ray on its back fin. It strains plankton and never takes a hook, so you need a cast net. Flatheads, blue cats, stripers and gar all eat them.'},
   {id:'pinfish',locs:['pier'],name:'Pinfish',times:['dawn','day','dusk'],peak:['day'],off:.8,weather:['clear','rain','fog'],band:[.4,1],rest:[.6,1],lures:['shrimp','worm','cricket'],likes:'still',power:.15,speed:60,end:.4,bite:.9,rar:10,len:[10,25],price:1,shape:'pinfish',col:'#56686c',belly:'#eeeee6',mark:'none',school:[3,6],seas:[1,1.2,1,.5],nibbles:[2,4],hint:'A little silver porgy with yellow and blue stripes and a black spot behind its gills. Gangs of them peck the bait off your hook around the pilings. Redfish, trout, flounder and tarpon love them alive.'},
@@ -1545,7 +1563,7 @@ const SPECIES=[
 ];
 LURES.worm.bait=true;
 const LHOOK={dryfly:0,popbug:0,nymph:0,bugger:1,ghost:1,spinner:1,spoon:1,popper:1,crank:1,jig:1,fly:1,frog:2,mouse:2,plastic:2,spinnerbait:2,buzz:2,jerk:1,lipless:1,grub:1,cjig:0,swim:2,prop:2};
-const SHORT={dryfly:'Dry Fly',popbug:'Pop Bug',nymph:'Nymph',bugger:'Bugger',ghost:'Grey Ghost',mouse:'Mouse',cricket:'Crickets',minnow:'Minnow',liver:'Liver',dough:'Dough',corn:'Corn',roe:'Roe',shrimp:'Shrimp',worm:'Worm',spinner:'Spinner',spoon:'Spoon',popper:'Popper',crank:'Crankbait',jig:'Jig',fly:'Moth Fly',frog:'Frog',plastic:'Plastic Worm',spinnerbait:'Spinnerbait',buzz:'Buzzbait',jerk:'Jerkbait',lipless:'Rattlebait',grub:'Grub',cjig:'Crappie Jig',swim:'Swimbait',prop:'Prop Bait'};for(const k in SHORT)LURES[k].short=SHORT[k];
+const SHORT={dryfly:'Dry Fly',popbug:'Pop Bug',nymph:'Nymph',bugger:'Bugger',ghost:'Grey Ghost',mouse:'Mouse',cricket:'Crickets',minnow:'Minnow',liver:'Liver',dough:'Dough',corn:'Corn',roe:'Roe',shrimp:'Shrimp',tako:'Tako',worm:'Worm',spinner:'Spinner',spoon:'Spoon',popper:'Popper',crank:'Crankbait',jig:'Jig',fly:'Moth Fly',frog:'Frog',plastic:'Plastic Worm',spinnerbait:'Spinnerbait',buzz:'Buzzbait',jerk:'Jerkbait',lipless:'Rattlebait',grub:'Grub',cjig:'Crappie Jig',swim:'Swimbait',prop:'Prop Bait'};for(const k in SHORT)LURES[k].short=SHORT[k];
 const CKEYS=['natural','bright','dark'];
 const CINFO={natural:'Clear daylight',bright:'Rain & fog',dark:'Dusk & night'};
 const PAL={dryfly:[['Caddis','#c9a46a'],['Royal Wulff','#d8463a'],['Black Gnat','#2e2a26']],popbug:[['Yellow','#e8d03a'],['Chartreuse','#c8e83a'],['Black','#2e2a26']],
@@ -1560,7 +1578,7 @@ const PAL={dryfly:[['Caddis','#c9a46a'],['Royal Wulff','#d8463a'],['Black Gnat',
   cjig:[['White','#f4f0e6'],['Pink','#f08ab0'],['Black','#2e2e36']],swim:[['Shad','#9fb4b8'],['Firetiger','#f08a1e'],['Black','#2e2e36']],
   prop:[['Bone','#e8dcc0'],['Firetiger','#f08a1e'],['Black','#2e2e36']]};
 const SIZES={small:{name:'Small',tag:'Panfish',hook:-1,sink:.8,draw:.8,mouth:[1.4,1,.65],dive:45},reg:{name:'Regular',tag:'All-round',hook:0,sink:1,draw:1,mouth:[1,1,1],dive:70},large:{name:'Large',tag:'Big fish',hook:1,sink:1.2,draw:1.3,mouth:[.45,.9,1.4],dive:100}};for(const k in LHOOK)LURES[k].hook=LHOOK[k];
-const MOUTH={shad:0,pinfish:0,mullet:0,sprat:0,butterflyfish:0,redbreast:0,distichodus:0,nembwe:2,africanpike:2,tigerfish:2,nileperch:2,vundu:2,goliath:2,piranha:1,peacock:2,arowana:2,pacu:1,oscar:1,redtail:2,arapaima:2,walleye:2,pike:2,whitebass:1,drum:1,tigermuskie:2,flathead:2,smallmouth:2,brook:1,brown:1,rockbass:1,fallfish:1,chub:0,sucker:0,undercut:2,brownbull:1,blackbull:1,pumpkinseed:0,crappie:1,pickerel:2,bowfin:2,bluegill:0,perch:0,trout:1,carp:1,eel:1,koi:1,bass:2,catfish:2,mossback:2,spottedgar:1,alligatorgar:2,warmouth:1,redear:0,flier:0,bluecat:2,cutthroat:1,grayling:0,golden:0,whitefish:0,laketrout:2,mackinaw:2,redfish:2,seatrout:1,sheepshead:0,flounder:2,mackerel:1,pompano:0,hardhead:1,tarpon:2,chinook:2,sockeye:1,coho:1,pink:1,dolly:1,kenaiking:2};SPECIES.forEach(s=>s.mouth=MOUTH[s.id]);
+const MOUTH={ulua:2,kaugiant:2,omilu:2,oio:0,moi:1,aholehole:0,menpachi:1,kumu:0,roi:2,taape:1,shad:0,pinfish:0,mullet:0,sprat:0,butterflyfish:0,redbreast:0,distichodus:0,nembwe:2,africanpike:2,tigerfish:2,nileperch:2,vundu:2,goliath:2,piranha:1,peacock:2,arowana:2,pacu:1,oscar:1,redtail:2,arapaima:2,walleye:2,pike:2,whitebass:1,drum:1,tigermuskie:2,flathead:2,smallmouth:2,brook:1,brown:1,rockbass:1,fallfish:1,chub:0,sucker:0,undercut:2,brownbull:1,blackbull:1,pumpkinseed:0,crappie:1,pickerel:2,bowfin:2,bluegill:0,perch:0,trout:1,carp:1,eel:1,koi:1,bass:2,catfish:2,mossback:2,spottedgar:1,alligatorgar:2,warmouth:1,redear:0,flier:0,bluecat:2,cutthroat:1,grayling:0,golden:0,whitefish:0,laketrout:2,mackinaw:2,redfish:2,seatrout:1,sheepshead:0,flounder:2,mackerel:1,pompano:0,hardhead:1,tarpon:2,chinook:2,sockeye:1,coho:1,pink:1,dolly:1,kenaiking:2};SPECIES.forEach(s=>s.mouth=MOUTH[s.id]);
 // North Lake. Weights: herring and mackerel from the usual length-weight curves, cod about 5 kg at
 // 80 cm, bluefin from the western Atlantic curve (about 300 kg at 250 cm). Bluefin are catch-and-release on the charter
 // tuna rod only; the chum slick brings them up (tunaDraw).
@@ -1593,7 +1611,7 @@ function effLuck(){return Math.min(.7,(S.luck||0)+(gearOn('whistle')?.08:0));}
 Object.assign(BAITPULL.minnow,{walleye:1.6,pike:1.5,whitebass:1.3,drum:1.2,tigermuskie:1.4,flathead:2.2});
 Object.assign(BAITPULL.minnow,{peacock:1.6,arapaima:1.8,redtail:1.4});Object.assign(BAITPULL.liver,{piranha:1.8,redtail:1.8});Object.assign(BAITPULL.corn,{pacu:2});Object.assign(BAITPULL.dough,{pacu:1.8});
 Object.assign(BAITPULL.cricket,{arowana:1.5,oscar:1.4});
-BAITPULL.shrimp={redfish:2,seatrout:2.2,sheepshead:2.4,flounder:1.6,pompano:1.8,hardhead:1.8,tarpon:1.3,mackerel:1.1,spottedgar:1.1,bluecat:1.2};BAITPULL.worm={sheepshead:.6,pompano:.6,redear:1.4};
+BAITPULL.tako={ulua:2.2,kaugiant:2.6,oio:1.4,kumu:1.6,roi:1.2,taape:.7};BAITPULL.shrimp={moi:1.8,oio:1.6,kumu:1.6,aholehole:1.4,menpachi:1.6,taape:1.5,redfish:2,seatrout:2.2,sheepshead:2.4,flounder:1.6,pompano:1.8,hardhead:1.8,tarpon:1.3,mackerel:1.1,spottedgar:1.1,bluecat:1.2};BAITPULL.worm={sheepshead:.6,pompano:.6,redear:1.4};
 Object.assign(BAITPULL.cricket,{flier:1.6,warmouth:1.3,redear:1.2,cutthroat:1.4,grayling:1.4,golden:1.6,whitefish:1.2});Object.assign(BAITPULL.minnow,{spottedgar:1.6,alligatorgar:2,warmouth:1.4,bluecat:1.3,laketrout:1.6,mackinaw:2,redfish:1.4,seatrout:1.6,flounder:1.8,tarpon:1.8,cutthroat:1.2});Object.assign(BAITPULL.liver,{bluecat:2,hardhead:1.4});
 Object.assign(BAITPULL.cricket,{brook:1.5,rockbass:1.3,fallfish:1.2,chub:1.2});Object.assign(BAITPULL.minnow,{smallmouth:1.6,brown:1.5,rockbass:1.3});Object.assign(BAITPULL.corn,{fallfish:1.3,chub:1.3,sucker:1.2});Object.assign(BAITPULL.dough,{sucker:1.4,chub:1.2});
 function lureAppeal(sp,f){const lu=LURES[S.lure];if(lu.sea)return seaAppeal(sp);
@@ -1602,7 +1620,7 @@ function lureAppeal(sp,f){const lu=LURES[S.lure];if(lu.sea)return seaAppeal(sp);
     if(o&&f&&o.len>f.len*.35)m*=Math.max(.04,Math.pow(f.len*.35/o.len,3));return m;}
   if(S.lure==='cutbait'){const src=BK().cs;return(CUTPULL[sp.id]||1)*(OILY[src]?1.3:1);}
   if(lu.bait)return(BAITPULL[S.lure]&&BAITPULL[S.lure][sp.id])||1;const v=lureVar();return(v.color===condPref()?1.5:.8)*SIZES[v.size].mouth[sp.mouth];}
-const TROPHY={shad:[26,29,32],pinfish:[20,23,25],mullet:[36,41,45],bluegill:[18,21,24],pumpkinseed:[15,18,21],perch:[22,27,32],crappie:[25,30,34],bass:[40,50,58],trout:[38,46,52],catfish:[55,68,78],pickerel:[48,56,63],carp:[65,78,88],eel:[70,85,96],bowfin:[65,75,85],brownbull:[30,34,38],blackbull:[25,28,31],smallmouth:[30,40,48],brook:[20,26,31],brown:[38,48,56],rockbass:[18,22,25],fallfish:[25,32,37],chub:[15,19,23],sucker:[33,40,46],undercut:[72,78,83],walleye:[50,61,68],pike:[70,85,97],whitebass:[33,38,42],drum:[45,55,63],tigermuskie:[100,110,120],flathead:[95,105,115],piranha:[22,26,30],peacock:[45,55,63],arowana:[65,75,84],pacu:[45,55,61],oscar:[24,29,33],redtail:[75,90,102],arapaima:[153,179,200],spottedgar:[70,79,85],alligatorgar:[190,212,230],warmouth:[20,24,27],redear:[24,27,29],flier:[15,17,19],bluecat:[80,95,105],cutthroat:[40,47,52],grayling:[36,40,43],golden:[32,38,42],whitefish:[38,44,48],laketrout:[65,76,84],mackinaw:[110,117,122],redfish:[70,82,90],seatrout:[50,57,63],sheepshead:[45,52,57],flounder:[48,56,62],mackerel:[55,62,67],pompano:[38,44,48],hardhead:[34,39,42],tarpon:[170,190,203]};
+const TROPHY={ulua:[83,98,108],kaugiant:[148,156,161],omilu:[52,61,68],oio:[50,60,66],moi:[35,41,45],aholehole:[18,21,24],menpachi:[17,20,23],kumu:[29,34,38],roi:[32,38,42],taape:[23,27,30],shad:[26,29,32],pinfish:[20,23,25],mullet:[36,41,45],bluegill:[18,21,24],pumpkinseed:[15,18,21],perch:[22,27,32],crappie:[25,30,34],bass:[40,50,58],trout:[38,46,52],catfish:[55,68,78],pickerel:[48,56,63],carp:[65,78,88],eel:[70,85,96],bowfin:[65,75,85],brownbull:[30,34,38],blackbull:[25,28,31],smallmouth:[30,40,48],brook:[20,26,31],brown:[38,48,56],rockbass:[18,22,25],fallfish:[25,32,37],chub:[15,19,23],sucker:[33,40,46],undercut:[72,78,83],walleye:[50,61,68],pike:[70,85,97],whitebass:[33,38,42],drum:[45,55,63],tigermuskie:[100,110,120],flathead:[95,105,115],piranha:[22,26,30],peacock:[45,55,63],arowana:[65,75,84],pacu:[45,55,61],oscar:[24,29,33],redtail:[75,90,102],arapaima:[153,179,200],spottedgar:[70,79,85],alligatorgar:[190,212,230],warmouth:[20,24,27],redear:[24,27,29],flier:[15,17,19],bluecat:[80,95,105],cutthroat:[40,47,52],grayling:[36,40,43],golden:[32,38,42],whitefish:[38,44,48],laketrout:[65,76,84],mackinaw:[110,117,122],redfish:[70,82,90],seatrout:[50,57,63],sheepshead:[45,52,57],flounder:[48,56,62],mackerel:[55,62,67],pompano:[38,44,48],hardhead:[34,39,42],tarpon:[170,190,203]};
 // Boyoma Falls shipped without trophy sizes, which crashed the Log on its tab. Set the way the others are: bronze about
 // 72%, silver 85% and gold 94% of the biggest the species gets.
 Object.assign(TROPHY,{sprat:[7,8,9],butterflyfish:[9,11,12],redbreast:[29,34,38],distichodus:[50,59,66],nembwe:[36,42,47],africanpike:[40,47,52],tigerfish:[65,76,85],nileperch:[124,145,162],vundu:[94,110,123],goliath:[107,118,125]});
@@ -1611,12 +1629,16 @@ Object.assign(TROPHY,{herring:[31,34,37],atlmackerel:[37,41,44],cod:[90,105,115]
 Object.assign(TROPHY,{chinook:[86,102,113],sockeye:[52,61,68],coho:[61,72,80],pink:[45,53,58],dolly:[50,60,66],kenaiking:[135,141,146]});
 // Roe: salmon, trout and char go for it; nothing else much cares
 BAITPULL.roe={chinook:2,kenaiking:2,coho:1.5,sockeye:1.6,pink:1.2,dolly:2.2,trout:1.8,grayling:1.2,brown:1.3,brook:1.4,cutthroat:1.3};
+// Kaʻū: IGFA all-tackle records through the weight formula for giant trevally 72.8 kg, bluefin trevally 13.24 kg,
+// bonefish 8.61 kg, bluestripe snapper 0.68 kg (the legend shares the giant trevally's record). Moi: FishBase's
+// heaviest published, 3.2 kg. Peacock grouper: its IGFA record (1.10 kg) is far under its known size, so FishBase's
+// 60 cm, 3.5 kg. Āholehole 27 cm (22.2 cm SL), menpachi 31 cm, kūmū 51 cm: FishBase maximum lengths, no IGFA weight.
 // Size ceilings: the length at which the game's weight formula gives the IGFA all-tackle world record for the species
 // (records checked Nov 2026). Everyday fish stay inside sp.len; about 1 in 60 (up to 1 in 40 with a big reputation)
 // lands above the old top, and the bigger it is the rarer, approaching the record without reaching it, so catches
 // no longer pile up tied at one maximum. Species with no IGFA weight record keep sp.len[1] as their top.
 // every species now has a rare trophy range above its usual size, so no leaderboard tops out at a hard cap
-const SIZE_CEIL={bluegill:44.8,pumpkinseed:30.5,perch:52.7,crappie:54.8,bass:87.6,trout:125.6,catfish:138,pickerel:89.2,carp:129,brownbull:63.6,blackbull:65.7,bowfin:93.3,smallmouth:71.2,brook:84.2,brown:122.3,rockbass:38.4,fallfish:55.1,sucker:64.5,walleye:99.5,pike:160.9,whitebass:59.1,drum:115.6,tigermuskie:157,peacock:94.3,pacu:110.5,redtail:177.6,arapaima:234.1,spottedgar:97.1,warmouth:35.8,redear:49.1,flier:34.1,bluecat:186.5,alligatorgar:277.6,cutthroat:119.1,grayling:62.6,golden:76.8,laketrout:143.7,redfish:157.2,seatrout:89.6,sheepshead:73.8,flounder:89.5,mackerel:86.9,pompano:63,hardhead:64.4,tigerfish:110.2,nileperch:188.8,vundu:143.5,goliath:144.8,tarpon:227.8,herring:48.4,atlmackerel:56.1,cod:168.6,dogfish:104.8,bluefin:325.9,eel:125,chub:30.5,piranha:41,arowana:100,oscar:45,whitefish:65,chinook:135,sockeye:84,coho:102,pink:76,dolly:95,kenaiking:152,mackinaw:132,undercut:95,flathead:140,shad:52,pinfish:33,mullet:70,sprat:13,butterflyfish:15,redbreast:46,distichodus:80,nembwe:60,africanpike:68,blackbass:105};
+const SIZE_CEIL={ulua:167.6,kaugiant:167.6,omilu:96.4,oio:89.5,moi:62.7,aholehole:27,menpachi:31,kumu:51,roi:60,taape:37.2,bluegill:44.8,pumpkinseed:30.5,perch:52.7,crappie:54.8,bass:87.6,trout:125.6,catfish:138,pickerel:89.2,carp:129,brownbull:63.6,blackbull:65.7,bowfin:93.3,smallmouth:71.2,brook:84.2,brown:122.3,rockbass:38.4,fallfish:55.1,sucker:64.5,walleye:99.5,pike:160.9,whitebass:59.1,drum:115.6,tigermuskie:157,peacock:94.3,pacu:110.5,redtail:177.6,arapaima:234.1,spottedgar:97.1,warmouth:35.8,redear:49.1,flier:34.1,bluecat:186.5,alligatorgar:277.6,cutthroat:119.1,grayling:62.6,golden:76.8,laketrout:143.7,redfish:157.2,seatrout:89.6,sheepshead:73.8,flounder:89.5,mackerel:86.9,pompano:63,hardhead:64.4,tigerfish:110.2,nileperch:188.8,vundu:143.5,goliath:144.8,tarpon:227.8,herring:48.4,atlmackerel:56.1,cod:168.6,dogfish:104.8,bluefin:325.9,eel:125,chub:30.5,piranha:41,arowana:100,oscar:45,whitefish:65,chinook:135,sockeye:84,coho:102,pink:76,dolly:95,kenaiking:152,mackinaw:132,undercut:95,flathead:140,shad:52,pinfish:33,mullet:70,sprat:13,butterflyfish:15,redbreast:46,distichodus:80,nembwe:60,africanpike:68,blackbass:105};
 // IGFA all-tackle records through the long-body weight formula: king 44.1 kg, coho 15.2, sockeye 6.9, pink 6.7, Dolly Varden 9.5
 Object.assign(SIZE_CEIL,{chinook:158.8,coho:111.3,sockeye:85.5,pink:84.8,dolly:95.1});
 function ceilOf(sp){return Math.max(sp.len[1],SIZE_CEIL[sp.id]||0);}
@@ -1665,10 +1687,10 @@ function BK(){const b=S.bait||(S.bait={});b.live=b.live||[];b.dead=b.dead||[];b.
 function bucketCount(){const b=BK();return b.live.length+b.dead.length;}
 // Kept legal: only fish that anglers may use as bait. Game fish (trout, bass, crappie, perch, walleye, pike and the like) go back
 // or to the cooler. Live bait is panfish and forage fish; cut bait adds rough and saltwater bait fish.
-const LIVE_OK=new Set(['bluegill','pumpkinseed','redear','warmouth','flier','chub','fallfish','sucker','shad','pinfish','mullet','sprat','butterflyfish','redbreast','piranha','oscar']);
+const LIVE_OK=new Set(['aholehole','taape','bluegill','pumpkinseed','redear','warmouth','flier','chub','fallfish','sucker','shad','pinfish','mullet','sprat','butterflyfish','redbreast','piranha','oscar']);
 // Cast nets are for non-game baitfish only; sunfish and game fish that come up in one go back.
 const NET_OK=new Set(['shad','mullet','pinfish','sucker','sprat','butterflyfish','redbreast']);
-const CUT_OK=new Set([...LIVE_OK,'carp','drum','hardhead','mackerel','pacu','distichodus']);
+const CUT_OK=new Set([...LIVE_OK,'roi','carp','drum','hardhead','mackerel','pacu','distichodus']);
 // A catch can go in the bucket if it's a legal baitfish small enough to fish live.
 function baitSized(sp,len){return LIVE_OK.has(sp.id)&&!sp.legend&&len<=20;}
 function cutStrips(kg){return clamp(1+Math.floor(kg*2.2046*3),1,8);}
@@ -1785,7 +1807,7 @@ function drawGroundCached(c,cam,dk){
   const camY=G.camY||0,key=[S.loc,W,H,SC,DPR,S.weather,S.yday,Math.round(dk*250),!!GPAT,stones.length,rocks.length,roots.length].join('|');
   // At sea the picture slides with the boat's movement (G.seaX) and is only redrawn when it runs out.
   const sh=GC.cv?(G.seaX||0)-(GC.sx||0):0;
-  if(!GC.cv||GC.key!==key||cam-8<GC.x0-sh||cam+W+8>GC.x1-sh||H+camY+14>GC.y1){
+  if(!GC.cv||GC.key!==key||KAUTILES.dirty||cam-8<GC.x0-sh||cam+W+8>GC.x1-sh||H+camY+14>GC.y1){
     const M=Math.round(W*.35),x0=Math.floor((cam-M)/4)*4-8,x1=cam+W+M,y0=SURF-14,y1=H+camY+14+Math.round(H*.4),k=SC*DPR;
     if(!GC.cv)GC.cv=document.createElement('canvas');const pw=Math.ceil((x1-x0)*k),ph=Math.ceil((y1-y0)*k);
     if(GC.cv.width!==pw||GC.cv.height!==ph){GC.cv.width=pw;GC.cv.height=ph;}
@@ -1800,11 +1822,11 @@ function drawGround(c,cam,dk,vx0,vx1){
   if(GPAT&&LOC().ocean)try{GPAT.setTransform(new DOMMatrix().translate(-(((G.seaX||0)%160)+160)%160,0).scale(.5));}catch(e){}
   c.save();path();c.fillStyle=GPAT||'#5b4933';c.fill();c.clip();
   if(GPAT&&LOC().ocean)try{GPAT.setTransform(new DOMMatrix().scale(.5));}catch(e){}
-  {const Lg=LOC();if(Lg.salt||Lg.ocean||Lg.alpine||Lg.alaska||Lg.cypress){c.fillStyle=Lg.salt?'rgba(200,180,132,.72)':Lg.ocean?'rgba(132,122,102,.66)':Lg.alpine?'rgba(122,126,126,.6)':Lg.alaska?'rgba(138,136,126,.74)':'rgba(30,24,14,.45)';c.fillRect(x0,SURF,x1-x0,H-SURF+(G.camY||0)+14);
+  {const Lg=LOC();if(Lg.salt||Lg.ocean||Lg.alpine||Lg.alaska||Lg.cypress){c.fillStyle=Lg.kau?'rgba(52,54,60,.9)':Lg.salt?'rgba(200,180,132,.72)':Lg.ocean?'rgba(132,122,102,.66)':Lg.alpine?'rgba(122,126,126,.6)':Lg.alaska?'rgba(138,136,126,.74)':'rgba(30,24,14,.45)';c.fillRect(x0,SURF,x1-x0,H-SURF+(G.camY||0)+14);
     // Open sea: cold grey-brown sand and fine gravel with shell grit, rippled by the bottom current.
     if(Lg.ocean){const sx=G.seaX||0,ox=((sx%11)+11)%11;c.strokeStyle='rgba(84,76,62,.4)';c.lineWidth=.8;c.beginPath();for(let x=Math.floor(x0/11)*11-ox;x<x1;x+=11){const b=bottomAt(x);c.moveTo(x,b+3);c.quadraticCurveTo(x+3.5,b+1.4,x+7,b+3);}c.stroke();
       for(let n=Math.floor((x0+sx)/7);n*7<x1+sx;n++){const v=vnoise(n+.5,4111);if(v>.42)continue;const x=n*7-sx+v*9,b=bottomAt(x),k=(n%6+6)%6;c.fillStyle=k%3?'rgba(70,66,58,.55)':'rgba(214,206,186,.45)';c.beginPath();c.ellipse(x,b+4+k*3.2,1+(k%4)*.5,.7+(k%3)*.3,n,0,TAU);c.fill();}}
-    if(Lg.salt){c.strokeStyle='rgba(120,100,64,.35)';c.lineWidth=.8;c.beginPath();for(let x=Math.floor(x0/9)*9;x<x1;x+=9){const b=bottomAt(x);c.moveTo(x,b+3);c.quadraticCurveTo(x+3,b+1,x+6,b+3);}c.stroke();
+    if(Lg.salt&&!Lg.kau){c.strokeStyle='rgba(120,100,64,.35)';c.lineWidth=.8;c.beginPath();for(let x=Math.floor(x0/9)*9;x<x1;x+=9){const b=bottomAt(x);c.moveTo(x,b+3);c.quadraticCurveTo(x+3,b+1,x+6,b+3);}c.stroke();
       c.fillStyle='rgba(250,245,230,.45)';for(let i=0;i<60;i++){const x=x0+((i*61.7)%(x1-x0)),b=bottomAt(x);c.beginPath();c.ellipse(x,b+4+(i%5)*3,1.2,.7,i,0,TAU);c.fill();}}
     // Kenai: a bed of rounded glacial cobble and gravel in greys, olive and rust, densest on the surface of the bottom;
     // in fall, paler patches of freshly turned gravel where salmon have dug their redds in the shallower tailouts.
@@ -1828,18 +1850,19 @@ function drawGround(c,cam,dk,vx0,vx1){
   if(dk>.01){c.fillStyle=`rgba(3,7,16,${dk*.55})`;c.fillRect(x0,SURF,x1-x0,H-SURF+(G.camY||0)+14);}
   c.restore();
   // silt layer along the top (glacial grey on the Kenai)
-  c.lineJoin='round';c.lineCap='round';const ak=LOC().alaska;
-  c.strokeStyle=rgbStr(mix(ak?'#8c8a80':'#8a7a56','#1f1c15',dk*.8),.95);c.lineWidth=5;c.beginPath();for(let x=x0;x<=x1;x+=4){const y=bottomAt(x)+2;x===x0?c.moveTo(x,y):c.lineTo(x,y);}c.stroke();
-  c.strokeStyle=rgbStr(mix(ak?'#b0aea2':'#b4a37a','#2a261c',dk*.8),.8);c.lineWidth=1.4;c.beginPath();for(let x=x0;x<=x1;x+=4){const y=bottomAt(x)+.3;x===x0?c.moveTo(x,y):c.lineTo(x,y);}c.stroke();
+  c.lineJoin='round';c.lineCap='round';const ak=LOC().alaska,kau=LOC().kau;
+  c.strokeStyle=rgbStr(mix(kau?'#2a2a2e':ak?'#8c8a80':'#8a7a56','#1f1c15',dk*.8),.95);c.lineWidth=5;c.beginPath();for(let x=x0;x<=x1;x+=4){const y=bottomAt(x)+2;x===x0?c.moveTo(x,y):c.lineTo(x,y);}c.stroke();
+  c.strokeStyle=rgbStr(mix(kau?'#55565c':ak?'#b0aea2':'#b4a37a','#2a261c',dk*.8),.8);c.lineWidth=1.4;c.beginPath();for(let x=x0;x<=x1;x+=4){const y=bottomAt(x)+.3;x===x0?c.moveTo(x,y):c.lineTo(x,y);}c.stroke();
   c.strokeStyle=rgbStr(mix('#3a2e1e','#0e0b07',dk*.8),.55);c.lineWidth=1;c.beginPath();for(let x=x0;x<=x1;x+=4){const y=bottomAt(x)+5;x===x0?c.moveTo(x,y):c.lineTo(x,y);}c.stroke();
   // Kenai: a solid layer of rounded cobble on the surface of the bottom, sitting up into the water
   if(ak){const hsx=n=>{const v=Math.sin(n*127.1)*43758.5453;return v-Math.floor(v);},tones=['#807e76','#686864','#928c7e','#606456','#846e56','#a09c92','#545654'];
     for(let n=Math.floor(x0/2.6);n*2.6<x1;n++){const x=n*2.6+hsx(n)*2.6,b=bottomAt(x),h=hsx(n*7),rr=1.4+h*h*4.6,lift=rr*(.25+hsx(n*9)*.35),cy=b+rr*.75-lift;
       c.fillStyle=rgbStr(mix(tones[Math.floor(hsx(n*5+3)*tones.length)],'#0e1214',dk*.8));c.beginPath();c.ellipse(x,cy,rr*1.35,rr*.9,(h-.5)*.6,0,TAU);c.fill();
       c.fillStyle=`rgba(255,252,240,${.3*(1-dk*.8)})`;c.beginPath();c.ellipse(x-rr*.4,cy-rr*.4,rr*.55,rr*.28,0,0,TAU);c.fill();}}
+  if(kau)drawKauReef(c,x0,x1,dk);
   // half-buried stones on the surface
   // Each one lies along the slope it rests on, so on a bank it tilts with the ground instead of jutting out level.
-  for(const st of stones){if(st.x<vx0||st.x>vx1)continue;const b=bottomAt(st.x),tone=105+st.s*60,ang=clamp(Math.atan2(bottomAt(st.x+st.r)-bottomAt(st.x-st.r),2*st.r),-1.25,1.25);
+  for(const st of stones){if(st.x<vx0||st.x>vx1)continue;if(kau&&st.x>DOCKX+24&&kauSand(st.x/TW)<.15)continue;const b=bottomAt(st.x),tone=105+st.s*60,ang=clamp(Math.atan2(bottomAt(st.x+st.r)-bottomAt(st.x-st.r),2*st.r),-1.25,1.25);
     c.save();c.translate(st.x,b);c.rotate(ang);c.translate(0,1.5);
     const sy=stoneStyle(st,dk,b);c.fillStyle=sy?sy.body:`rgb(${tone*(1-dk*.75)|0},${tone*.96*(1-dk*.75)|0},${tone*.85*(1-dk*.75)|0})`;c.beginPath();c.ellipse(0,0,st.r,st.r*.62,0,Math.PI,TAU);c.fill();
     if(sy&&sy.film){c.fillStyle=sy.film;c.beginPath();c.ellipse(0,-st.r*.42,st.r*.8,st.r*.2,0,Math.PI,TAU);c.fill();}
@@ -1851,7 +1874,9 @@ const DEPTH_WARP=2.2;
 function depthWarp(){return LOC().ocean?1.1:DEPTH_WARP;}
 function warpY(y){const D=GROUND-SURF,t=(y-SURF)/D;return t<=0||t>=1?y:SURF+D*(1-Math.pow(1-t,depthWarp()));}
 function unwarpY(y){const D=GROUND-SURF,w=(y-SURF)/D;return w<=0||w>=1?y:SURF+D*(1-Math.pow(1-w,1/depthWarp()));}
-function bottomAt(x){return warpY(rawBottomAt(x));}
+// At Kaʻū the big coral heads stand up off the lava, and fish, lures and lines treat their tops as the bottom.
+function bottomAt(x){const b=warpY(rawBottomAt(x));return typeof S!=='undefined'&&S&&S.loc==='kau'&&KAUBM?Math.min(b,kauHeadAt(x,b)):b;}
+function kauRockAt(x){return warpY(rawBottomAt(x));}
 // ---- The open sea (LOC().ocean) ----
 // The sea floor is generated from a seed instead of drawn: smooth value noise in a few sizes gives gently rolling sand
 // and gravel 95-115 ft down, with broad banks rising 20-35 ft and smaller mounds on top of them, which is where the bait
@@ -2381,14 +2406,14 @@ function drawSeaLife(c,dk,vx0,vx1){const sx=G.seaX||0,D=(col,a=1)=>rgbStr(mix(co
   if(L.seal){const k=L.seal,x=k.X-sx,u=k.t/9;if(x>vx0-20&&x<vx1+20){const up=Math.min(1,u*6,(1-u)*6),y=SURF+4-up*5;c.fillStyle=D('#4a4844');c.beginPath();c.ellipse(x,y,3.4,4.4,0,0,TAU);c.fill();
     c.beginPath();c.ellipse(x+2.6,y+.6,2.4,1.8,0,0,TAU);c.fill();c.fillStyle=D('#141414');c.beginPath();c.arc(x+1.4,y-1.2,.6,0,TAU);c.fill();}}}
 function seaBottom(x){return Math.min(GROUND,ftToY(seaBottomFt(x+(G.seaX||0))));}
-function rawBottomAt(x){const lid=(typeof S!=='undefined'&&S&&S.loc)||'pond';if(LOCS[lid]&&LOCS[lid].ocean)return seaBottom(x);if(lid==='amazon')return amazonBottom(x);if(lid==='bayou')return bayouBottom(x);if(lid==='alpine')return alpineBottom(x);if(lid==='pier')return pierBottom(x);if(lid==='congo')return congoBottom(x);if(lid==='creek')return creekBottom(x);if(lid==='lake')return lakeBottom(x);if(lid==='river')return riverBottom(x);if(lid==='kenai')return kenaiBottom(x);const u=x/TW;const ft=profFt(u,POND_PTS)+(1-nestZoneW(u))*(.5*Math.sin(u*27)+.9*Math.sin(u*9+1)*smooth(1.05,1.4,u));return Math.min(GROUND,ftToY(Math.max(1.5,ft)));}
+function rawBottomAt(x){const lid=(typeof S!=='undefined'&&S&&S.loc)||'pond';if(LOCS[lid]&&LOCS[lid].ocean)return seaBottom(x);if(lid==='amazon')return amazonBottom(x);if(lid==='bayou')return bayouBottom(x);if(lid==='alpine')return alpineBottom(x);if(lid==='pier')return pierBottom(x);if(lid==='congo')return congoBottom(x);if(lid==='creek')return creekBottom(x);if(lid==='lake')return lakeBottom(x);if(lid==='river')return riverBottom(x);if(lid==='kenai')return kenaiBottom(x);if(lid==='kau')return kauBottom(x);const u=x/TW;const ft=profFt(u,POND_PTS)+(1-nestZoneW(u))*(.5*Math.sin(u*27)+.9*Math.sin(u*9+1)*smooth(1.05,1.4,u));return Math.min(GROUND,ftToY(Math.max(1.5,ft)));}
 const POND_PTS=[[0,2.5],[.17,4.2],[.24,5],[.6,5],[.74,9],[1.06,9],[1.24,18.5],[1.5,19.5],[1.75,19],[2.05,19.5]];
 // Depth profile from control points: [u (screen widths from the bank), depth in feet]. Smooth between points
 // and level at each one, so two points at the same depth make a true flat.
 function profFt(u,pts){if(u<=pts[0][0])return pts[0][1];for(let i=0;i<pts.length-1;i++){const [a,da]=pts[i],[b,db]=pts[i+1];if(u<=b)return lerp(da,db,smooth(a,b,u));}return pts[pts.length-1][1];}
 function nestZoneW(u){let w=0;for(const z of LOC().nests||[])w=Math.max(w,smooth(z.a-.05,z.a,u)*(1-smooth(z.b,z.b+.05,u)));return w;}
 function ftToY(ft){return SURF+ft*pxPerFt();}
-function dockY(){const sh=(typeof S!=='undefined'&&S&&LOCS[S.loc])?LOCS[S.loc].shore:'';return SURF-(sh==='pier'?26:sh==='tunaboat'?10:14);}
+function dockY(){const sh=(typeof S!=='undefined'&&S&&LOCS[S.loc])?LOCS[S.loc].shore:'';return SURF-(sh==='pier'?26:sh==='tunaboat'?10:sh==='lava'?17:14);}
 const LOCS={pond:{north:-1,name:'Mossback Pond',tag:'Dockside fishing',desc:'A quiet pond with an old dock, lily pads and a weedy bottom.',seed:7,nests:[{a:.24,b:.6,d:5,ids:['pumpkinseed','bluegill']},{a:.74,b:1.06,d:9,ids:['crappie','bass']}],maxDepth:6,lv:1,shore:'dock',water:['#2f8086','#3f6f72','#0f3a40'],preview:18.3},
   creek:{north:1,tight:true,name:'Willow Creek',tag:'A rocky trout stream',desc:'A shallow stream of riffles, boulders and deep pools under a hardwood forest. The current carries your bait downstream.',seed:23,nests:[{a:.98,b:1.28,d:4,ids:['smallmouth'],rocks:true},{a:1.4,b:1.74,d:3.5,ids:['rockbass'],rocks:true}],maxDepth:2.6,lv:5,fee:250,feeName:'Trout Stamp',feeWhy:'Willow Creek is a designated trout stream, so you need a trout stamp to fish it.',current:16,shore:'boulder',rocky:true,snags:1,riffles:true,undercut:true,noPads:true,deciduous:true,water:['#4d8a7a','#5c7a6a','#2a4436'],preview:9,boulders:[.57,.75,.92,1.33,1.37,1.69,1.79],holds:[.84,1.8]},
   lake:{north:1,name:'Big Rock Lake',tag:'Open water from a rented boat',desc:'A deep, clear lake with a weedy shelf, a rocky point and a cold basin far out. Walleye, pike and the odd tiger muskie roam it.',seed:41,nests:[{a:.24,b:.6,d:6,ids:['crappie','bluegill']},{a:.76,b:1.08,d:11,ids:['smallmouth'],rocks:true}],maxDepth:9,lv:10,fee:40,feeName:'Boat Rental',perTrip:true,feeWhy:'You rent a boat at the marina each trip.',shore:'boat',noPads:true,snags:.3,water:['#2c6f8f','#4a7486','#0a2a40'],preview:7.4,boulders:[.93],holds:[.82,1.2,1.6],sunken:[1.36],deepWeeds:[[1.1,1.28],[1.6,1.84]]},
@@ -2412,7 +2437,10 @@ Object.assign(LOCS,{
   congo:{castnet:true,north:0,name:'Boyoma Falls',tag:'The Congo River at Kisangani',desc:'The Congo pours over a string of rapids on the equator. Wagenia fishermen work their basket traps in the white water, and below the rocks the river scours out deep eddies where the goliath tigerfish waits.',seed:131,maxDepth:14,
     nests:[],lv:27,fee:2500,feeName:'Congo Expedition',feeWhy:'It takes a long flight, a river boat up from Kinshasa and a local guide. A Wagenia fisherman paddles you out to the rocks below the falls.',shore:'congo',jungle:true,congo:true,current:20,flow:true,rocky:true,snags:1,noPads:true,
     water:['#8a6a3c','#7a6440','#2a1d0e'],preview:7.2,boulders:[.3,.82,.9,1.57],sunken:[.44],holds:[.52,.64,1.36,1.47]}});
-const LOC_ORDER=['pond','creek','lake','bayou','river','alpine','amazon','kenai','pier','congo'];
+const LOC_ORDER=['pond','creek','lake','bayou','river','alpine','amazon','kenai','pier','congo','kau'];
+LOCS.kau={north:0,name:'Kaʻū Coast',tag:'Lava shore on Hawaiʻi Island',desc:'Black lava ledges on the Kaʻū coast at Punaluʻu, below Mauna Loa. Green sea turtles bask on the black sand across the bay, humpbacks breach offshore in winter, and Kīlauea lights up the night when it erupts. Shore anglers come here for ulua, the giant trevally.',seed:163,maxDepth:7,
+  nests:[],lv:29,fee:2800,feeName:'Flight to Hilo',feeWhy:'A flight to the Big Island and a drive down the Kaʻū coast. The lava ledges are free to fish from.',shore:'lava',salt:true,warm:true,kau:true,noPads:true,snags:.8,rocky:true,
+  water:['#2a8fb4','#3a86a6','#0c3e5a'],preview:17.6,boulders:[.3,.38,.95,1.02,1.25],holds:[.25,.7,1.15,1.5]};
 // North Lake, Prince Edward Island: the giant bluefin grounds, fished from a charter boat a few miles offshore.
 // Opens at level 30 for anglers with 1,000 respect. The sea floor is generated (seaBottomFt) so the boat can follow a running fish indefinitely.
 LOCS.pei={north:0,name:'North Lake Banks',tag:'Giant bluefin off Prince Edward Island',desc:'A few miles off North Lake, the herring come up over the banks and the giant bluefin follow them. You fish from a lobster boat that turns into a tuna charter every summer. Charters leave at dawn, and every trip out is paid for.',seed:173,maxDepth:40,
@@ -2477,7 +2505,11 @@ function resize(){ // the world is 2 lake-widths (TW) on every screen, so everyt
   // and if the surface and bottom moved with it the fish and bait would jump up and down the water. So while the width
   // stays the same, keep the tallest height seen (the toolbar just covers the bottom for a moment); a real change of
   // width or orientation lays it out afresh.
-  const lkey=CW+(land?'L':'P');let LCH=CH;if(G.layKey===lkey&&G.layCH&&CH<G.layCH&&CH>G.layCH*.7)LCH=G.layCH;G.layKey=lkey;G.layCH=LCH;
+  // But if the page stays shorter (an app's toolbar settling in after the game loaded), lay it out to fit after a moment,
+  // or the bottom of the water ends up hidden under the buttons until the phone is turned.
+  const lkey=CW+(land?'L':'P');let LCH=CH;clearTimeout(G.layT);
+  if(G.layKey===lkey&&G.layCH&&CH<G.layCH&&CH>G.layCH*.7&&!G.layForce){LCH=G.layCH;G.layT=setTimeout(()=>{if(innerWidth===CW&&innerHeight<G.layCH){G.layForce=true;try{dispatchEvent(new Event('resize'));}finally{G.layForce=false;}}},1200);}
+  G.layKey=lkey;G.layCH=LCH;
   SC=land?Math.max(Math.min(CW/400,LCH/470),CW/800):Math.min(CW/400,LCH/560);W=CW/SC;TW=Math.min(W,400);WX=Math.round(Math.max(TW*2,W));if(typeof S!=='undefined'&&S&&LOCS[S.loc]&&LOCS[S.loc].ocean)WX+=Math.round(W*2.5);H=LCH/SC;SURF=Math.round(H*(land?.34:.31));
   GROUND=H-Math.max(land?34:60,(land?64:150)/SC);if(GROUND-SURF<150)GROUND=SURF+150;
   darkC.width=Math.ceil(CW/2);darkC.height=Math.ceil(CH/2);
@@ -2848,7 +2880,7 @@ function missHook(f,why){
   if(bait&&d<0&&!S.owned.h4){S.tips=S.tips||{};S.tips.small=(S.tips.small||0)+1;if(S.tips.small===2&&!S.tips.smallShown){S.tips.smallShown=true;save();setTimeout(()=>toast('Tip: try a #4 hook','Bigger mouths spit a small hook. Shop \u203a Hooks, 8 coins'),1900);}}
 }
 function useBait(){if(G.tour)return;if(!isBait()||S.lure==='worm')return;if(LURES[S.lure].sea){seaUseBait();return;}if(LURES[S.lure].own){useOwnBait();return;}S.lures[S.lure]=(S.lures[S.lure]||1)-1;if(S.lures[S.lure]<=0){delete S.lures[S.lure];const nm=LURES[S.lure].name;S.lure='worm';toast('Out of '+nm,'Switched back to worms');}save();updateHUD(true);}
-function baitNoun(){if(S.lure==='seacut')return G.sea&&G.sea.cutSp==='herring'?'cut herring':'cut mackerel';if(S.lure==='tunalive')return G.sea&&G.sea.bait==='atlmackerel'?'mackerel':'herring';if(S.lure==='tunadead')return'herring';if(S.lure==='livebait'){const o=ownLive();return o?SPMAP[o.sp].name.toLowerCase():'baitfish';}if(S.lure==='cutbait')return'cut bait';return{worm:'worm',cricket:'cricket',minnow:'minnow',liver:'liver',dough:'dough ball',corn:'corn',roe:'roe',shrimp:'shrimp'}[S.lure]||'bait';}
+function baitNoun(){if(S.lure==='seacut')return G.sea&&G.sea.cutSp==='herring'?'cut herring':'cut mackerel';if(S.lure==='tunalive')return G.sea&&G.sea.bait==='atlmackerel'?'mackerel':'herring';if(S.lure==='tunadead')return'herring';if(S.lure==='livebait'){const o=ownLive();return o?SPMAP[o.sp].name.toLowerCase():'baitfish';}if(S.lure==='cutbait')return'cut bait';return{worm:'worm',cricket:'cricket',minnow:'minnow',liver:'liver',dough:'dough ball',corn:'corn',roe:'roe',shrimp:'shrimp',tako:'tako'}[S.lure]||'bait';}
 function stealTurtle(f){const bn=baitNoun();G.lure.bare=true;useBait();flee(f,10);f.wise=true;SFX.lose();toast(`A turtle stole your ${bn}`,'They\u2019re sneaky like that');G.lure.fish=null;refreshControls();}
 function stealCheck(f){
   if(!isBait())return false;
@@ -2995,7 +3027,7 @@ function rallySchool(f){if(!f.school)return;let n=0;for(const m of f.school.m){i
 // Different species give each other room; small fish keep clear of big predators; now and then an
 // active predator makes a run at a small fish (about 1 in 3 runs ends in a gulp, never with blood); and a big fish moving in on
 // the bait makes the small ones back off. Nothing gets eaten.
-const PREDATORS=new Set(['spottedgar','alligatorgar','bluecat','laketrout','mackinaw','redfish','seatrout','flounder','mackerel','tarpon','cutthroat','bass','smallmouth','pickerel','pike','walleye','brown','trout','catfish','flathead','tigermuskie','bowfin','peacock','arowana','redtail','undercut','tigerfish','goliath','nileperch','africanpike','nembwe','vundu']);
+const PREDATORS=new Set(['ulua','kaugiant','omilu','roi','spottedgar','alligatorgar','bluecat','laketrout','mackinaw','redfish','seatrout','flounder','mackerel','tarpon','cutthroat','bass','smallmouth','pickerel','pike','walleye','brown','trout','catfish','flathead','tigermuskie','bowfin','peacock','arowana','redtail','undercut','tigerfish','goliath','nileperch','africanpike','nembwe','vundu']);
 for(const id of ['chinook','kenaiking','coho','dolly'])PREDATORS.add(id);for(const id of ['chinook','kenaiking','sockeye','coho','pink','dolly'])COLDWATER.add(id);
 function isPred(sp){return PREDATORS.has(sp.id);}
 function preyOf(p,f){return f!==p&&!f.sp.turtle&&!p.sp.turtle&&!isPred(f.sp)&&f.L<p.L*.5&&f.state!=='fight';}
@@ -3500,6 +3532,7 @@ function render(){
   for(const f of back)dF(f);
   if(LOC().ocean){drawBaitClouds(c,dk);drawJellies(c,dk,vx0,vx1);drawBig(c,dk,vx0,vx1);} // bait schools, jellies and passing seals and whales behind the fish you can catch
   if(cboulders.length)drawBoulders(c,dk,vx0,vx1);
+  if(LOC().kau)drawKauLife(c,dk,vx0,vx1);
   for(const f of G.fish)if(!back.includes(f))dF(f);
   for(const w of weeds){if(w.x<vx0||w.x>vx1||!w.front)continue;drawWeed(w);}
   drawSpecks(c,dk,vx0,vx1);
@@ -3507,7 +3540,7 @@ function render(){
   if(LOC().shore==='dock'||LOC().shore==='camp')drawPilings(c,dk);if(LOC().shore==='pier')drawPierPilings(c,dk);
   if(congoRocks.length)drawCongoRocks(c,dk,vx0,vx1);
   drawGroundCached(c,cam,dk);
-  if(LOC().salt)drawPierCrabs(c,dk,vx0,vx1);
+  if(LOC().salt&&!LOC().kau)drawPierCrabs(c,dk,vx0,vx1);
   if(LOC().ocean){drawSeaFloor(c,dk,vx0,vx1);drawSeaGear(c,dk,vx0,vx1,false);drawChum(c,dk);}
   drawRockWater(c,dk,vx0,vx1);
   drawBeds(c,dk,vx0,vx1);
@@ -3583,12 +3616,14 @@ function updatePlane(dt){const P=G.plane,ok=LOC().salt||LOC().alaska;if(P&&(!ok|
   if(darkness()>.3||S.weather!=='clear')return;const dir=Math.random()<.5?1:-1;G.plane={dir,x:dir>0?-240:W+240,y:Math.min(SURF-42,Math.max((70*UI)/SC+12,SURF*rand(.28,.45))),v:rand(30,38),t:0};
   if(LOC().alaska)Object.assign(G.plane,{float:true,x:dir>0?-40:W+40,v:rand(26,34),sink:rand(2,5)});}
 let BANNER=null;
-function bannerImg(){if(BANNER)return BANNER;const k=3,w=118,h=17,cv=document.createElement('canvas');cv.width=w*k;cv.height=h*k;const x=cv.getContext('2d');x.scale(k,k);
+// The banner's words: at Kaʻū, “Let's go fishing!” in Hawaiian.
+function bannerText(){return LOC().kau?'E LAWAIʻA KĀKOU!':'TIGHT LINES!';}
+function bannerImg(){const txt=bannerText();if(BANNER&&BANNER.txt===txt)return BANNER;const k=3,w=118,h=17,cv=document.createElement('canvas');cv.width=w*k;cv.height=h*k;const x=cv.getContext('2d');x.scale(k,k);
   x.fillStyle='#fbfaf4';x.fillRect(0,0,w,h);x.fillStyle='#d8d2c0';x.fillRect(0,h-1.2,w,1.2);x.fillRect(0,0,w,.8);
   x.fillStyle='#c8322b';x.font='15px "Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif';x.textAlign='center';x.textBaseline='middle';
   // letters squeezed to fill the banner, the way real banner letters are set
-  const m=x.measureText('TIGHT LINES!').width,sx=Math.min(1,(w-10)/m);x.save();x.translate(w/2,h/2+1);x.scale(sx,1);x.fillText('TIGHT LINES!',0,0);x.restore();
-  BANNER={cv,w,h};return BANNER;}
+  const m=x.measureText(txt).width,sx=Math.min(1,(w-20)/m);x.save();x.translate(w/2+3,h/2+1);x.scale(sx,1);x.fillText(txt,0,0);x.restore();
+  BANNER={cv,w,h,txt};return BANNER;}
 function drawPlane(c,dk,fog){const P=G.plane;if(!P)return;if(P.float){drawFloatPlane(c,P,dk,fog);return;}const a=(1-dk*.8)*(fog?.4:1),d=P.dir,bob=Math.sin(P.t*.9)*1.6,px=P.x,py=P.y+bob,tilt=Math.sin(P.t*.9+.6)*.03;
   c.save();c.globalAlpha=a;
   // banner, trailing behind on a tow line, rippling in the wind; its leading edge hangs from a weighted pole
@@ -3651,6 +3686,7 @@ function drawBackdrop(c,cam,dk,fog,rain,h){
   // far ridge
   c.save();c.translate(-cam*.12,0);
   const SKC={pond:['#3d6b55','#24473a','#7aa0ab'],creek:['#2f5a46','#1a382c','#6a92a0'],lake:['#46666a','#283f44','#8094aa'],river:['#5e7448','#3a4a2e','#a3ad9c'],amazon:['#2f5a38','#1b3a24','#88aaa2'],bayou:['#44583a','#2a3826','#8ea29a'],alpine:['#6f7c70','#4c5850','#8a9cb0'],kenai:['#33584a','#1e3a30','#8fa4b6'],pier:['#c9b98a','#a8986a','#9ab4c0']}[S.loc]||['#3d6b55','#24473a','#7aa0ab'];
+  if(LOC().kau){c.restore();drawKauBack(c,cam,dk,fog,rain,h);return;}
   if(LOC().salt){c.restore();drawSeaBack(c,cam,dk,fog,rain,h);return;}
   if(LOC().congo){c.restore();drawCongoBack(c,cam,dk,fog,rain,h);return;}
   if(LOC().ocean){c.restore();drawOceanBack(c,cam,dk,fog,rain,h);return;}
@@ -4233,7 +4269,7 @@ function drawWaterTop(c,cam,dk,fog,rain,h){
   for(let i=0;i<26;i++){const y=SURF+3+((i*7)%22),x=((i*97.3-cam*.9+G.t*(6+i%4*2))%(W+80)+W+80)%(W+80)-40,len=10+(i*13)%26;c.fillRect(x,y,len,.8);}
   // sun or moon glitter
   const sunT=(h-6)/12;if(sunT>0&&sunT<1&&!rain&&!fog){const sx=lerp(W*.95,W*.1,sunT);c.fillStyle=`rgba(255,240,200,${.35*(1-dk)})`;for(let i=0;i<9;i++){const y=SURF+2+i*3.2,w=(12-i)*1.4*(.6+.4*Math.sin(G.t*3+i));c.fillRect(sx-w/2+Math.sin(G.t*2+i*1.7)*4,y,w,1);}}
-  {const Zf=sea();if(!LOC().riverbank&&!Zf.jungle&&Zf.leafDrop+Zf.fall*(1-Zf.leaf)>.05){const a=Math.min(1,Zf.leafDrop*1.5+(1-Zf.leaf)*Zf.fall*.6)*(1-dk*.6);for(let i=0;i<16;i++){const span=W+60,x=(((i*151.7-cam*.9+Math.sin(G.t*.2+i)*8)%span)+span)%span-30;c.save();c.translate(x,SURF+1);c.rotate(i);c.fillStyle=rgbStr(hexRgb(FALLC[i%FALLC.length]),a);c.beginPath();c.ellipse(0,0,2.2,1,0,0,TAU);c.fill();c.restore();}}}
+  {const Zf=sea();if(!LOC().riverbank&&!Zf.jungle&&!LOC().kau&&Zf.leafDrop+Zf.fall*(1-Zf.leaf)>.05){const a=Math.min(1,Zf.leafDrop*1.5+(1-Zf.leaf)*Zf.fall*.6)*(1-dk*.6);for(let i=0;i<16;i++){const span=W+60,x=(((i*151.7-cam*.9+Math.sin(G.t*.2+i)*8)%span)+span)%span-30;c.save();c.translate(x,SURF+1);c.rotate(i);c.fillStyle=rgbStr(hexRgb(FALLC[i%FALLC.length]),a);c.beginPath();c.ellipse(0,0,2.2,1,0,0,TAU);c.fill();c.restore();}}}
   // leaves and foam drifting downstream on the river
   if(LOC().riverbank){const sp=LOC().current*.9;for(let i=0;i<14;i++){const span=W+60,x=(((i*137.1-cam*.9-G.t*sp*(.7+(i%3)*.15))%span)+span)%span-30,y=SURF+1+(i*5)%4;
     if(i%3===0){c.fillStyle=`rgba(240,240,230,${.35*(1-dk*.7)})`;c.fillRect(x,y,6+(i%4)*2,.9);}else{c.save();c.translate(x,y);c.rotate(Math.sin(G.t*1.3+i)*.5);c.fillStyle=rgbStr(mix(['#b8862e','#9a5a24','#c8a040'][i%3],'#151008',dk*.8));c.beginPath();c.ellipse(0,0,2.2,1,0,0,TAU);c.fill();c.restore();}}}
@@ -4263,7 +4299,8 @@ const PLANTSET={pond:{bed:[['tapegrass',.3],['coontail',.2],['milfoil',.2],['elo
   alpine:{bed:[['quillwort',.55],['chara',.3],['sago',.15]],deep:[['chara',1]],pondweed:.35},  // sago here stands in for fineleaf pondweed, short stands in the sheltered shallows only
   amazon:{bed:[['fanwort',1]],red:true,keep:.5},
   pier:{bed:[['turtlegrass',.55],['shoalgrass',.25],['manateegrass',.2]],tall:1.5},
-  congo:{bed:[]}};
+  congo:{bed:[]},
+  kau:{bed:[['limu',1]],keep:.6,tall:.4}};
 const SHOREKIND={pond:'cattail',lake:'bulrush',river:'waterwillow',congo:'papyrus'};
 let floats=[];
 function plantRng(){let z=(LOC().seed*7477+31)%233280;return()=>(z=(z*9301+49297)%233280)/233280;}
@@ -4282,7 +4319,7 @@ function assignPlants(){const Lc=LOC(),P=PLANTSET[S.loc]||PLANTSET.pond,q=plantR
   if(Lc.cypress)for(const p of pads)floats.push({x:p.x,k:q()<.68?'hyacinth':'waterlettuce',H:p.r*3.1,seed:1+Math.floor(q()*4),a:p.a});
   if(Lc.jungle&&!Lc.congo)for(let x=DOCKX+70;x<WX;x+=60+q()*110){const n=2+Math.floor(q()*3);for(let i=0;i<n;i++)floats.push({x:x+i*(9+q()*6),k:q()<.6?'waterlettuce':'hyacinth',H:18+q()*12,seed:1+Math.floor(q()*4),a:q()*6});}
   if(Lc.congo)for(const u of [.42,.47,.68,1.3,1.36])floats.push({x:u*TW,k:'hyacinth',H:26+q()*12,seed:1+Math.floor(q()*4),a:q()*6});
-  if(Lc.salt)for(const u of [.5,.72,1.15,1.6])floats.push({x:u*TW,k:'sargassum',H:22+q()*10,seed:1+Math.floor(q()*4),a:q()*6});
+  if(Lc.salt&&!Lc.kau)for(const u of [.5,.72,1.15,1.6])floats.push({x:u*TW,k:'sargassum',H:22+q()*10,seed:1+Math.floor(q()*4),a:q()*6});
   // papyrus along the Congo bank
   if(Lc.congo)for(let i=0;i<7;i++){const cx=60+q()*(WX*.5+W);for(let k=0;k<3;k++)reeds.push({x:cx+(q()-.5)*18,h:14+q()*12,ph:q()*6,head:false,lean:0});}
   // build the sprites now so nothing stalls while panning
@@ -4356,7 +4393,8 @@ const ROCKKIND={
   pier:{stone:['#aba08a','#9b917c','#b3a78e','#8f8774'],shape:'angular',grain:'lime',film:'#6a7044',filmA:.45,algae:'#62a03e',crust:true,turb:.1},
   pond:{stone:['#8a8478','#7e776a','#958a76','#726d66'],film:'#5e5a32',filmA:.55,turb:.3},
   kenai:{stone:['#8f8c84','#7c7c78','#9a948a','#6e6e6c','#86807a'],shape:'round',grain:'bed',film:'#7a7458',filmA:.25,algae:'#5e6e3a',silt:.4,rust:.15,turb:.4,sand:'#a8a294'},
-  congo:{stone:['#6e5a46','#5e5246','#74604a'],film:'#4e4a26',filmA:.4,turb:.5}};
+  congo:{stone:['#6e5a46','#5e5246','#74604a'],film:'#4e4a26',filmA:.4,turb:.5},
+  kau:{stone:['#3a3a3e','#444448','#323236','#4c4c50'],shape:'round',film:'#56585e',filmA:.2,algae:'#7a3a36',turb:.03}};
 const rockKind=()=>ROCKKIND[S.loc]||null;
 // The color of a rock at depth: red goes first, then everything slides toward the water's own color and darkens at night.
 function rockTint(y){const Lc=LOC(),kd=rockKind(),wat=Lc.water||['#2f5a5a','#2f5a5a','#0a2a30'],dep=clamp((y-SURF)/(GROUND-SURF),0,1),turb=kd?kd.turb:.25;
@@ -4457,7 +4495,8 @@ function drawRockWater(c,dk,vx0,vx1){const kd=rockKind();if(!kd||!cboulders.leng
     // boils: water forced up over the rock surfaces downstream as a slick that spreads and drifts off
     if(boil>.05){const per=3.2+hs(k.x,3)*2.5,s=(G.t/per+hs(k.x,4))%1;if(s<.75){const e=s/.75,bx=k.x-W*(1.4+topFt*.3+e*2.6),br=3+e*W*(.7+boil*.6);
       c.fillStyle=`rgba(215,232,228,${.14*boil*(1-e)*sa})`;c.beginPath();c.ellipse(bx,SURF+.4,br,br*.1+.6,0,0,TAU);c.fill();c.strokeStyle=`rgba(230,242,238,${.35*boil*(1-e)*sa})`;c.lineWidth=.8;c.stroke();}}}}
-function drawBoulders(c,dk,vx0,vx1){for(const k of cboulders){if(k.x<vx0-60||k.x>vx1+60)continue;if(k.log){drawLog(c,dk,k);continue;}if(LOC().stumps){drawStump(c,dk,k);continue;}if(LOC().congo){drawBoulder(c,dk,k);}else if(rockKind()&&rockKind().shape){drawRock(c,dk,k);if(S.loc==='creek'&&k.y-k.r>SURF+4)drawPlant(c,'watermoss',k.r*1.3,1+(k.x|0)%4,k.x+k.r*.15,k.y-k.r*.82,0,{whole:true,flip:true,dk:dk*.9});continue;}else{c.fillStyle=rockGrad(c,k.x,k.y,k.r,dk,k.t);c.beginPath();c.ellipse(k.x,k.y,k.r*1.2,k.r,0,0,TAU);c.fill();
+function drawBoulders(c,dk,vx0,vx1){if(LOC().kau)return;// at Kaʻū the boulders are coral heads, drawn with the reef
+  for(const k of cboulders){if(k.x<vx0-60||k.x>vx1+60)continue;if(k.log){drawLog(c,dk,k);continue;}if(LOC().stumps){drawStump(c,dk,k);continue;}if(LOC().congo){drawBoulder(c,dk,k);}else if(rockKind()&&rockKind().shape){drawRock(c,dk,k);if(S.loc==='creek'&&k.y-k.r>SURF+4)drawPlant(c,'watermoss',k.r*1.3,1+(k.x|0)%4,k.x+k.r*.15,k.y-k.r*.82,0,{whole:true,flip:true,dk:dk*.9});continue;}else{c.fillStyle=rockGrad(c,k.x,k.y,k.r,dk,k.t);c.beginPath();c.ellipse(k.x,k.y,k.r*1.2,k.r,0,0,TAU);c.fill();
   {const Lb=LOC();c.fillStyle=rgbStr(mix(Lb.alpine?'#8a9a6a':Lb.salt?'#6a7a3a':'#4f7a3a','#122016',dk*.75),Lb.alpine?.25:.55);c.beginPath();c.ellipse(k.x-k.r*.2,k.y-k.r*.82,k.r*.7,k.r*.22,0,0,TAU);c.fill();}}
   if(LOC().congo){c.save();c.globalAlpha=1-dk*.65;PLANTS.riverweedOnRock(c,k.x,k.y,k.r*1.18,k.r*.95,(k.x|0)+5);c.restore();}
   if(k.y-k.r<SURF+3){c.strokeStyle=`rgba(240,250,250,${.55*(1-dk*.6)})`;c.lineWidth=1.2;for(let i=0;i<3;i++){const o=(G.t*18+i*9)%26;c.beginPath();c.moveTo(k.x-k.r*1.1-o,SURF+1+i);c.lineTo(k.x-k.r*1.1-o-6,SURF+1.4+i);c.stroke();}}}}
@@ -4912,7 +4951,7 @@ function drawPierRail(c,dk,y){const K=col=>rgbStr(mix(col,'#16120c',dk*.75));c.f
 function dockTone(col,camp,dk,a){return rgbStr(mx(camp?mx(col,'#8a8578',.55):hexRgb(col),'#1a130c',dk*.75),a);}
 function drawDock(c,dk){
   const y=dockY(),wood=rgbStr(mix('#7a5634','#2a1e14',dk*.75)),dwood=rgbStr(mix('#4e3520','#150f0a',dk*.75));
-  const shore=LOC().shore;if(shore==='boulder'){drawShoreBoulder(c,dk,y);}else if(shore==='boat'||shore==='canoe'){drawBoat(c,dk,y,false);}else if(shore==='tunaboat'){drawTunaBoat(c,dk,y,false);}else if(shore==='gravel'){if(LOC().alaska){c.save();c.beginPath();c.rect(-60,-1e4,DOCKX+260,SURF+.5+1e4);c.clip();drawGravelBar(c,dk,y);c.restore();}else drawGravelBar(c,dk,y);}/* on the Kenai the bar's underwater slope is the cobble riverbed itself */else if(shore==='pier'){drawPier(c,dk,y);}else if(shore==='congo'){drawCongoShore(c,dk,y);}else{
+  const shore=LOC().shore;if(shore==='boulder'){drawShoreBoulder(c,dk,y);}else if(shore==='boat'||shore==='canoe'){drawBoat(c,dk,y,false);}else if(shore==='tunaboat'){drawTunaBoat(c,dk,y,false);}else if(shore==='gravel'){if(LOC().alaska){c.save();c.beginPath();c.rect(-60,-1e4,DOCKX+260,SURF+.5+1e4);c.clip();drawGravelBar(c,dk,y);c.restore();}else drawGravelBar(c,dk,y);}/* on the Kenai the bar's underwater slope is the cobble riverbed itself */else if(shore==='pier'){drawPier(c,dk,y);}else if(shore==='congo'){drawCongoShore(c,dk,y);}else if(shore==='lava'){drawLavaShore(c,dk,y);}else{
   {const sh=c.createLinearGradient(0,SURF,0,SURF+16);sh.addColorStop(0,`rgba(0,0,0,${.28*(1-dk*.5)})`);sh.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=sh;c.fillRect(-4,SURF,DOCKX+6,16);}
   // Weathered deck: boards that vary in tone, a stringer beam, a mooring post, a cleat, an old tire and a ladder.
   const camp=shore==='camp',K=col=>dockTone(col,camp,dk,1),Ka=(col,al)=>dockTone(col,camp,dk,al);
@@ -5199,6 +5238,9 @@ function drawLure(c,id,x,y,s,col,ang=0){
       c.strokeStyle='rgba(120,80,50,.45)';c.lineWidth=.35;c.beginPath();for(const x of[-.6,-2,-3.4])c.moveTo(x,-1.5),c.lineTo(x+.3,1);c.stroke();
       c.fillStyle=shade(K,-.25);c.beginPath();c.moveTo(-6,2.2+k);c.lineTo(-8,1.2+k);c.lineTo(-7.6,3.2+k);c.closePath();c.fill();c.fillStyle='#111';c.beginPath();c.arc(1.1,-.9,.5,0,TAU);c.fill();
       c.strokeStyle=K;c.lineWidth=.35;c.beginPath();c.moveTo(1.6,-.8);c.quadraticCurveTo(4,-3,6,-2.2+k);c.moveTo(1.6,-.5);c.quadraticCurveTo(4.4,-1.4,6.2,0-k);c.moveTo(-1,.9);c.lineTo(-.6,2.6);c.moveTo(-2.2,.8);c.lineTo(-2,2.5);c.stroke();break;}
+    case'tako':{lureHook(c,.3,0);// a whole small octopus: round mantle, eight curling arms trailing behind
+      const wv=Math.sin(G.t*3)*.6;for(let a=0;a<8;a++){const yy=-1.6+a*.45;c.strokeStyle=shade(K,-.15+a%2*.1);c.lineWidth=.75-a*.04;c.lineCap='round';c.beginPath();c.moveTo(-1.2,yy*.5);c.quadraticCurveTo(-5,yy+wv*(a%2?1:-1),-8.5-a%3,yy*1.4+wv*.5);c.stroke();}
+      c.fillStyle=K;c.beginPath();c.ellipse(.8,-.3,2.6,1.9,-.15,0,TAU);c.fill();c.fillStyle='rgba(255,230,230,.35)';c.beginPath();c.ellipse(.2,-1.1,1.2,.6,-.2,0,TAU);c.fill();c.fillStyle='#1a0c10';c.beginPath();c.arc(-.6,.2,.35,0,TAU);c.fill();break;}
     case'roe':{lureHook(c,.3,0);// a little mesh bag of orange eggs
       for(const [dx,dy] of [[-1.6,-.6],[-3.4,-.8],[-2.4,.9],[-4.4,.6],[-1,.9],[-3.3,2]]){c.fillStyle=K;c.beginPath();c.arc(dx,dy,1.15,0,TAU);c.fill();c.fillStyle='rgba(255,236,200,.6)';c.beginPath();c.arc(dx-.35,dy-.35,.38,0,TAU);c.fill();}
       c.strokeStyle='rgba(250,250,240,.5)';c.lineWidth=.3;c.beginPath();c.ellipse(-2.6,.5,3.2,2.3,0,0,TAU);c.stroke();break;}
@@ -5665,7 +5707,9 @@ function drawFin(c,f,o,sil){
     c.strokeStyle='rgba(255,244,214,.18)';c.lineWidth=o.w*.5;c.beginPath();for(const [a,b,x,y] of f.rays){c.moveTo(a-o.w*1.2,b);c.lineTo(x-o.w*1.2,y);}c.stroke();}
   if(o.lead&&f.rays&&f.rays.length){const [a,b,x,y]=f.rays[o.leadIdx||0];c.lineCap='round';c.strokeStyle=o.lead[0];c.lineWidth=.0075;c.beginPath();c.moveTo(a,b);c.lineTo(x,y);c.stroke();if(o.lead[1]){const [a2,b2,x2,y2]=f.rays[(o.leadIdx||0)+1]||f.rays[0];c.strokeStyle=o.lead[1];c.lineWidth=.006;c.beginPath();c.moveTo((a+a2)/2+(a2-a)*.6,(b+b2)/2+(b2-b)*.6);c.lineTo((x+x2)/2+(x2-x)*.6,(y+y2)/2+(y2-y)*.6);c.stroke();}}
   if(o.blot){const [bx,by,br,bc]=o.blot,g=c.createRadialGradient(bx,by,0,bx,by,br);g.addColorStop(0,bc);g.addColorStop(.75,bc);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.beginPath();c.arc(bx,by,br,0,Math.PI*2);c.fill();}
-  c.strokeStyle=o.margin||'rgba(255,246,222,.28)';c.lineWidth=.009;poly(c,f.o);c.stroke();
+  if(o.dots){const [sd,n,rr,col,halo]=o.dots,r=rng(sd),xs=f.o.map(p=>p[0]),ys=f.o.map(p=>p[1]),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);// spots scattered over the fin
+    for(let i=0;i<n;i++){const x=lerp(x0,x1,r()),y=lerp(y0,y1,r());if(halo){c.fillStyle=halo;c.beginPath();c.arc(x,y,rr*1.7,0,Math.PI*2);c.fill();}c.fillStyle=col;c.beginPath();c.arc(x,y,rr,0,Math.PI*2);c.fill();}}
+  c.strokeStyle=o.margin||'rgba(255,246,222,.28)';c.lineWidth=o.marginW||.009;poly(c,f.o);c.stroke();
   c.restore();
   if(f.spines){for(const [a,b,x,y] of f.spines)ray(c,a,b,x,y,o.sw||.0028,o.spineCol||'rgba(66,50,20,.9)',false);
     c.strokeStyle='rgba(255,238,196,.45)';c.lineWidth=.0011;c.lineCap='round';c.beginPath();for(const [a,b,x,y] of f.spines){c.moveTo(a+.0012,b);c.lineTo(x+.0006,y);}c.stroke();}
@@ -5678,6 +5722,7 @@ function bodySprite(D,Lp){
   c.setTransform(Lp,0,0,Lp,ox,oy);{const g=c.createLinearGradient(0,y0+pad,0,y1-pad);D.grad.forEach(([o,cc])=>g.addColorStop(o,cc));c.fillStyle=g;}D.bodyPath(c);c.fill();
   const sk=document.createElement('canvas');sk.width=W;sk.height=H;const k=sk.getContext('2d');k.setTransform(Lp,0,0,Lp,ox,oy);D.markings(k);
   c.setTransform(1,0,0,1,0,0);c.save();c.globalCompositeOperation='source-atop';blur(c,Math.max(.4,Lp*.0028));c.drawImage(sk,0,0);blur(c,0);c.restore();
+  if(D.sharp){c.save();c.setTransform(Lp,0,0,Lp,ox,oy);c.globalCompositeOperation='source-atop';D.sharp(c);c.restore();}// crisp markings: scutes, small spots, fine stripes
   if(Lp>=18){const id=c.getImageData(0,0,W,H),d=id.data,st=D.scale,rh=st*.6,lit=D.light||{};
     for(let py=0;py<H;py++)for(let px=0;px<W;px++){const i=(py*W+px)*4;if(d[i+3]===0)continue;
       const x=(px-ox)/Lp,y=(py-oy)/Lp,t=D.topAt(x),bo=D.botAt(x),v=cl((y-(t+bo)/2)/((bo-t)/2),-1,1),opx=D.gillAt(y),onHead=x>opx-.004;
@@ -6024,7 +6069,7 @@ M.head=(D,c,H)=>{const h=D.hd,dk=h.dark||'44,40,14';let g;
 M.make=o=>{const t=o.top,b=o.bot,xt=t[t.length-1][0],yt=t[t.length-1][1],yb=b[b.length-1][1];
   const D=shape(Object.assign({rear:[[xt,yt],[xt-.011,yt*.66],[xt-.016,(yt+yb)/2],[xt-.011,yb*.66],[xt,yb]]},o));
   const g=o.gill||{x:.21,kt:7.8,kb:3.4};D.gillAt=y=>g.x+(y<-.02?g.kt:g.kb)*(y+.02)*(y+.02);
-  D.hd=o.head;D.markings=k=>o.marks&&o.marks(k,D);D.head=(c,H)=>M.head(D,c,H);
+  D.hd=o.head;D.markings=k=>o.marks&&o.marks(k,D);if(o.sharp)D.sharp=k=>o.sharp(k,D);D.head=(c,H)=>M.head(D,c,H);
   D.fins=s=>{const F={tail:M.tail(D,o.tailFin,s||0)};for(const [k,f] of Object.entries(o.finSpec))F[k]=f(D);return F;};
   D.finStyle=o.finStyle;D.backFins=o.back;D.frontFins={pre:o.pre||['pect'],post:o.post||['pelvic']};
   if(o.noScales)D.scale=0;return D;};
@@ -6650,6 +6695,357 @@ R.S.tarpon=M.make({id:'tarpon',band:.45,scale:.028,scaleEdge:1.5,headDark:[.24,.
   back:['thread','dorsal','anal'],
   head:{dark:'30,40,50',eye:{x:.43,y:-.02,r:.022,iris:['#d8dde0','#98a2a8','#2a3238']},preop:.08,nostril:[.465,-.034],
     mouth:{line:[[.5,-.014],[.48,-.008],[.455,.0],[.43,.008],[.41,.014]],maxilla:.013,maxCol:['#8a969c','#9aa6ac'],lipCol:'rgba(170,180,184,.6)',jawTop:'rgba(60,80,90,.3)'}}});
+// ===== Kaʻū coast, Hawaiʻi =====
+// Giant trevally (ulua): deep and compressed with a steep, blunt forehead; silvery grey, darker on the back, often with
+// small dark spots; a short low spiny dorsal, then a long soft dorsal and anal fin, both tall and sickle-shaped in
+// front; very long sickle pectorals; a strip of hard bony scutes along the rear of the lateral line; a slim tail stalk
+// and a big, deeply forked tail; a big mouth. Grown males turn almost black.
+// a row of bony scutes along the straight rear part of a jack's lateral line
+const scuteRow=(k,D,x0,x1,fill,hi)=>{for(let x=x0;x>x1;x-=.0125){const y=(D.topAt(x)+D.botAt(x))/2-.002,h=Math.min(.011,(D.botAt(x)-D.topAt(x))*.2);k.fillStyle=fill;k.beginPath();k.moveTo(x+.006,y);k.quadraticCurveTo(x-.001,y-h*1.1,x-.007,y);k.quadraticCurveTo(x-.001,y+h*1.1,x+.006,y);k.fill();
+  k.strokeStyle=hi;k.lineWidth=.0011;k.beginPath();k.moveTo(x+.004,y-.0008);k.quadraticCurveTo(x-.001,y-h*.8,x-.005,y-.0008);k.stroke();k.strokeStyle='rgba(20,24,28,.35)';k.lineWidth=.0008;k.beginPath();k.moveTo(x-.006,y-h*.3);k.lineTo(x-.006,y+h*.3);k.stroke();}};
+const uluaSpec=(o={})=>({band:.44,scale:.006,scaleEdge:.45,headDark:[.24,.34],bellyTint:[236,238,238,.35],
+  top:[[.49,-.012],[.486,-.042],[.472,-.08],[.445,-.118],[.4,-.152],[.335,-.174],[.255,-.184],[.165,-.18],[.075,-.166],[-.015,-.143],[-.095,-.114],[-.165,-.084],[-.225,-.058],[-.275,-.038],[-.315,-.025],[-.345,-.018],[-.368,-.016]],
+  bot:[[.49,.02],[.482,.05],[.462,.08],[.425,.108],[.365,.132],[.285,.148],[.195,.152],[.105,.146],[.015,.13],[-.075,.106],[-.155,.08],[-.215,.056],[-.265,.037],[-.305,.025],[-.34,.018],[-.368,.015]],
+  grad:o.grad||[[0,'#2e3842'],[.14,'#46525c'],[.28,'#76838c'],[.42,'#a9b2b7'],[.58,'#cdd2d4'],[.72,'#dfe2e2'],[.86,'#eceeec'],[1,'#f4f5f4']],
+  gill:{x:.255,kt:5,kb:2.4},lateral:{x0:.25,x1:-.36,f:.34,col:'rgba(0,0,0,0)'},edgeCol:'rgba(24,30,36,.55)',tailFin:{type:'fork',spread:.2,notch:.6,rays:22},
+  marks:(k,D)=>{// the lateral line arches over the pectoral, then runs straight back; on the straight part, a row of bony scutes
+    M.line(k,[[.25,D.topAt(.25)+(D.botAt(.25)-D.topAt(.25))*.3],[.12,D.topAt(.12)+(D.botAt(.12)-D.topAt(.12))*.24],[-.02,D.topAt(-.02)+(D.botAt(-.02)-D.topAt(-.02))*.32],[-.12,(D.topAt(-.12)+D.botAt(-.12))/2-.004]],.0028,'rgba(30,36,44,.3)');
+    if(o.spots!==false)M.spots(k,D,{seed:o.seed||211,n:o.spotN||14,x0:.18,x1:-.2,f0:.12,f1:.62,r:[.0025,.005],col:'rgba(20,24,28,.55)'});
+    if(o.marks)o.marks(k,D);},
+  sharp:(k,D)=>scuteRow(k,D,-.13,-.36,o.scute||'rgba(120,128,134,.75)','rgba(240,244,246,.6)'),
+  finSpec:{spiny:D=>sp(D,{x0:.205,x1:.1,H:[.022,.038,.044,.042,.038,.032,.026,.02],dip:.25,join:-.01,tailOff:.004}),
+    soft:D=>so(D,{x0:.08,x1:-.245,h0:.13,hm:.04,h1:.018,peak:.1,lean:.36,rays:21}),
+    anal:D=>so(D,{side:1,x0:-.005,x1:-.24,h0:.105,hm:.035,h1:.016,peak:.1,lean:.36,rays:17,spines:2}),
+    pect:D=>pc(D,{x:.245,y:.03,len:.25,w:.05,ang:.3}),pelvic:D=>pv(D,{x:.2,len:.07,ang:.5,spine:true})},
+  finStyle:o.fins||{tail:F('rgba(52,60,68,.92)','rgba(70,78,86,.82)','rgba(20,24,28,.45)',{horiz:true}),soft:F('rgba(60,68,76,.75)','rgba(56,64,72,.9)','rgba(20,24,28,.45)'),
+    spiny:F('rgba(70,78,86,.6)','rgba(60,68,76,.85)','',{sw:.0028,spineCol:'rgba(30,34,40,.9)'}),anal:F('rgba(80,88,96,.72)','rgba(70,78,86,.88)','rgba(20,24,28,.45)',{sw:.0024,spineCol:'rgba(40,46,52,.9)'}),
+    pect:F('rgba(160,168,176,.45)','rgba(120,130,140,.6)','rgba(40,46,52,.4)',{edge:.25}),pelvic:F('rgba(200,206,210,.7)','rgba(180,186,190,.85)','rgba(80,86,92,.4)',{sw:.0022,spineCol:'rgba(230,232,234,.9)'})},
+  back:['soft','spiny','anal'],
+  head:{dark:o.dark||'30,36,44',eye:{x:.415,y:-.06,r:.024,iris:['#c8cccc','#7c8486','#24282a']},preop:.07,nostril:[.452,-.072],
+    mouth:{line:[[.49,.016],[.475,.024],[.455,.032],[.432,.04],[.415,.045]],maxilla:.02,maxCol:o.maxCol||['#8e989e','#aab2b6'],lipCol:'rgba(170,176,180,.7)',jawTop:'rgba(50,60,70,.35)',chin:'rgba(240,242,242,.4)'}}});
+R.S.ulua=M.make(Object.assign({id:'ulua'},uluaSpec()));
+// The legend: a grown male gone dark, almost black on the back and fins, old scars on the flank.
+R.S.kaugiant=M.make(Object.assign({id:'kaugiant'},uluaSpec({grad:[[0,'#16191d'],[.14,'#22262b'],[.28,'#3a4046'],[.42,'#5e666c'],[.58,'#868e92'],[.72,'#a6acae'],[.86,'#c4c8c8'],[1,'#d6d9d8']],dark:'14,16,20',seed:223,spotN:6,
+  maxCol:['#50565c','#646a70'],scute:'rgba(70,76,82,.8)',marks:(k,D)=>{k.strokeStyle='rgba(200,204,206,.3)';k.lineWidth=.002;k.lineCap='round';for(const [x,y,l,a] of [[.1,-.05,.05,.3],[.02,.02,.04,-.2],[-.06,-.03,.035,.5]]){k.beginPath();k.moveTo(x,y);k.lineTo(x-Math.cos(a)*l,y+Math.sin(a)*l);k.stroke();}},
+  fins:{tail:F('rgba(22,24,28,.94)','rgba(34,38,42,.86)','rgba(8,8,10,.5)',{horiz:true}),soft:F('rgba(28,30,34,.82)','rgba(26,28,32,.92)','rgba(8,8,10,.5)'),
+    spiny:F('rgba(34,36,40,.7)','rgba(28,30,34,.88)','',{sw:.0028,spineCol:'rgba(12,14,16,.9)'}),anal:F('rgba(36,38,42,.8)','rgba(30,32,36,.9)','rgba(8,8,10,.5)',{sw:.0024,spineCol:'rgba(14,16,18,.9)'}),
+    pect:F('rgba(90,96,100,.5)','rgba(60,64,68,.66)','rgba(20,22,24,.4)',{edge:.25}),pelvic:F('rgba(120,126,130,.7)','rgba(90,96,100,.85)','rgba(40,44,48,.4)',{sw:.0022,spineCol:'rgba(200,204,206,.9)'})}})));
+// Bluefin trevally (ʻōmilu): slimmer than the ulua with a more pointed snout; brassy on the back, washed with blue,
+// peppered with small blue-black spots; second dorsal, anal and tail an electric blue; black scutes.
+R.S.omilu=M.make({id:'omilu',band:.44,scale:.006,scaleEdge:.45,headDark:[.24,.34],bellyTint:[236,240,240,.35],
+  top:[[.5,-.004],[.49,-.026],[.468,-.056],[.425,-.09],[.365,-.118],[.29,-.138],[.205,-.147],[.115,-.145],[.025,-.133],[-.065,-.11],[-.145,-.083],[-.21,-.058],[-.26,-.04],[-.3,-.027],[-.335,-.019],[-.362,-.016]],
+  bot:[[.5,.014],[.488,.036],[.465,.062],[.425,.09],[.365,.114],[.29,.129],[.205,.134],[.115,.13],[.025,.116],[-.065,.096],[-.145,.073],[-.21,.052],[-.26,.035],[-.3,.024],[-.335,.018],[-.362,.015]],
+  grad:[[0,'#3a5466'],[.14,'#56727c'],[.27,'#8a9476'],[.4,'#aeb294'],[.55,'#cfd2c4'],[.7,'#e2e6e2'],[.86,'#eef0ee'],[1,'#f4f6f4']],
+  gill:{x:.26,kt:5.5,kb:2.6},lateral:{x0:.25,x1:-.36,f:.34,col:'rgba(0,0,0,0)'},edgeCol:'rgba(24,34,44,.55)',tailFin:{type:'fork',spread:.18,notch:.62,rays:22},
+  sharp:(k,D)=>scuteRow(k,D,-.13,-.355,'rgba(22,26,32,.85)','rgba(150,170,190,.5)'),
+  marks:(k,D)=>{M.line(k,[[.25,D.topAt(.25)+(D.botAt(.25)-D.topAt(.25))*.3],[.12,D.topAt(.12)+(D.botAt(.12)-D.topAt(.12))*.24],[-.02,D.topAt(-.02)+(D.botAt(-.02)-D.topAt(-.02))*.33],[-.12,(D.topAt(-.12)+D.botAt(-.12))/2-.004]],.0026,'rgba(30,40,50,.3)');
+    M.spots(k,D,{seed:231,n:70,x0:.26,x1:-.22,f0:.06,f1:.58,r:[.0022,.0042],col:r=>`rgba(${20+r*30|0},${40+r*40|0},${90+r*60|0},.75)`});
+    // the blue sheen over the back
+    const g=k.createLinearGradient(0,-.15,0,.0);g.addColorStop(0,'rgba(60,110,190,.35)');g.addColorStop(1,'rgba(60,110,190,0)');k.fillStyle=g;D.bodyPath(k);k.fill();},
+  finSpec:{spiny:D=>sp(D,{x0:.2,x1:.09,H:[.02,.034,.04,.038,.034,.028,.022,.018],dip:.25,join:-.01,tailOff:.004}),
+    soft:D=>so(D,{x0:.07,x1:-.24,h0:.11,hm:.03,h1:.016,peak:.06,lean:.42,rays:22}),
+    anal:D=>so(D,{side:1,x0:-.01,x1:-.235,h0:.09,hm:.026,h1:.014,peak:.06,lean:.42,rays:18,spines:2}),
+    pect:D=>pc(D,{x:.25,y:.028,len:.22,w:.045,ang:.28}),pelvic:D=>pv(D,{x:.2,len:.06,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(40,110,210,.9)','rgba(70,140,230,.8)','rgba(10,40,90,.45)',{horiz:true}),soft:F('rgba(50,120,215,.8)','rgba(40,110,205,.92)','rgba(10,40,90,.45)'),
+    spiny:F('rgba(90,110,130,.55)','rgba(70,90,110,.85)','',{sw:.0028,spineCol:'rgba(30,40,50,.9)'}),anal:F('rgba(60,130,220,.8)','rgba(46,116,210,.9)','rgba(10,40,90,.45)',{sw:.0024,spineCol:'rgba(30,70,140,.9)'}),
+    pect:F('rgba(220,210,150,.45)','rgba(200,190,130,.55)','rgba(110,100,50,.4)',{edge:.25}),pelvic:F('rgba(200,210,214,.7)','rgba(180,190,196,.85)','rgba(80,90,96,.4)',{sw:.0022,spineCol:'rgba(230,234,236,.9)'})},
+  back:['soft','spiny','anal'],
+  head:{dark:'30,40,50',eye:{x:.425,y:-.045,r:.022,iris:['#d0d4c8','#8a907c','#262a22']},preop:.07,nostril:[.46,-.056],
+    mouth:{line:[[.5,.008],[.485,.016],[.465,.024],[.445,.03],[.43,.034]],maxilla:.016,maxCol:['#98a4a8','#b0b8ba'],lipCol:'rgba(170,180,184,.7)',jawTop:'rgba(50,70,80,.35)',chin:'rgba(240,242,242,.4)'}}});
+// Bonefish (ʻōʻio): long and round, a conical glassy snout overhanging a small mouth underneath, big eye; brilliant
+// silver with faint dark streaks along the upper scale rows; one dorsal fin mid-back; a deeply forked tail.
+R.S.oio=M.make({id:'oio',band:.45,scale:.009,scaleEdge:.9,headDark:[.26,.36],bellyTint:[246,248,248,.35],
+  top:[[.5,.014],[.492,-.004],[.475,-.02],[.44,-.039],[.385,-.057],[.31,-.073],[.22,-.084],[.12,-.088],[.02,-.086],[-.08,-.077],[-.16,-.062],[-.23,-.046],[-.285,-.035],[-.325,-.028],[-.355,-.025],[-.372,-.024]],
+  bot:[[.5,.024],[.485,.034],[.455,.047],[.41,.06],[.345,.073],[.26,.083],[.165,.087],[.065,.085],[-.035,.077],[-.125,.063],[-.205,.048],[-.265,.037],[-.31,.029],[-.345,.025],[-.372,.023]],
+  grad:[[0,'#4e626e'],[.12,'#6e8490'],[.26,'#a4b4bc'],[.42,'#d2dadd'],[.6,'#e8eded'],[.8,'#f2f5f5'],[1,'#f8fafa']],
+  gill:{x:.3,kt:8,kb:4},lateral:{x0:.28,x1:-.37,f:.36,col:'rgba(40,50,60,.25)'},edgeCol:'rgba(40,52,60,.5)',tailFin:{type:'fork',spread:.16,notch:.68,rays:20},
+  marks:(k,D)=>{k.lineCap='round';for(const f of [.1,.18,.26,.34,.42]){M.line(k,[[.28,lerp(D.topAt(.28),D.botAt(.28),f)],[.0,lerp(D.topAt(0),D.botAt(0),f)],[-.3,lerp(D.topAt(-.3),D.botAt(-.3),f)]],.0028,`rgba(50,64,74,${.42-f*.5})`);}
+    // the glassy, translucent snout
+    const g=k.createLinearGradient(.43,0,.5,0);g.addColorStop(0,'rgba(120,140,150,0)');g.addColorStop(.6,'rgba(90,110,120,.35)');g.addColorStop(1,'rgba(50,62,70,.7)');k.fillStyle=g;D.bodyPath(k);k.fill();},
+  finSpec:{dorsal:D=>so(D,{x0:.1,x1:-.04,h0:.115,hm:.03,h1:.012,peak:.07,lean:.4,rays:16}),
+    anal:D=>so(D,{side:1,x0:-.17,x1:-.245,h0:.04,hm:.02,h1:.01,peak:.15,lean:.35,rays:8}),
+    pect:D=>pc(D,{x:.29,y:.05,len:.13,w:.04,ang:.15}),pelvic:D=>pv(D,{x:.03,len:.075,ang:.6})},
+  finStyle:{tail:F('rgba(120,140,150,.85)','rgba(150,166,174,.72)','rgba(50,64,74,.4)',{horiz:true}),dorsal:F('rgba(120,140,150,.65)','rgba(110,130,140,.85)','rgba(50,64,74,.4)'),
+    anal:F('rgba(220,226,230,.6)','rgba(200,208,212,.75)','rgba(110,120,130,.4)'),pect:F('rgba(220,226,230,.4)','rgba(200,208,212,.55)','rgba(110,120,130,.4)',{edge:.25}),pelvic:F('rgba(230,234,236,.6)','rgba(210,216,220,.75)','rgba(110,120,130,.4)')},
+  back:['dorsal','anal'],
+  head:{dark:'40,52,60',eye:{x:.415,y:-.022,r:.03,iris:['#c8d4d8','#6e8088','#1a2226']},preop:.07,nostril:[.455,-.022],
+    mouth:{line:[[.462,.042],[.448,.049],[.432,.052],[.42,.052]],w:.0035,col:'rgba(40,50,58,.85)',lipCol:'rgba(230,200,190,.75)',lipW:.007,jaw:false}}});
+// Pacific threadfin (moi): a blunt, rounded, see-through snout overhanging a mouth set far underneath; a big eye under a
+// clear fatty lid; two separate dorsals; a deeply forked tail with long lobes; six free threads hanging below each pectoral.
+// Silvery, grey-blue on the back with faint lines along the scale rows; fins dusky.
+R.S.moi=M.make({id:'moi',band:.44,scale:.008,scaleEdge:.7,headDark:[.25,.35],bellyTint:[244,246,246,.35],
+  top:[[.488,.012],[.496,-.008],[.492,-.03],[.474,-.05],[.438,-.07],[.38,-.088],[.305,-.102],[.215,-.11],[.12,-.112],[.025,-.108],[-.065,-.098],[-.145,-.082],[-.215,-.062],[-.27,-.045],[-.31,-.035],[-.342,-.029],[-.368,-.026]],
+  bot:[[.488,.022],[.472,.042],[.44,.06],[.385,.078],[.31,.093],[.22,.101],[.125,.103],[.03,.099],[-.06,.088],[-.14,.072],[-.21,.054],[-.268,.04],[-.31,.032],[-.342,.027],[-.368,.025]],
+  grad:[[0,'#4a5866'],[.14,'#66747e'],[.28,'#98a4aa'],[.44,'#c6ccce'],[.6,'#dfe2e2'],[.78,'#eef0f0'],[1,'#f6f7f6']],
+  gill:{x:.27,kt:6,kb:3},lateral:{x0:.26,x1:-.37,f:.32,col:'rgba(40,48,56,.3)'},edgeCol:'rgba(36,44,52,.55)',tailFin:{type:'fork',spread:.2,notch:.74,rays:20},
+  marks:(k,D)=>{for(const f of [.12,.2,.28,.36,.44,.52]){M.line(k,[[.26,lerp(D.topAt(.26),D.botAt(.26),f)],[0,lerp(D.topAt(0),D.botAt(0),f)],[-.3,lerp(D.topAt(-.3),D.botAt(-.3),f)]],.0024,`rgba(40,50,60,${.24-f*.25})`);}
+    const g=k.createRadialGradient(.47,-.01,0,.47,-.01,.05);g.addColorStop(0,'rgba(210,222,226,.55)');g.addColorStop(1,'rgba(210,222,226,0)');k.fillStyle=g;D.bodyPath(k);k.fill();},
+  finSpec:{spiny:D=>sp(D,{x0:.17,x1:.06,H:[.04,.062,.066,.062,.054,.044,.034,.026],dip:.3,join:.004,tailOff:.004}),
+    soft:D=>so(D,{x0:-.05,x1:-.17,h0:.07,hm:.035,h1:.014,peak:.1,lean:.4,rays:12}),
+    anal:D=>so(D,{side:1,x0:-.07,x1:-.19,h0:.065,hm:.03,h1:.014,peak:.1,lean:.4,rays:13,spines:3}),
+    pect:D=>pc(D,{x:.27,y:.055,len:.11,w:.04,ang:.25}),pelvic:D=>pv(D,{x:.17,len:.06,ang:.55,spine:true})},
+  finStyle:{tail:F('rgba(56,62,70,.92)','rgba(74,80,88,.8)','rgba(24,28,32,.45)',{horiz:true}),soft:F('rgba(66,72,80,.7)','rgba(60,66,74,.88)','rgba(24,28,32,.45)'),
+    spiny:F('rgba(80,86,94,.55)','rgba(66,72,80,.85)','',{sw:.0028,spineCol:'rgba(34,38,44,.9)'}),anal:F('rgba(90,96,104,.7)','rgba(76,82,90,.86)','rgba(24,28,32,.45)',{sw:.0024,spineCol:'rgba(50,56,62,.9)'}),
+    pect:F('rgba(70,76,84,.6)','rgba(60,66,74,.75)','rgba(24,28,32,.4)',{edge:.25}),pelvic:F('rgba(200,206,210,.7)','rgba(180,186,190,.85)','rgba(80,86,92,.4)',{sw:.0022,spineCol:'rgba(230,232,234,.9)'})},
+  back:['soft','spiny','anal'],
+  head:{dark:'36,44,52',eye:{x:.43,y:-.04,r:.03,iris:['#c4ccd0','#68747c','#1c2226'],ring:'rgba(210,220,224,.55)'},preop:.06,nostril:[.468,-.04],
+    mouth:{line:[[.455,.04],[.425,.046],[.395,.05],[.37,.052]],maxilla:.01,maxCol:['#b4bcc0','#c6ccce'],lipCol:'rgba(200,206,210,.6)',jawTop:'rgba(60,70,80,.3)'},
+    extra:c=>{c.lineCap='round';for(let i=0;i<6;i++){const x0=.268-i*.005,y0=.07+i*.003,x1=.15-i*.022,y1=.122+i*.004;c.strokeStyle='rgba(60,70,80,.35)';c.lineWidth=.0045;c.beginPath();c.moveTo(x0,y0);c.quadraticCurveTo(lerp(x0,x1,.45),y1-.004,x1,y1);c.stroke();
+      c.strokeStyle=`rgba(244,242,232,${.92-i*.06})`;c.lineWidth=.003;c.beginPath();c.moveTo(x0,y0);c.quadraticCurveTo(lerp(x0,x1,.45),y1-.004,x1,y1);c.stroke();}}}});
+// Hawaiian flagtail (āholehole): compressed and fairly deep, a big eye, bright silver; a single notched dorsal fin; a
+// forked tail with a dusky edge; greenish grey on the back.
+R.S.aholehole=M.make({id:'aholehole',band:.44,scale:.012,scaleEdge:.8,headDark:[.22,.32],bellyTint:[244,246,244,.35],
+  top:[[.49,.0],[.475,-.034],[.44,-.072],[.385,-.106],[.31,-.134],[.22,-.148],[.13,-.151],[.04,-.145],[-.05,-.128],[-.13,-.1],[-.2,-.072],[-.255,-.05],[-.3,-.037],[-.335,-.03],[-.36,-.028]],
+  bot:[[.49,.016],[.474,.04],[.44,.07],[.385,.098],[.31,.122],[.22,.134],[.13,.136],[.04,.128],[-.05,.11],[-.13,.086],[-.2,.062],[-.255,.044],[-.3,.033],[-.335,.028],[-.36,.026]],
+  grad:[[0,'#56685e'],[.14,'#76887e'],[.28,'#a8b4ae'],[.44,'#d0d8d6'],[.6,'#e4e9e8'],[.8,'#f0f3f2'],[1,'#f6f8f7']],
+  gill:{x:.24,kt:6,kb:3},lateral:{x0:.24,x1:-.35,f:.28,col:'rgba(40,50,46,.25)'},edgeCol:'rgba(36,46,42,.5)',tailFin:{type:'fork',spread:.15,notch:.55,rays:18},
+  finSpec:{spiny:D=>sp(D,{x0:.13,x1:-.02,H:[.04,.07,.085,.09,.086,.076,.064,.05,.04,.032],dip:.28,join:.03,tailOff:.0}),
+    soft:D=>so(D,{x0:-.012,x1:-.18,h0:.05,hm:.065,h1:.02,peak:.25,lean:.3,rays:11}),
+    anal:D=>so(D,{side:1,x0:-.04,x1:-.18,h0:.06,hm:.05,h1:.018,peak:.2,lean:.3,rays:11,spines:3}),
+    pect:D=>pc(D,{x:.235,y:.03,len:.11,w:.045,ang:.15}),pelvic:D=>pv(D,{x:.19,len:.07,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(170,178,174,.8)','rgba(150,160,156,.7)','rgba(60,70,66,.4)',{horiz:true,margin:'rgba(34,38,36,.75)',marginW:.016}),soft:F('rgba(170,180,176,.55)','rgba(150,160,156,.8)','rgba(60,70,66,.4)'),
+    spiny:F('rgba(170,180,176,.5)','rgba(140,150,146,.8)','',{sw:.0028,spineCol:'rgba(90,100,96,.9)'}),anal:F('rgba(200,206,204,.6)','rgba(180,188,186,.8)','rgba(80,90,86,.4)',{sw:.0024,spineCol:'rgba(140,150,146,.9)'}),
+    pect:F('rgba(220,224,222,.4)','rgba(200,206,204,.55)','rgba(90,100,96,.4)',{edge:.25}),pelvic:F('rgba(230,232,230,.65)','rgba(210,214,212,.8)','rgba(100,110,106,.4)',{sw:.0022,spineCol:'rgba(240,242,240,.9)'})},
+  back:['soft','spiny','anal'],
+  head:{dark:'36,46,42',eye:{x:.395,y:-.035,r:.042,iris:['#cfd6d2','#7c8a84','#1c2220']},preop:.07,nostril:[.445,-.05],
+    mouth:{line:[[.49,.008],[.475,.014],[.458,.02],[.44,.024]],maxilla:.012,maxCol:['#9aa6a2','#aab4b0'],lipCol:'rgba(200,206,204,.6)',jawTop:'rgba(60,70,66,.3)'}}});
+// Soldierfish (menpachi): oval and deep, an enormous dark eye for feeding at night, big rough scales; red all over,
+// darker on the back; a dark red bar across the gill cover; fins red with white leading edges, the spiny dorsal
+// yellow-orange toward its tips.
+R.S.menpachi=M.make({id:'menpachi',band:.44,scale:.03,scaleEdge:1.6,headDark:[.22,.3],bellyTint:[240,170,150,.3],
+  top:[[.48,.002],[.47,-.04],[.442,-.088],[.395,-.133],[.325,-.168],[.24,-.188],[.15,-.194],[.06,-.188],[-.03,-.17],[-.11,-.14],[-.18,-.102],[-.24,-.068],[-.285,-.046],[-.32,-.035],[-.348,-.03]],
+  bot:[[.48,.022],[.468,.06],[.442,.1],[.395,.138],[.325,.165],[.24,.178],[.15,.182],[.06,.174],[-.03,.154],[-.11,.122],[-.18,.088],[-.24,.058],[-.285,.04],[-.32,.032],[-.348,.028]],
+  grad:[[0,'#6a140e'],[.15,'#8c1e14'],[.3,'#b02c1c'],[.46,'#c83c26'],[.62,'#d8563a'],[.78,'#e2785c'],[.9,'#e89a80'],[1,'#eeb4a0']],
+  gill:{x:.22,kt:5,kb:2.6},lateral:{x0:.22,x1:-.34,f:.24,col:'rgba(90,20,14,.3)'},edgeCol:'rgba(70,12,8,.6)',tailFin:{type:'fork',spread:.15,notch:.5,rays:18},
+  finSpec:{spiny:D=>sp(D,{x0:.14,x1:-.03,H:[.05,.075,.088,.09,.086,.078,.066,.052,.04,.03],dip:.35,join:-.01,tailOff:.006}),
+    soft:D=>so(D,{x0:-.04,x1:-.17,h0:.08,hm:.075,h1:.02,peak:.2,lean:.35,rays:14}),
+    anal:D=>so(D,{side:1,x0:-.05,x1:-.17,h0:.075,hm:.07,h1:.02,peak:.2,lean:.35,rays:12,spines:4}),
+    pect:D=>pc(D,{x:.22,y:.04,len:.11,w:.045,ang:.2}),pelvic:D=>pv(D,{x:.19,len:.08,ang:.45,spine:true})},
+  finStyle:{tail:F('rgba(190,50,30,.85)','rgba(210,80,50,.75)','rgba(90,16,10,.45)',{horiz:true}),soft:F('rgba(200,60,36,.65)','rgba(190,50,30,.88)','rgba(90,16,10,.45)',{lead:['rgba(250,246,240,.95)','rgba(190,50,30,.9)']}),
+    spiny:F('rgba(240,170,60,.65)','rgba(200,70,36,.88)','',{sw:.003,spineCol:'rgba(250,230,200,.9)'}),anal:F('rgba(210,70,40,.7)','rgba(196,56,32,.9)','rgba(90,16,10,.45)',{sw:.0026,spineCol:'rgba(250,240,230,.95)',lead:['rgba(250,246,240,.95)','rgba(190,50,30,.9)']}),
+    pect:F('rgba(230,120,90,.45)','rgba(210,90,60,.6)','rgba(120,30,20,.4)',{edge:.25}),pelvic:F('rgba(220,90,60,.7)','rgba(200,70,44,.88)','rgba(100,20,12,.4)',{sw:.0024,spineCol:'rgba(250,246,240,.95)',lead:['rgba(250,246,240,.95)','rgba(190,50,30,.9)']})},
+  back:['soft','spiny','anal'],
+  marks:(k,D)=>{// the dark bar along the edge of the gill cover
+    k.strokeStyle='rgba(60,8,6,.8)';k.lineWidth=.014;k.lineCap='round';k.beginPath();for(let y=-.14;y<=.1;y+=.01){const x=D.gillAt(y)-.002;y>-.14?k.lineTo(x,y):k.moveTo(x,y);}k.stroke();},
+  head:{dark:'70,12,8',eye:{x:.385,y:-.04,r:.058,iris:['#2a0c08','#140604','#050202'],ring:'rgba(110,20,14,.85)',pupil:.7},preop:.06,nostril:[.44,-.075],
+    mouth:{line:[[.48,.01],[.47,.022],[.455,.034],[.44,.04]],maxilla:.016,maxCol:['#a83020','#b84030'],lipCol:'rgba(230,140,110,.6)',jawTop:'rgba(90,16,10,.3)'}}});
+// Whitesaddle goatfish (kūmū): long, with a steep sloping forehead and a long snout; two long barbels under the chin
+// for feeling through the sand; red to purplish red with a white saddle on the tail stalk and faint pale lines; two
+// separate dorsals; a forked tail. Found only in Hawaiʻi.
+R.S.kumu=M.make({id:'kumu',band:.44,scale:.012,scaleEdge:.9,headDark:[.24,.34],bellyTint:[244,200,190,.3],
+  top:[[.49,.032],[.482,.004],[.462,-.026],[.425,-.058],[.37,-.087],[.295,-.108],[.21,-.12],[.12,-.123],[.03,-.118],[-.06,-.105],[-.14,-.084],[-.21,-.062],[-.265,-.045],[-.31,-.035],[-.34,-.031],[-.365,-.029]],
+  bot:[[.49,.044],[.472,.058],[.44,.072],[.385,.087],[.31,.099],[.22,.105],[.13,.106],[.04,.1],[-.05,.089],[-.13,.072],[-.2,.054],[-.26,.04],[-.305,.032],[-.34,.028],[-.365,.027]],
+  grad:[[0,'#6a1826'],[.14,'#8c2432'],[.28,'#ac3640'],[.44,'#c44c50'],[.6,'#d26e66'],[.76,'#e09680'],[.9,'#ecbea6'],[1,'#f2d6c4']],
+  gill:{x:.255,kt:5.5,kb:2.6},lateral:{x0:.25,x1:-.36,f:.3,col:'rgba(90,20,30,.25)'},edgeCol:'rgba(70,14,24,.55)',tailFin:{type:'fork',spread:.15,notch:.6,rays:18},
+  marks:(k,D)=>{// the white saddle on top of the tail stalk, pale lines along the side, a dark stripe through the eye
+    {const cx=-.272,t=D.topAt(cx),d=D.botAt(cx)-t,g=k.createRadialGradient(cx,t,0,cx,t,d*.75);g.addColorStop(0,'rgba(252,248,246,.97)');g.addColorStop(.6,'rgba(252,248,246,.9)');g.addColorStop(1,'rgba(252,248,246,0)');k.save();D.bodyPath(k);k.clip();k.fillStyle=g;k.beginPath();k.ellipse(cx,t,.034,d*.75,0,0,TAU);k.fill();k.restore();}
+    for(const f of [.35,.55])M.line(k,[[.3,lerp(D.topAt(.3),D.botAt(.3),f)],[0,lerp(D.topAt(0),D.botAt(0),f)],[-.22,lerp(D.topAt(-.22),D.botAt(-.22),f)]],.0035,'rgba(250,230,226,.35)');
+    M.line(k,[[.48,.02],[.43,-.03],[.36,-.042],[.28,-.04]],.011,'rgba(60,10,24,.42)');M.line(k,[[.47,.035],[.42,-.012],[.36,-.022],[.29,-.02]],.004,'rgba(250,226,220,.45)');},
+  finSpec:{spiny:D=>sp(D,{x0:.15,x1:.04,H:[.05,.08,.088,.084,.072,.058,.044,.032],dip:.3,join:.004,tailOff:.004}),
+    soft:D=>so(D,{x0:-.05,x1:-.16,h0:.065,hm:.045,h1:.016,peak:.15,lean:.35,rays:10}),
+    anal:D=>so(D,{side:1,x0:-.06,x1:-.16,h0:.055,hm:.04,h1:.016,peak:.15,lean:.35,rays:8,spines:1}),
+    pect:D=>pc(D,{x:.25,y:.035,len:.1,w:.04,ang:.15}),pelvic:D=>pv(D,{x:.21,len:.07,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(180,60,70,.85)','rgba(200,90,96,.72)','rgba(90,20,30,.4)',{horiz:true}),soft:F('rgba(200,90,100,.55)','rgba(180,70,80,.85)','rgba(90,20,30,.4)'),
+    spiny:F('rgba(200,90,100,.5)','rgba(176,66,76,.85)','',{sw:.0028,spineCol:'rgba(120,30,40,.9)'}),anal:F('rgba(220,130,130,.6)','rgba(200,100,104,.85)','rgba(90,20,30,.4)',{sw:.0024,spineCol:'rgba(150,50,60,.9)'}),
+    pect:F('rgba(230,160,160,.4)','rgba(210,130,130,.55)','rgba(110,40,50,.4)',{edge:.25}),pelvic:F('rgba(230,150,150,.65)','rgba(210,120,124,.8)','rgba(100,30,40,.4)',{sw:.0022,spineCol:'rgba(240,210,210,.9)'})},
+  back:['soft','spiny','anal'],
+  head:{dark:'70,14,24',eye:{x:.39,y:-.04,r:.022,iris:['#d8b04a','#a07024','#3a2408']},preop:.06,nostril:[.43,-.045],
+    mouth:{line:[[.485,.04],[.47,.046],[.452,.05]],lipCol:'rgba(230,180,170,.6)',jaw:false},
+    barbels:[{p:[[.462,.052],[.44,.072],[.405,.088],[.36,.097],[.33,.099]],w:.0075,col:'rgba(246,232,176,.95)'},{p:[[.456,.055],[.432,.08],[.395,.098],[.35,.108],[.318,.11]],w:.0075,col:'rgba(232,212,150,.9)'}]}});
+// Peacock grouper (roi): a heavy-bodied grouper with a big mouth and a jutting lower jaw, a rounded tail and rounded
+// soft fins; dark brown covered all over with small bright blue spots edged in black, pale bars across the back half,
+// a paler patch on the chest. Brought to Hawaiʻi in 1956 and now the reef's top predator.
+R.S.roi=M.make({id:'roi',band:.44,scale:.008,scaleEdge:.6,headDark:[.22,.32],bellyTint:[120,96,80,.25],
+  top:[[.49,.008],[.478,-.022],[.45,-.056],[.4,-.09],[.33,-.12],[.25,-.14],[.16,-.149],[.07,-.15],[-.02,-.143],[-.1,-.128],[-.17,-.108],[-.23,-.088],[-.28,-.074],[-.32,-.066],[-.35,-.063]],
+  bot:[[.495,.03],[.475,.058],[.44,.088],[.385,.113],[.31,.13],[.22,.138],[.13,.139],[.04,.133],[-.05,.12],[-.13,.102],[-.2,.084],[-.26,.07],[-.31,.063],[-.35,.06]],
+  grad:[[0,'#24180f'],[.15,'#32231a'],[.3,'#3e2e24'],[.46,'#4a382c'],[.62,'#544034'],[.78,'#5e4a3c'],[.9,'#6a5446'],[1,'#74604f']],
+  gill:{x:.22,kt:5,kb:2.5},lateral:{x0:.22,x1:-.34,f:.26,col:'rgba(20,12,8,.25)'},edgeCol:'rgba(16,10,6,.6)',tailFin:{type:'round',spread:.13,rays:16},
+  marks:(k,D)=>{M.bars(k,D,{seed:241,n:5,x0:-.04,x1:-.31,w:.035,a:.28,col:'200,180,150',f0:.02,f1:.75,taper:.2,fade:.8});
+    // the chest paler
+    const g=k.createRadialGradient(.27,.09,0,.27,.09,.08);g.addColorStop(0,'rgba(140,118,96,.45)');g.addColorStop(1,'rgba(140,118,96,0)');k.fillStyle=g;D.bodyPath(k);k.fill();
+    // blue spots edged in black all over
+    },
+  sharp:(k,D)=>M.spots(k,D,{seed:243,n:230,x0:.47,x1:-.35,f0:.03,f1:.96,r:[.0036,.005],halo:'rgba(8,6,8,.7)',col:r=>`rgba(${50+r*40|0},${130+r*50|0},${215+r*35|0},.95)`}),
+  finSpec:{spiny:D=>sp(D,{x0:.21,x1:.0,H:[.03,.042,.046,.046,.044,.042,.04,.038,.036],dip:.35,join:.006,tailOff:.004}),
+    soft:D=>so(D,{x0:-.01,x1:-.27,h0:.06,hm:.075,h1:.03,peak:.55,lean:.15,rays:15}),
+    anal:D=>so(D,{side:1,x0:-.1,x1:-.26,h0:.05,hm:.07,h1:.03,peak:.55,lean:.12,rays:9,spines:3}),
+    pect:D=>pc(D,{x:.22,y:.04,len:.12,w:.065,ang:.1}),pelvic:D=>pv(D,{x:.19,len:.08,ang:.45,spine:true})},
+  finStyle:{tail:F('rgba(48,36,34,.94)','rgba(36,28,30,.92)','rgba(14,10,10,.45)',{horiz:true,dots:[251,40,.0045,'rgba(80,160,236,.95)','rgba(8,6,8,.7)'],margin:'rgba(240,240,236,.85)',marginW:.008}),
+    soft:F('rgba(44,34,34,.88)','rgba(36,28,30,.94)','rgba(14,10,10,.45)',{dots:[253,26,.0042,'rgba(80,160,236,.95)','rgba(8,6,8,.7)'],margin:'rgba(240,240,236,.8)',marginW:.007}),
+    spiny:F('rgba(50,40,36,.75)','rgba(40,30,28,.9)','',{sw:.003,spineCol:'rgba(20,14,12,.9)',dots:[255,10,.004,'rgba(80,160,236,.9)','rgba(8,6,8,.7)']}),anal:F('rgba(44,34,34,.88)','rgba(36,28,30,.94)','rgba(14,10,10,.45)',{sw:.0026,spineCol:'rgba(20,14,12,.9)',dots:[257,18,.0042,'rgba(80,160,236,.95)','rgba(8,6,8,.7)'],margin:'rgba(240,240,236,.8)',marginW:.007}),
+    pect:F('rgba(90,70,60,.6)','rgba(70,54,46,.78)','rgba(20,14,12,.4)',{edge:.25}),pelvic:F('rgba(50,40,40,.8)','rgba(44,34,34,.9)','rgba(14,10,10,.4)',{sw:.0024,spineCol:'rgba(60,50,46,.9)'})},
+  back:['soft','spiny','anal'],
+  head:{dark:'16,10,6',eye:{x:.4,y:-.05,r:.022,iris:['#5a7a6a','#2a3a32','#0a100c']},preop:.08,nostril:[.445,-.055],
+    mouth:{line:[[.495,.026],[.47,.03],[.44,.036],[.41,.042],[.385,.046]],maxilla:.024,maxCol:['#2e2018','#3a2a20'],lipCol:'rgba(90,70,60,.6)',jawTop:'rgba(20,12,8,.35)',chin:'rgba(80,66,56,.3)'},
+    extra:c=>{c.fillStyle='rgba(8,6,8,.75)';for(const [x,y] of [[.43,-.02],[.45,.0],[.36,-.07],[.34,.03],[.37,.07],[.31,-.01]]){c.beginPath();c.arc(x,y,.0062,0,TAU);c.fill();c.fillStyle='rgba(90,170,240,.95)';c.beginPath();c.arc(x,y,.0045,0,TAU);c.fill();c.fillStyle='rgba(8,6,8,.75)';}}}});
+// Bluestripe snapper (taʻape): snapper-shaped; bright yellow with four blue stripes edged in black running from the
+// head to the tail; whitish below with faint grey lines; yellow fins; a slightly forked tail. Brought to Hawaiʻi in 1958.
+R.S.taape=M.make({id:'taape',band:.44,scale:.01,scaleEdge:.7,headDark:[.22,.32],bellyTint:[246,240,210,.4],
+  top:[[.49,.008],[.475,-.022],[.448,-.056],[.408,-.09],[.35,-.121],[.272,-.144],[.185,-.155],[.095,-.157],[.005,-.149],[-.085,-.128],[-.165,-.098],[-.228,-.07],[-.278,-.049],[-.318,-.037],[-.348,-.031],[-.37,-.029]],
+  bot:[[.49,.024],[.472,.05],[.435,.08],[.375,.107],[.295,.125],[.205,.133],[.115,.133],[.025,.125],[-.065,.109],[-.145,.087],[-.215,.063],[-.275,.043],[-.315,.033],[-.348,.029],[-.37,.027]],
+  grad:[[0,'#b08a18'],[.14,'#d0a820'],[.3,'#e2bc2a'],[.46,'#ecca3a'],[.62,'#f0d864'],[.76,'#f2e4a0'],[.9,'#f4eed0'],[1,'#f6f2e2']],
+  gill:{x:.24,kt:5.5,kb:2.6},lateral:{x0:.24,x1:-.36,f:.26,col:'rgba(120,90,20,.2)'},edgeCol:'rgba(110,80,10,.5)',tailFin:{type:'fork',spread:.14,notch:.38,rays:17},
+  sharp:(k,D)=>{const st=(f0,f1,xs)=>{const pts=[];for(let x=xs;x>=-.33;x-=.01){const t=(xs-x)/(xs+.33),f=lerp(f0,f1,t);pts.push([x,lerp(D.topAt(x),D.botAt(x),f)]);}
+      M.line(k,pts,.0105,'rgba(20,30,60,.7)');M.line(k,pts,.0072,'rgba(60,150,230,.95)');M.line(k,pts.map(p=>[p[0],p[1]-.0012]),.0022,'rgba(170,220,250,.6)');};
+    st(.26,.24,.46);st(.4,.4,.44);st(.53,.52,.4);st(.65,.62,.32);},
+  marks:(k,D)=>{    for(const f of [.76,.84,.92])M.line(k,[[.3,lerp(D.topAt(.3),D.botAt(.3),f)],[0,lerp(D.topAt(0),D.botAt(0),f)],[-.22,lerp(D.topAt(-.22),D.botAt(-.22),f)]],.0025,'rgba(150,150,140,.35)');},
+  finSpec:{spiny:D=>sp(D,{x0:.18,x1:-.03,H:[.03,.05,.062,.064,.062,.058,.054,.05,.046,.042],dip:.3,join:-.01,tailOff:.006}),
+    soft:D=>so(D,{x0:-.04,x1:-.2,h0:.05,hm:.045,h1:.018,peak:.2,lean:.3,rays:14}),
+    anal:D=>so(D,{side:1,x0:-.07,x1:-.2,h0:.06,hm:.045,h1:.018,peak:.2,lean:.3,rays:8,spines:3}),
+    pect:D=>pc(D,{x:.235,y:.03,len:.13,w:.045,ang:.18}),pelvic:D=>pv(D,{x:.2,len:.08,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(230,190,50,.88)','rgba(240,206,80,.76)','rgba(130,100,20,.4)',{horiz:true}),soft:F('rgba(240,200,60,.65)','rgba(230,186,46,.88)','rgba(130,100,20,.4)'),
+    spiny:F('rgba(240,206,70,.6)','rgba(228,186,50,.86)','',{sw:.0028,spineCol:'rgba(160,120,30,.9)'}),anal:F('rgba(240,210,80,.7)','rgba(232,196,60,.88)','rgba(130,100,20,.4)',{sw:.0024,spineCol:'rgba(170,130,40,.9)'}),
+    pect:F('rgba(244,220,140,.45)','rgba(234,206,110,.6)','rgba(140,110,30,.4)',{edge:.25}),pelvic:F('rgba(246,226,140,.7)','rgba(240,214,110,.86)','rgba(140,110,30,.4)',{sw:.0022,spineCol:'rgba(250,240,200,.9)'})},
+  back:['soft','spiny','anal'],
+  head:{dark:'110,80,10',eye:{x:.41,y:-.045,r:.024,iris:['#e8d070','#a88a30','#3a2c08']},preop:.07,nostril:[.45,-.05],
+    mouth:{line:[[.49,.016],[.475,.024],[.455,.032],[.432,.038]],maxilla:.014,maxCol:['#c0a040','#d0b050'],lipCol:'rgba(230,200,120,.6)',jawTop:'rgba(120,90,20,.3)'}}});
+// ---- Kaʻū reef life you can't catch, drawn with the same fish engine ----
+// Whitetip reef shark (manō lālā kea): slender, grey-brown above and white below, a broad blunt snout, small eyes; the
+// first dorsal set well back, behind the pectorals; a big second dorsal and anal; the long upper tail lobe. The tips
+// of the first dorsal and the upper tail lobe are bright white.
+R.S.whitetip=M.make({id:'whitetip',band:.5,scale:0,noScales:true,headDark:[.24,.32],bellyTint:[236,236,232,.35],
+  top:[[.5,.012],[.492,-.006],[.475,-.02],[.445,-.033],[.4,-.046],[.33,-.058],[.24,-.066],[.14,-.069],[.04,-.067],[-.06,-.06],[-.15,-.049],[-.23,-.036],[-.3,-.025],[-.36,-.018],[-.4,-.015]],
+  bot:[[.5,.016],[.49,.028],[.47,.038],[.43,.048],[.37,.057],[.29,.064],[.2,.067],[.1,.065],[0,.058],[-.1,.047],[-.19,.035],[-.27,.025],[-.33,.018],[-.4,.014]],
+  grad:[[0,'#4a4842'],[.25,'#5e5c56'],[.45,'#76746c'],[.56,'#9a988e'],[.64,'#d2d0c8'],[.75,'#e6e4de'],[1,'#f0eee8']],
+  gill:{x:.3,kt:0,kb:0},lateral:{x0:.3,x1:-.38,f:.4,col:'rgba(0,0,0,0)'},edgeCol:'rgba(30,30,28,.5)',tailFin:{type:'shark',spread:.12,tip:-.58},
+  marks:(k,D)=>{k.strokeStyle='rgba(40,38,34,.4)';k.lineWidth=.0032;for(let i=0;i<5;i++){const x=.33-i*.013;k.beginPath();k.moveTo(x,D.topAt(x)+.035);k.quadraticCurveTo(x-.006,(D.topAt(x)+D.botAt(x))/2,x-.003,D.botAt(x)-.022);k.stroke();}
+    k.fillStyle='rgba(40,38,34,.28)';for(const [x,f] of [[.18,.3],[.08,.22],[-.05,.32],[-.14,.25],[.0,.42]]){k.beginPath();k.arc(x,lerp(D.topAt(x),D.botAt(x),f),.0045,0,TAU);k.fill();}},
+  finSpec:{d1:D=>so(D,{x0:.1,x1:-.02,h0:.1,hm:.1,h1:.012,peak:.12,lean:.55,rays:0}),d2:D=>so(D,{x0:-.22,x1:-.28,h0:.045,hm:.045,h1:.01,peak:.15,lean:.5,rays:0}),
+    anal:D=>so(D,{side:1,x0:-.2,x1:-.26,h0:.042,hm:.042,h1:.01,peak:.15,lean:.5,rays:0}),
+    pect:D=>pc(D,{x:.26,y:.05,len:.16,w:.07,ang:-.75}),pelvic:D=>pv(D,{x:-.06,len:.06,ang:.5})},
+  finStyle:(()=>{const fin=F('rgba(84,82,76,.96)','rgba(72,70,64,.96)','',{edge:.2});return{tail:F('rgba(78,76,70,.96)','rgba(90,88,82,.94)','',{horiz:true,blot:[-.565,-.105,.05,'rgba(250,250,246,.95)']}),
+    d1:F('rgba(84,82,76,.96)','rgba(72,70,64,.96)','',{edge:.2,blot:[.035,-.155,.045,'rgba(250,250,246,.96)']}),d2:fin,anal:fin,pect:F('rgba(90,88,82,.94)','rgba(76,74,68,.94)','',{edge:.2}),pelvic:fin};})(),
+  back:['d1','d2','anal'],
+  head:{dark:'34,32,30',noGill:true,eye:{x:.43,y:-.02,r:.012,iris:['#b8c0a8','#5a6448','#0a0c08']},preop:0,nostril:[.485,.008],
+    mouth:{line:[[.455,.047],[.44,.052],[.42,.054],[.4,.052]],jaw:false,lipCol:'rgba(30,30,28,.6)',lipW:.004}}});
+// Bullethead parrotfish (uhu), the big blue-green male: stout, a rounded head with the teeth fused into a beak, big
+// scales each edged in salmon pink, an orange-pink cheek with a blue-green band across the snout, a long low dorsal and
+// anal, a squared tail with pointed corners. Uhu bite the coral and grind it to sand.
+const uhuSpec=(fem)=>({band:.44,scale:.03,scaleEdge:1.5,headDark:[.22,.3],bellyTint:fem?[214,150,140,.3]:[120,200,180,.25],
+  top:[[.495,.018],[.49,-.008],[.472,-.038],[.44,-.07],[.39,-.1],[.32,-.124],[.24,-.138],[.15,-.144],[.06,-.142],[-.03,-.132],[-.11,-.114],[-.18,-.092],[-.24,-.07],[-.29,-.054],[-.33,-.046],[-.36,-.043]],
+  bot:[[.495,.03],[.484,.056],[.46,.08],[.42,.1],[.36,.116],[.28,.126],[.19,.13],[.1,.128],[.01,.12],[-.08,.106],[-.16,.088],[-.23,.07],[-.29,.055],[-.33,.047],[-.36,.044]],
+  grad:fem?[[0,'#4a2a24'],[.2,'#62382e'],[.45,'#7a4638'],[.7,'#8a4e40'],[1,'#a05848']]:[[0,'#1e6a62'],[.2,'#2a8478'],[.45,'#3aa08e'],[.7,'#4ab09a'],[1,'#7cc4ac']],
+  gill:{x:.22,kt:5,kb:2.6},lateral:{x0:.22,x1:-.34,f:.3,col:'rgba(0,0,0,0)'},edgeCol:fem?'rgba(40,20,16,.55)':'rgba(10,50,46,.55)',tailFin:{type:'emarg',spread:.13,notch:fem?.08:.2,rays:14},
+  sharp:(k,D)=>{// each scale edged in pink (male) or a pale spot in each scale row (female)
+    if(!fem){k.strokeStyle='rgba(236,140,130,.55)';k.lineWidth=.0035;for(let x=.2;x>-.34;x-=.034)for(let f=.12;f<.95;f+=.15){const y=lerp(D.topAt(x),D.botAt(x),f);k.beginPath();k.arc(x+.012,y,.015,Math.PI*.6,Math.PI*1.4);k.stroke();}}
+    else{k.fillStyle='rgba(244,226,210,.75)';for(const f of[.55,.72,.86])for(let x=.12;x>-.26;x-=.045){k.beginPath();k.arc(x,lerp(D.topAt(x),D.botAt(x),f),.008,0,TAU);k.fill();}}},
+  marks:(k,D)=>{if(!fem){// orange-pink cheek, blue-green bands on the snout and chin
+      const g=k.createRadialGradient(.33,.045,0,.33,.045,.08);g.addColorStop(0,'rgba(246,170,110,.9)');g.addColorStop(.6,'rgba(240,160,110,.7)');g.addColorStop(1,'rgba(240,160,110,0)');k.fillStyle=g;k.beginPath();k.ellipse(.33,.045,.085,.06,-.3,0,TAU);k.fill();
+      M.line(k,[[.49,.012],[.45,-.012],[.4,-.022]],.012,'rgba(120,236,230,.7)');M.line(k,[[.485,.052],[.44,.072],[.38,.09]],.01,'rgba(120,236,230,.6)');}
+    else{k.fillStyle='rgba(180,60,50,.4)';k.beginPath();k.ellipse(.0,.11,.25,.03,0,0,TAU);k.fill();}},
+  finSpec:{dorsal:D=>so(D,{x0:.2,x1:-.265,h0:.03,hm:.052,h1:.04,peak:.7,lean:.12,rays:18,spines:9}),
+    anal:D=>so(D,{side:1,x0:-.02,x1:-.265,h0:.03,hm:.05,h1:.036,peak:.7,lean:.12,rays:9,spines:3}),
+    pect:D=>pc(D,{x:.22,y:.02,len:.12,w:.05,ang:.1}),pelvic:D=>pv(D,{x:.17,len:.07,ang:.5,spine:true})},
+  finStyle:fem?{tail:F('rgba(150,60,48,.9)','rgba(170,80,64,.8)','rgba(70,24,18,.4)',{horiz:true}),dorsal:F('rgba(130,64,52,.8)','rgba(116,56,46,.9)','rgba(60,24,18,.4)'),anal:F('rgba(150,70,58,.8)','rgba(130,60,50,.9)','rgba(60,24,18,.4)'),pect:F('rgba(200,140,120,.4)','rgba(180,110,96,.55)','rgba(90,40,30,.4)',{edge:.25}),pelvic:F('rgba(190,90,76,.8)','rgba(170,74,62,.9)','rgba(90,40,30,.4)')}
+    :{tail:F('rgba(40,150,140,.9)','rgba(60,170,150,.8)','rgba(10,60,56,.4)',{horiz:true,margin:'rgba(236,150,120,.85)',marginW:.012}),dorsal:F('rgba(60,160,150,.8)','rgba(50,140,130,.9)','rgba(10,60,56,.4)',{margin:'rgba(240,150,120,.85)',marginW:.01}),
+      anal:F('rgba(60,160,150,.8)','rgba(50,140,130,.9)','rgba(10,60,56,.4)',{margin:'rgba(240,150,120,.85)',marginW:.01}),pect:F('rgba(120,200,190,.45)','rgba(90,180,170,.55)','rgba(20,70,66,.4)',{edge:.25}),pelvic:F('rgba(80,180,170,.8)','rgba(60,160,150,.9)','rgba(20,70,66,.4)')},
+  back:['dorsal','anal'],
+  head:{dark:fem?'40,20,16':'10,50,46',eye:{x:.39,y:-.05,r:.022,iris:fem?['#e8b070','#a06020','#2a1408']:['#e8d080','#a08a30','#2a2408']},preop:.05,nostril:[.44,-.05],
+    mouth:{line:[[.497,.03],[.485,.032],[.47,.034]],lipCol:'rgba(0,0,0,0)',jaw:false},
+    extra:c=>{// the beak: two fused tooth plates meeting at the lips
+      const tc=fem?'rgba(236,226,206,.95)':'rgba(170,236,220,.95)';c.fillStyle=tc;c.beginPath();c.moveTo(.474,.016);c.quadraticCurveTo(.498,.014,.503,.03);c.lineTo(.474,.031);c.closePath();c.fill();
+      c.beginPath();c.moveTo(.474,.033);c.lineTo(.502,.033);c.quadraticCurveTo(.496,.046,.474,.046);c.closePath();c.fill();
+      c.strokeStyle='rgba(20,30,28,.6)';c.lineWidth=.0025;c.beginPath();c.moveTo(.47,.032);c.lineTo(.503,.032);c.stroke();c.strokeStyle='rgba(20,30,28,.3)';c.lineWidth=.0015;c.beginPath();c.moveTo(.474,.016);c.quadraticCurveTo(.498,.014,.503,.03);c.moveTo(.502,.033);c.quadraticCurveTo(.496,.046,.474,.046);c.stroke();}}});
+R.S.uhu=M.make(Object.assign({id:'uhu'},uhuSpec(false)));R.S.uhufem=M.make(Object.assign({id:'uhufem'},uhuSpec(true)));
+// Small reef fish of the Kaʻū reef (not caught; drawn swimming over the coral).
+// Yellow tang (lauʻīpala): a bright yellow disc with a pointed snout, tall rounded dorsal and anal fins, a white
+// scalpel spine on the tail stalk, a squared tail.
+R.S.ytang=M.make({id:'ytang',band:.44,scale:0,noScales:true,headDark:[.2,.28],bellyTint:[255,240,140,.2],
+  top:[[.5,.03],[.48,.0],[.44,-.04],[.38,-.09],[.3,-.14],[.2,-.175],[.1,-.19],[0,-.19],[-.1,-.175],[-.18,-.145],[-.24,-.11],[-.28,-.08],[-.31,-.06],[-.34,-.052]],
+  bot:[[.5,.04],[.48,.06],[.44,.09],[.38,.12],[.3,.15],[.2,.172],[.1,.182],[0,.18],[-.1,.165],[-.18,.135],[-.24,.1],[-.28,.072],[-.31,.056],[-.34,.05]],
+  grad:[[0,'#e8b800'],[.3,'#f6cc10'],[.6,'#fad61e'],[1,'#f2d030']],
+  gill:{x:.26,kt:4,kb:2},lateral:{x0:.26,x1:-.3,f:.22,col:'rgba(160,110,0,.2)'},edgeCol:'rgba(150,100,0,.5)',tailFin:{type:'emarg',spread:.13,notch:.06,rays:14},
+  sharp:(k,D)=>{k.fillStyle='rgba(255,255,250,.95)';k.beginPath();k.ellipse(-.29,.0,.022,.008,-.2,0,TAU);k.fill();},
+  finSpec:{dorsal:D=>so(D,{x0:.3,x1:-.28,h0:.09,hm:.13,h1:.06,peak:.45,lean:.15,rays:22,spines:5}),anal:D=>so(D,{side:1,x0:.18,x1:-.27,h0:.07,hm:.11,h1:.055,peak:.45,lean:.15,rays:18,spines:3}),
+    pect:D=>pc(D,{x:.24,y:.02,len:.12,w:.05,ang:.1}),pelvic:D=>pv(D,{x:.2,len:.08,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(240,200,20,.95)','rgba(248,214,40,.9)','rgba(160,110,0,.35)',{horiz:true}),dorsal:F('rgba(246,206,24,.95)','rgba(236,196,16,.95)','rgba(160,110,0,.35)'),anal:F('rgba(246,206,24,.95)','rgba(236,196,16,.95)','rgba(160,110,0,.35)'),pect:F('rgba(250,226,90,.6)','rgba(240,210,60,.7)','rgba(160,110,0,.3)',{edge:.25}),pelvic:F('rgba(246,206,24,.95)','rgba(236,196,16,.95)','rgba(160,110,0,.35)')},
+  back:['dorsal','anal'],head:{dark:'150,100,0',eye:{x:.34,y:-.05,r:.032,iris:['#2a2410','#1a1608','#050402']},preop:0,nostril:[.4,-.06],mouth:{line:[[.5,.034],[.49,.036]],jaw:false,lipCol:'rgba(150,110,20,.7)',lipW:.008}}});
+// Manini (convict tang): oval, pale grey-green with six narrow black bars, one through the eye; a slightly forked tail.
+R.S.manini=M.make({id:'manini',band:.44,scale:0,noScales:true,headDark:[.2,.28],bellyTint:[240,244,236,.35],
+  top:[[.5,.02],[.48,-.01],[.44,-.05],[.38,-.09],[.3,-.125],[.2,-.148],[.1,-.156],[0,-.152],[-.1,-.138],[-.18,-.112],[-.24,-.082],[-.29,-.058],[-.33,-.045],[-.36,-.04]],
+  bot:[[.5,.03],[.48,.05],[.44,.075],[.38,.1],[.3,.122],[.2,.138],[.1,.144],[0,.14],[-.1,.126],[-.18,.1],[-.24,.074],[-.29,.054],[-.33,.042],[-.36,.038]],
+  grad:[[0,'#9aa496'],[.3,'#c4ccc0'],[.6,'#dfe4da'],[1,'#eef0e8']],
+  gill:{x:.26,kt:4,kb:2},lateral:{x0:.26,x1:-.32,f:.24,col:'rgba(60,70,60,.15)'},edgeCol:'rgba(60,70,60,.45)',tailFin:{type:'fork',spread:.12,notch:.3,rays:14},
+  sharp:(k,D)=>{for(const x of[.37,.23,.09,-.05,-.19]){k.fillStyle='rgba(16,18,16,.9)';k.beginPath();const w=.015;k.moveTo(x-w,D.topAt(x-w)-.004);k.lineTo(x+w,D.topAt(x+w)-.004);k.lineTo(x+w*.8,lerp(D.topAt(x),D.botAt(x),.9));k.lineTo(x-w*.8,lerp(D.topAt(x),D.botAt(x),.9));k.closePath();k.fill();}
+    k.beginPath();k.arc(-.31,D.topAt(-.31)+.012,.012,0,TAU);k.fill();},
+  finSpec:{dorsal:D=>so(D,{x0:.26,x1:-.3,h0:.05,hm:.07,h1:.04,peak:.5,lean:.2,rays:22,spines:9}),anal:D=>so(D,{side:1,x0:.1,x1:-.3,h0:.045,hm:.06,h1:.035,peak:.5,lean:.2,rays:19,spines:3}),
+    pect:D=>pc(D,{x:.25,y:.02,len:.12,w:.045,ang:.1}),pelvic:D=>pv(D,{x:.2,len:.07,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(190,196,180,.85)','rgba(200,206,190,.75)','rgba(60,70,60,.35)',{horiz:true}),dorsal:F('rgba(200,206,190,.8)','rgba(180,188,172,.9)','rgba(60,70,60,.35)'),anal:F('rgba(210,214,200,.8)','rgba(190,196,182,.9)','rgba(60,70,60,.35)'),pect:F('rgba(220,226,216,.5)','rgba(200,208,196,.6)','rgba(60,70,60,.3)',{edge:.25}),pelvic:F('rgba(220,224,210,.85)','rgba(200,206,192,.9)','rgba(60,70,60,.35)')},
+  back:['dorsal','anal'],head:{dark:'60,70,60',eye:{x:.37,y:-.045,r:.03,iris:['#c8c088','#6a6030','#0a0804']},preop:0,nostril:[.42,-.05],mouth:{line:[[.5,.025],[.488,.03]],jaw:false,lipCol:'rgba(60,60,50,.7)',lipW:.008}}});
+// Moorish idol (kihikihi): a tall disc with a long white streamer off the dorsal fin, broad black and white bands with
+// yellow behind, a tube snout with an orange saddle, a black tail edged in white.
+R.S.idol=M.make({id:'idol',band:.44,scale:0,noScales:true,headDark:[.2,.28],bellyTint:[255,255,250,.2],
+  top:[[.5,.03],[.47,.012],[.42,-.01],[.37,-.04],[.31,-.09],[.24,-.15],[.15,-.2],[.05,-.22],[-.05,-.215],[-.13,-.18],[-.2,-.13],[-.25,-.085],[-.29,-.052],[-.32,-.038],[-.35,-.034]],
+  bot:[[.5,.04],[.47,.05],[.42,.06],[.37,.08],[.31,.12],[.24,.16],[.15,.19],[.05,.2],[-.05,.19],[-.13,.16],[-.2,.115],[-.25,.075],[-.29,.048],[-.32,.036],[-.35,.033]],
+  grad:[[0,'#f4f0e4'],[1,'#fbf8ee']],
+  gill:{x:.24,kt:3,kb:2},lateral:{x0:.24,x1:-.3,f:.2,col:'rgba(0,0,0,0)'},edgeCol:'rgba(30,30,28,.5)',tailFin:{type:'emarg',spread:.09,notch:.12,rays:12},
+  sharp:(k,D)=>{const band=(x0,x1,col)=>{k.fillStyle=col;k.beginPath();k.moveTo(x0,-.4);k.lineTo(x1,-.4);k.lineTo(x1-.02,.4);k.lineTo(x0-.02,.4);k.closePath();k.fill();};
+    band(.31,.18,'rgba(14,14,14,.96)');band(.02,-.06,'rgba(248,206,40,.95)');band(-.06,-.2,'rgba(14,14,14,.96)');band(-.24,-.27,'rgba(248,206,40,.9)');
+    k.fillStyle='rgba(240,140,40,.95)';k.beginPath();k.ellipse(.43,.0,.03,.016,-.3,0,TAU);k.fill();},
+  finSpec:{dorsal:D=>{// a tall sickle of a fin that runs out into a long white streamer, sweeping back
+      const q=(a,b,c2,n)=>{const o=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;o.push([u*u*a[0]+2*u*t*b[0]+t*t*c2[0],u*u*a[1]+2*u*t*b[1]+t*t*c2[1]]);}return o;};
+      const lead=q([.2,D.topAt(.2)+.004],[.14,-.3],[-.02,-.5],10),fil=q([-.02,-.5],[-.08,-.66],[-.32,-.74],10),back=q([-.33,-.725],[-.1,-.64],[-.05,-.46],10),rear=q([-.05,-.46],[-.07,-.28],[-.25,D.topAt(-.25)+.004],10);
+      return{o:[...lead,...fil.slice(1),...back,...rear.slice(1)]};},
+    anal:D=>so(D,{side:1,x0:.12,x1:-.24,h0:.1,hm:.14,h1:.02,peak:.25,lean:.5,rays:16,spines:3}),pect:D=>pc(D,{x:.23,y:.02,len:.1,w:.04,ang:.1}),pelvic:D=>pv(D,{x:.2,len:.08,ang:.5})},
+  finStyle:{tail:F('rgba(20,20,20,.95)','rgba(30,30,30,.9)','',{horiz:true,margin:'rgba(250,250,246,.95)',marginW:.014}),dorsal:F('rgba(248,246,236,.95)','rgba(240,238,228,.95)','rgba(60,60,58,.2)'),anal:F('rgba(20,20,20,.95)','rgba(30,30,30,.95)','',{margin:'rgba(248,206,40,.9)',marginW:.01}),pect:F('rgba(240,240,230,.5)','rgba(220,220,210,.6)','',{edge:.25}),pelvic:F('rgba(20,20,20,.95)','rgba(30,30,30,.95)','')},
+  back:['dorsal','anal'],head:{dark:'30,30,28',eye:{x:.27,y:-.06,r:.028,iris:['#4a4030','#2a2010','#050402']},preop:0,nostril:[.32,-.06],mouth:{line:[[.5,.035],[.49,.037]],jaw:false,lipCol:'rgba(40,30,20,.8)',lipW:.008}}});
+// Reef triggerfish (humuhumunukunukuāpuaʻa), Hawaiʻi's state fish: a rhombus-shaped body, the eye set high and far back,
+// tan above and white below, a black wedge running back to the tail stalk lined in gold, blue and gold bars from the eye
+// down to the pectoral, orange lips; the dorsal and anal fins far back and undulating.
+R.S.humu=M.make({id:'humu',band:.44,scale:0,noScales:true,headDark:[.18,.26],bellyTint:[250,250,246,.3],
+  top:[[.5,.03],[.47,.0],[.42,-.04],[.35,-.09],[.26,-.14],[.17,-.172],[.08,-.18],[-.02,-.17],[-.1,-.14],[-.17,-.1],[-.23,-.066],[-.28,-.046],[-.32,-.04],[-.35,-.038]],
+  bot:[[.5,.045],[.47,.07],[.42,.1],[.35,.13],[.26,.15],[.17,.158],[.08,.15],[-.02,.13],[-.1,.1],[-.17,.07],[-.23,.05],[-.28,.042],[-.32,.04],[-.35,.038]],
+  grad:[[0,'#a88e64'],[.35,'#c4ac80'],[.5,'#eeeae0'],[1,'#f8f6f0']],
+  gill:{x:.2,kt:0,kb:0},lateral:{x0:.2,x1:-.3,f:.3,col:'rgba(0,0,0,0)'},edgeCol:'rgba(40,34,24,.5)',tailFin:{type:'round',spread:.09,rays:12},
+  sharp:(k,D)=>{// black wedge to the tail stalk, edged in gold
+    k.fillStyle='rgba(16,16,16,.95)';k.beginPath();k.moveTo(.14,.02);k.lineTo(-.06,-.1);k.lineTo(-.33,-.03);k.lineTo(-.33,.035);k.lineTo(-.06,.09);k.closePath();k.fill();
+    k.strokeStyle='rgba(240,190,60,.9)';k.lineWidth=.008;k.beginPath();k.moveTo(-.1,-.09);k.lineTo(-.33,-.035);k.moveTo(-.1,.085);k.lineTo(-.33,.04);k.stroke();
+    k.strokeStyle='rgba(90,140,220,.95)';k.lineWidth=.009;for(const dx of[0,.03,.06]){k.beginPath();k.moveTo(.33-dx,-.06);k.lineTo(.27-dx,.05);k.stroke();}
+    k.strokeStyle='rgba(240,190,60,.9)';k.lineWidth=.007;k.beginPath();k.moveTo(.345,-.05);k.lineTo(.29,.06);k.stroke();
+    k.strokeStyle='rgba(60,90,170,.9)';k.lineWidth=.01;k.beginPath();k.moveTo(.47,.02);k.lineTo(.36,-.03);k.stroke();},
+  finSpec:{spiny:D=>sp(D,{x0:.15,x1:.06,H:[.08,.05,.02],dip:.2,join:-.01,tailOff:.004}),dorsal:D=>so(D,{x0:-.04,x1:-.27,h0:.09,hm:.07,h1:.03,peak:.2,lean:.25,rays:16}),
+    anal:D=>so(D,{side:1,x0:-.03,x1:-.27,h0:.08,hm:.065,h1:.03,peak:.2,lean:.25,rays:15}),pect:D=>pc(D,{x:.2,y:.03,len:.09,w:.04,ang:.1}),pelvic:D=>pv(D,{x:.05,len:.03,ang:.6})},
+  finStyle:{tail:F('rgba(200,190,170,.85)','rgba(210,200,180,.75)','rgba(60,50,30,.3)',{horiz:true}),spiny:F('rgba(150,130,96,.8)','rgba(130,110,80,.9)','',{sw:.004,spineCol:'rgba(60,50,30,.9)'}),dorsal:F('rgba(220,214,200,.7)','rgba(200,194,180,.8)','rgba(60,50,30,.3)'),anal:F('rgba(230,226,214,.7)','rgba(210,206,194,.8)','rgba(60,50,30,.3)'),pect:F('rgba(240,200,80,.8)','rgba(230,186,60,.85)','rgba(120,90,20,.3)',{edge:.25}),pelvic:F('rgba(200,190,170,.8)','rgba(180,170,150,.9)','')},
+  back:['spiny','dorsal','anal'],head:{dark:'40,34,24',eye:{x:.22,y:-.06,r:.028,iris:['#3a6a90','#1a3a58','#050a10']},preop:0,nostril:[.3,-.06],mouth:{line:[[.5,.038],[.485,.042]],jaw:false,lipCol:'rgba(240,120,50,.95)',lipW:.014}}});
+// Milletseed butterflyfish (lauwiliwili), found only in Hawaiʻi: a yellow disc with rows of small dark spots, a black
+// bar through the eye and a black spot on the tail stalk; schools in the open over the reef.
+R.S.lauwili=M.make({id:'lauwili',band:.44,scale:0,noScales:true,headDark:[.2,.28],bellyTint:[255,250,220,.3],
+  top:[[.5,.02],[.47,0],[.42,-.04],[.35,-.1],[.27,-.15],[.18,-.18],[.08,-.192],[-.02,-.188],[-.1,-.165],[-.17,-.13],[-.23,-.09],[-.28,-.062],[-.32,-.05],[-.35,-.046]],
+  bot:[[.5,.03],[.47,.045],[.42,.07],[.35,.11],[.27,.145],[.18,.168],[.08,.178],[-.02,.172],[-.1,.15],[-.17,.118],[-.23,.082],[-.28,.058],[-.32,.048],[-.35,.045]],
+  grad:[[0,'#e8c020'],[.5,'#f4d640'],[1,'#f6e6a0']],
+  gill:{x:.24,kt:3,kb:2},lateral:{x0:.24,x1:-.3,f:.22,col:'rgba(0,0,0,0)'},edgeCol:'rgba(140,100,0,.45)',tailFin:{type:'emarg',spread:.11,notch:.04,rays:14},
+  sharp:(k,D)=>{k.fillStyle='rgba(50,44,30,.42)';for(let x=.18;x>-.24;x-=.032)for(let f=.12;f<.92;f+=.1){const y=lerp(D.topAt(x),D.botAt(x),f)+(x*.25);if(y<D.topAt(x)+.01||y>D.botAt(x)-.01)continue;k.beginPath();k.arc(x,y,.0065,0,TAU);k.fill();}
+    k.fillStyle='rgba(14,14,14,.95)';k.beginPath();k.moveTo(.33,D.topAt(.33)-.01);k.lineTo(.385,D.topAt(.385));k.lineTo(.33,D.botAt(.33)-.02);k.lineTo(.29,D.botAt(.29)-.02);k.closePath();k.fill();
+    k.beginPath();k.arc(-.32,.0,.022,0,TAU);k.fill();},
+  finSpec:{dorsal:D=>so(D,{x0:.22,x1:-.28,h0:.08,hm:.1,h1:.04,peak:.5,lean:.2,rays:20,spines:12}),anal:D=>so(D,{side:1,x0:.06,x1:-.27,h0:.07,hm:.09,h1:.04,peak:.5,lean:.2,rays:16,spines:3}),
+    pect:D=>pc(D,{x:.24,y:.02,len:.1,w:.04,ang:.1}),pelvic:D=>pv(D,{x:.2,len:.08,ang:.5,spine:true})},
+  finStyle:{tail:F('rgba(240,220,120,.75)','rgba(250,236,170,.6)','rgba(140,100,0,.3)',{horiz:true}),dorsal:F('rgba(246,210,40,.95)','rgba(236,196,24,.95)','rgba(140,100,0,.3)',{margin:'rgba(20,20,20,.6)',marginW:.006}),anal:F('rgba(246,210,40,.95)','rgba(236,196,24,.95)','rgba(140,100,0,.3)'),pect:F('rgba(250,240,190,.5)','rgba(240,226,160,.6)','',{edge:.25}),pelvic:F('rgba(250,226,90,.9)','rgba(240,210,60,.9)','')},
+  back:['dorsal','anal'],head:{dark:'140,100,0',eye:{x:.36,y:-.05,r:.026,iris:['#1a1a14','#101008','#000'],ring:'rgba(20,20,20,.9)'},preop:0,nostril:[.42,-.05],mouth:{line:[[.5,.025],[.49,.028]],jaw:false,lipCol:'rgba(60,50,20,.7)',lipW:.007}}});
+// Saddle wrasse (hīnālea lauwili), found only in Hawaiʻi: slender, green with a blue head and a wide orange-red saddle
+// just behind it; a crescent tail with long tips. Always moving, darting over the coral.
+R.S.hinalea=M.make({id:'hinalea',band:.44,scale:.012,scaleEdge:.6,headDark:[.24,.32],bellyTint:[200,240,210,.25],
+  top:[[.5,.012],[.485,-.012],[.45,-.04],[.39,-.066],[.31,-.084],[.21,-.094],[.11,-.096],[.01,-.092],[-.09,-.082],[-.18,-.068],[-.25,-.054],[-.3,-.045],[-.34,-.04],[-.37,-.038]],
+  bot:[[.5,.02],[.48,.036],[.44,.054],[.38,.07],[.3,.08],[.2,.086],[.1,.086],[0,.082],[-.1,.072],[-.19,.058],[-.26,.047],[-.31,.04],[-.35,.036],[-.37,.035]],
+  grad:[[0,'#1e7a50'],[.4,'#2e9a60'],[.7,'#4ab070'],[1,'#7ac890']],
+  gill:{x:.24,kt:4,kb:2},lateral:{x0:.24,x1:-.34,f:.28,col:'rgba(0,0,0,0)'},edgeCol:'rgba(10,50,30,.5)',tailFin:{type:'lunate',spread:.14,notch:.5,rays:12},
+  marks:(k,D)=>{const g=k.createLinearGradient(.2,0,.5,0);g.addColorStop(0,'rgba(40,90,200,0)');g.addColorStop(.25,'rgba(40,90,200,.85)');g.addColorStop(1,'rgba(50,110,220,.95)');k.fillStyle=g;D.bodyPath(k);k.fill();
+    k.fillStyle='rgba(240,90,40,.92)';k.beginPath();k.moveTo(.21,-.2);k.lineTo(.1,-.2);k.lineTo(.08,.2);k.lineTo(.2,.2);k.closePath();k.fill();
+    for(let x=.05;x>-.33;x-=.03){k.strokeStyle='rgba(200,60,90,.35)';k.lineWidth=.004;k.beginPath();k.moveTo(x,D.topAt(x)+.01);k.lineTo(x-.008,D.botAt(x)-.01);k.stroke();}},
+  finSpec:{dorsal:D=>so(D,{x0:.2,x1:-.3,h0:.035,hm:.035,h1:.03,peak:.5,lean:.2,rays:20,spines:8}),anal:D=>so(D,{side:1,x0:.02,x1:-.3,h0:.03,hm:.032,h1:.028,peak:.5,lean:.2,rays:12,spines:3}),pect:D=>pc(D,{x:.23,y:.01,len:.11,w:.04,ang:.1}),pelvic:D=>pv(D,{x:.19,len:.05,ang:.5})},
+  finStyle:{tail:F('rgba(40,140,90,.9)','rgba(60,160,110,.8)','rgba(10,50,30,.3)',{horiz:true,margin:'rgba(240,120,60,.8)',marginW:.01}),dorsal:F('rgba(60,150,100,.8)','rgba(50,130,90,.9)','',{margin:'rgba(220,60,90,.8)',marginW:.008}),anal:F('rgba(60,150,100,.8)','rgba(50,130,90,.9)','',{margin:'rgba(80,140,230,.8)',marginW:.008}),pect:F('rgba(150,220,200,.4)','rgba(120,200,180,.5)','',{edge:.25}),pelvic:F('rgba(80,160,120,.8)','rgba(60,140,100,.9)','')},
+  back:['dorsal','anal'],head:{dark:'10,40,60',eye:{x:.4,y:-.03,r:.02,iris:['#d86030','#803010','#100402']},preop:0,nostril:[.45,-.03],mouth:{line:[[.5,.018],[.485,.024]],jaw:false,lipCol:'rgba(240,160,170,.85)',lipW:.008}}});
+// Bigeye scad (akule): slim and silver with a blue-green back, a very big eye, a forked tail; they travel in tight
+// shimmering schools over the reef and rise toward the surface at night.
+R.S.akule=M.make({id:'akule',band:.44,scale:0,noScales:true,headDark:[.24,.32],bellyTint:[250,252,252,.35],
+  top:[[.5,.01],[.485,-.01],[.45,-.03],[.39,-.05],[.31,-.066],[.21,-.076],[.11,-.08],[.01,-.078],[-.09,-.07],[-.18,-.056],[-.25,-.04],[-.3,-.028],[-.34,-.02],[-.37,-.016]],
+  bot:[[.5,.016],[.48,.03],[.44,.046],[.38,.06],[.3,.072],[.2,.078],[.1,.078],[0,.072],[-.1,.06],[-.19,.044],[-.26,.03],[-.31,.022],[-.35,.017],[-.37,.015]],
+  grad:[[0,'#2a5a6a'],[.25,'#4a8090'],[.4,'#a8c0c8'],[.55,'#dde6e8'],[1,'#f2f6f6']],
+  gill:{x:.27,kt:5,kb:2.4},lateral:{x0:.27,x1:-.36,f:.38,col:'rgba(30,60,70,.3)'},edgeCol:'rgba(20,50,60,.5)',tailFin:{type:'fork',spread:.16,notch:.7,rays:16},
+  marks:(k,D)=>{M.line(k,[[.27,lerp(D.topAt(.27),D.botAt(.27),.36)],[0,lerp(D.topAt(0),D.botAt(0),.38)],[-.3,lerp(D.topAt(-.3),D.botAt(-.3),.4)]],.008,'rgba(220,200,110,.35)');},
+  finSpec:{spiny:D=>sp(D,{x0:.16,x1:.06,H:[.03,.045,.04,.03,.02],dip:.25,join:-.01,tailOff:.004}),soft:D=>so(D,{x0:.03,x1:-.25,h0:.045,hm:.02,h1:.012,peak:.1,lean:.4,rays:18}),
+    anal:D=>so(D,{side:1,x0:-.03,x1:-.25,h0:.04,hm:.018,h1:.012,peak:.1,lean:.4,rays:16}),pect:D=>pc(D,{x:.25,y:.02,len:.14,w:.03,ang:.25}),pelvic:D=>pv(D,{x:.2,len:.05,ang:.5})},
+  finStyle:{tail:F('rgba(170,190,180,.8)','rgba(190,206,196,.7)','rgba(30,60,70,.3)',{horiz:true}),spiny:F('rgba(120,150,160,.6)','rgba(100,130,140,.8)','',{sw:.003}),soft:F('rgba(140,170,170,.6)','rgba(120,150,150,.8)',''),anal:F('rgba(220,226,226,.6)','rgba(200,210,210,.8)',''),pect:F('rgba(220,226,226,.4)','rgba(200,210,210,.5)','',{edge:.25}),pelvic:F('rgba(230,234,234,.7)','rgba(210,216,216,.8)','')},
+  back:['soft','spiny','anal'],head:{dark:'20,50,60',eye:{x:.39,y:-.02,r:.042,iris:['#c8d4d8','#6a7c84','#0a1014']},preop:.05,nostril:[.45,-.025],mouth:{line:[[.5,.014],[.48,.022],[.455,.028]],maxilla:.01,maxCol:['#b0c0c4','#c0ccd0'],lipCol:'rgba(200,210,214,.6)'}}});
 // Pinfish: a small, deep porgy, silvery with thin blue and yellow lines along the side, faint dark bars, a dark spot on
 // the shoulder, yellow fins, a forked tail.
 R.S.pinfish=M.make({id:'pinfish',band:.45,scale:.012,headDark:[.2,.3],bellyTint:[244,242,234,.3],
@@ -7592,7 +7988,7 @@ function renderSeaPick(list){const s=G.sea,rack=document.createElement('div');ra
       card.append(body);}
     rack.append(card);}
   const note=document.createElement('p');note.className='tb-cond';note.textContent=`${wellText()} \u00b7 it holds ${WELL_MAX}`;list.append(rack,note);}
-function update(dt){bankTurkeyTick(dt);bearTick(dt);fallsTick(dt);lipBearTick(dt);boatMove(dt);updateSeaLife(dt);charterNight();
+function update(dt){bankTurkeyTick(dt);bearTick(dt);fallsTick(dt);lipBearTick(dt);kauTick(dt);boatMove(dt);updateSeaLife(dt);charterNight();
   tickChatter(dt);updateFlock(dt);updateCritters(dt);updatePlane(dt);
   tickClock(dt);
   G.spawnT-=dt;if(G.spawnT<=0){spawnTick(false);G.spawnT=6;}
@@ -8076,6 +8472,504 @@ function drawFloatPlane(c,P,dk,fog){const a=(1-dk*.75)*(fog?.4:1),d=P.dir,px=P.x
   c.fillStyle=dkc;c.beginPath();c.moveTo(9.6,-2);c.quadraticCurveTo(11.4,0,9.6,2.4);c.lineTo(8.6,2.2);c.lineTo(8.6,-1.9);c.closePath();c.fill();// round engine cowl
   c.fillStyle='rgba(60,60,60,.35)';c.beginPath();c.ellipse(11.4,.2,.6,4+Math.sin(P.t*60)*.4,0,0,TAU);c.fill();
   c.restore();}
+// ---------------- Kaʻū coast (Punaluʻu, Hawaiʻi Island) ----------------
+// You stand on a black pāhoehoe ledge at the edge of Punaluʻu bay on the Kaʻū coast. Across the bay is the black sand
+// beach under its coconut grove, where green sea turtles (honu) haul out to bask. Behind it the Kaʻū slopes climb,
+// green and gullied, to the long low dome of Mauna Loa, white on top some winters. Off to the right, past the lava point,
+// is open Pacific: humpbacks blow and breach there from December to April, spinner dolphins come in on calm mornings.
+// Kīlauea's summit has been erupting in episodes since late 2024: every few weeks a lava fountain runs for hours, its
+// plume blown down the coast by the trades and its glow lighting the clouds at night; vog hangs low when it's going.
+// Underwater, lava ledges and boulders run out from the shore, crusted with cauliflower and lobe coral and red limu,
+// with sand channels between them where the ʻōʻio and moi feed.
+const KAU_PTS=[[0,5],[.05,8],[.12,10.5],[.2,10],[.3,11.5],[.42,12.5],[.55,13.5],[.68,12.5],[.8,13],[.95,14.5],[1.1,15.5],[1.3,15],[1.5,16],[1.7,16.5],[1.9,16],[2.05,16.5]];
+function kauSand(u){return smooth(.5,.56,u)*(1-smooth(.84,.9,u))+smooth(1.36,1.42,u)*(1-smooth(1.62,1.68,u));}
+function kauBottom(x){const u=x/TW,sd=kauSand(u);let ft=profFt(u,KAU_PTS);
+  // lava is lumpy and blocky: ledges, boulders and holes; the sand channels lie smooth and a little deeper
+  const rough=2.4*(fFbm(x*.011+3)-.5)+1.1*(fFbm(x*.045+9)-.5)+.35*Math.sin(x*.13);ft+=rough*(1-sd)+sd*1.2;
+  return Math.min(GROUND,ftToY(Math.max(3,ft)));}
+// Is a Kīlauea fountaining episode going right now? A few days in each month, for some hours of the day.
+function kilaueaOn(){if(G.kilauea!=null)return G.kilauea;const d=S.yday||0,on=fHash(d*3.7+11)<.22;if(!on)return 0;const h=(S.minutes/60)%24,s=4+fHash(d*5.1)*12,len=6+fHash(d*7.3)*8;let t=(h-s+24)%24;return t<len?Math.min(1,t/.5,(len-t)/.5):0;}
+function kauWhales(){const si=seasonIdx();return si===3?1:si===0?.55:si===2?.15:0;}
+const KAU={whale:null,wnext:0,dolph:null,dnext:0,canoe:null,cnext:0};
+function kauTick(dt){if(!LOC().kau)return;const t=G.t,h=(S.minutes/60)%24;
+  if(!KAU.whale&&t>KAU.wnext&&kauWhales()>0){KAU.wnext=t+(14+Math.random()*30)/kauWhales();const br=Math.random()<.35;KAU.whale={x:W*(.55+Math.random()*.6),t:0,br,dir:Math.random()<.5?-1:1};}
+  if(KAU.whale){KAU.whale.t+=dt;if(KAU.whale.t>(KAU.whale.br?3.2:4.5))KAU.whale=null;}
+  if(!KAU.dolph&&t>KAU.dnext&&h>6&&h<11&&S.weather!=='rain'){KAU.dnext=t+20+Math.random()*40;KAU.dolph={x:W*(.5+Math.random()*.5),t:0,dir:Math.random()<.5?-1:1,n:3+Math.floor(Math.random()*4)};}
+  if(KAU.dolph){KAU.dolph.t+=dt;if(KAU.dolph.t>9)KAU.dolph=null;}
+  if(!KAU.canoe&&t>KAU.cnext&&h>7&&h<17&&S.weather!=='rain'){KAU.cnext=t+60+Math.random()*90;const dir=Math.random()<.5?-1:1;KAU.canoe={x:dir>0?-60:W*1.6,dir};}
+  if(KAU.canoe){KAU.canoe.x+=KAU.canoe.dir*9*dt;if(KAU.canoe.x<-80||KAU.canoe.x>W*1.7)KAU.canoe=null;}}
+// A coconut palm on the far shore: a slim, slightly curved trunk, ringed and lit on one side; a crown of feathery fronds,
+// each a curved midrib with leaflets hanging from both sides, swaying in the trade wind; a couple of dead brown fronds
+// hanging under the crown, and a cluster of coconuts.
+function drawPalm(c,x,y,h,lean,K,ph,dk){const tx=x+lean*h,ty=y-h,mx0=x+lean*h*.25,my0=y-h*.55,wb=Math.max(.9,h*.05),wt=Math.max(.6,h*.032);
+  // trunk: a tapered curve, lighter on the sunward side
+  const pt=u=>{const v=1-u;return[v*v*x+2*v*u*mx0+u*u*tx,v*v*y+2*v*u*my0+u*u*ty];};
+  c.fillStyle=K('#665a4a');c.beginPath();for(let k=0;k<=10;k++){const [px,py]=pt(k/10),w=lerp(wb,wt,k/10)/2;k?c.lineTo(px-w,py):c.moveTo(px-w,py);}for(let k=10;k>=0;k--){const [px,py]=pt(k/10),w=lerp(wb,wt,k/10)/2;c.lineTo(px+w,py);}c.closePath();c.fill();
+  c.strokeStyle=K('#8c7e68',.8);c.lineWidth=Math.max(.3,wt*.35);c.beginPath();for(let k=0;k<=10;k++){const [px,py]=pt(k/10),w=lerp(wb,wt,k/10)/2;k?c.lineTo(px-w*.45,py):c.moveTo(px-w*.45,py);}c.stroke();
+  c.strokeStyle=K('#3e3428',.45);c.lineWidth=.3;c.beginPath();for(let k=1;k<10;k++){const [px,py]=pt(k/10+.03*Math.sin(k)),w=lerp(wb,wt,k/10)/2;c.moveTo(px-w,py);c.lineTo(px+w,py+.2);}c.stroke();
+  const sw=Math.sin(G.t*1.3+ph)*.07,gust=Math.sin(G.t*.5+ph*.7)*.04;
+  // dead fronds hanging straight down under the crown
+  c.strokeStyle=K('#7a6444');c.lineWidth=Math.max(.35,h*.014);for(const s of[-1,1]){const L=h*.22;c.beginPath();c.moveTo(tx,ty+h*.02);c.quadraticCurveTo(tx+s*L*.35,ty+L*.3,tx+s*L*.25,ty+L);c.stroke();
+    c.lineWidth=.3;c.beginPath();for(let k=1;k<6;k++){const u=k/6,bx=tx+s*L*.3*u,by=ty+L*u;c.moveTo(bx,by);c.lineTo(bx-s*1.2,by+1.4);c.moveTo(bx,by);c.lineTo(bx+s*.9,by+1.6);}c.stroke();c.lineWidth=Math.max(.35,h*.014);}
+  // fronds: back ones (darker) first, then the front ones
+  const n=11,F=[];for(let i=0;i<n;i++){const a=-Math.PI*1.02+i*Math.PI*1.04/(n-1)+sw+(fHash(ph*7+i)-.5)*.2,L=h*(.34+.1*fHash(ph*3+i*2.3)),back=i%2===0;F.push({a,L,back});}
+  F.sort((p,q)=>(q.back?1:0)-(p.back?1:0));
+  for(const f of F){const ca=Math.cos(f.a),sa=Math.sin(f.a),droop=f.L*(.35+.3*Math.abs(ca))+gust*f.L,ex=tx+ca*f.L,ey=ty+sa*f.L*.5+droop,cx=tx+ca*f.L*.55,cy=ty+sa*f.L*.5*.55-f.L*.12;
+    const col=f.back?'#36522e':'#4c6c3a',lc=f.back?'#3e5c32':'#5a7c42';
+    c.strokeStyle=K(col);c.lineWidth=Math.max(.35,h*.016);c.beginPath();c.moveTo(tx,ty);c.quadraticCurveTo(cx,cy,ex,ey);c.stroke();
+    // leaflets: pairs hanging from the midrib, shortest at the base and the tip
+    c.strokeStyle=K(lc,.95);c.lineWidth=Math.max(.25,h*.009);c.beginPath();
+    for(let k=2;k<=11;k++){const u=k/12,v=1-u,px=v*v*tx+2*v*u*cx+u*u*ex,py=v*v*ty+2*v*u*cy+u*u*ey,dxu=2*v*(cx-tx)+2*u*(ex-cx),dyu=2*v*(cy-ty)+2*u*(ey-cy),dl=Math.hypot(dxu,dyu)||1,nx=-dyu/dl,ny=dxu/dl,ll=f.L*.2*Math.sin(u*Math.PI)*(.8+.2*Math.sin(k*1.7+ph));
+      for(const s of[-1,1]){const lx=px+(nx*s*.6+dxu/dl*.35)*ll,ly=py+(ny*s*.6+dyu/dl*.35)*ll+ll*.55;c.moveTo(px,py);c.lineTo(lx,ly);}}c.stroke();}
+  // coconuts
+  c.fillStyle=K('#5e5a2a');for(const [ox,oy] of[[-.9,.8],[.8,.9],[0,1.5]]){c.beginPath();c.arc(tx+ox*h*.03,ty+oy*h*.03,Math.max(.5,h*.025),0,TAU);c.fill();}}
+// Hala (pandanus): a short, branching tree propped on stilt roots, each branch ending in a spray of long spiky leaves.
+function drawHala(c,x,y,h,K,ph){c.strokeStyle=K('#5a4c3c');c.lineCap='round';c.lineWidth=Math.max(.5,h*.06);
+  c.beginPath();for(const s of[-1,-.4,.3,1]){c.moveTo(x+s*h*.18,y);c.lineTo(x+s*h*.04,y-h*.22);}c.stroke();
+  const tips=[[x-h*.3,y-h*.8],[x+h*.05,y-h*.95],[x+h*.32,y-h*.75]];c.lineWidth=Math.max(.45,h*.045);c.beginPath();for(const [bx,by] of tips){c.moveTo(x,y-h*.22);c.quadraticCurveTo(x+(bx-x)*.2,y-h*.6,bx,by);}c.stroke();
+  for(const [bx,by] of tips){c.strokeStyle=K('#3e5a34');c.lineWidth=Math.max(.3,h*.02);c.beginPath();for(let k=0;k<9;k++){const a=-Math.PI*.95+k*Math.PI*.9/8+Math.sin(G.t+ph)*.04,L=h*(.22+.06*Math.sin(k*2+ph));c.moveTo(bx,by);c.quadraticCurveTo(bx+Math.cos(a)*L*.6,by+Math.sin(a)*L*.6,bx+Math.cos(a)*L,by+Math.sin(a)*L*.7+L*.25);}c.stroke();}}
+function drawKauBack(c,cam,dk,fog,rain,h){const wm=warmth(h),vog=.18+.5*kilaueaOn(),hz=SURF-12;
+  const K=(col,a=1,haze=0)=>{let v=mx(col,rain?'#9aa6ae':'#b9c6cc',haze);v=mx(v,'#d8c79a',vog*haze*.35);if(wm)v=v.map((q,i)=>lerp(q,[236,150,110][i],wm*.3*(1-dk)*haze));return rgbStr(mx(v,'#0d1622',dk*.86),a*(fog?.5:1));};
+  // Mauna Loa: a shield volcano 13,679 ft high, so broad its top is a long gentle curve. Lava flows streak its flanks.
+  c.save();c.translate(-cam*.04,0);{const cx=W*.42,R=W*1.25,Hm=SURF*.4,top=x=>hz-Hm*Math.pow(Math.max(0,1-Math.pow((x-cx)/R,2)),1.7)+2*(fFbm(x*.02)-.5);
+    {const mg=c.createLinearGradient(0,hz-Hm,0,hz);mg.addColorStop(0,K('#8e98b2',1,.66));mg.addColorStop(1,K('#6c7896',1,.55));c.fillStyle=mg;}c.beginPath();c.moveTo(cx-R,hz);for(let x=cx-R;x<=cx+R;x+=6)c.lineTo(x,top(x));c.lineTo(cx+R,hz);c.closePath();c.fill();
+    c.save();c.clip();
+      // snow on the summit some winters
+      if(seasonIdx()===3&&fHash(Math.floor((S.yday||0)/28)*3.1+7)<.75){c.fillStyle=K('#f2f4f6',.9,.35);c.beginPath();for(let x=cx-R*.16;x<=cx+R*.16;x+=4)c.lineTo(x,top(x)-.5);for(let x=cx+R*.16;x>=cx-R*.16;x-=4)c.lineTo(x,top(x)+3+5*Math.pow(1-Math.abs(x-cx)/(R*.16),.6)*fNoise(x*.09));c.closePath();c.fill();}c.restore();
+    // Kīlauea: a low shield on Mauna Loa's flank, nearer to you, its summit caldera a shallow notch
+    const kx=cx+R*.22,kh=Hm*.3,kw=R*.42,kt=x=>hz-kh*Math.pow(Math.max(0,1-Math.pow((x-kx)/kw,2)),1.4)+(Math.abs(x-kx)<9?1.6*(1-Math.abs(x-kx)/9):0);
+    {const mg=c.createLinearGradient(0,hz-kh,0,hz);mg.addColorStop(0,K('#7e88a2',1,.58));mg.addColorStop(1,K('#64708c',1,.5));c.fillStyle=mg;}
+    c.beginPath();c.moveTo(kx-kw,hz);for(let x=kx-kw;x<=kx+kw;x+=5)c.lineTo(x,kt(x));c.lineTo(kx+kw,hz);c.closePath();c.fill();
+    const ky=kt(kx)+1.5,on=kilaueaOn();if(on>0&&!fog){const nt=clamp((dk-.15)/.6,0,1);
+      // the plume: a column of gas and tephra over the vent that the trades bend over and carry off down the coast
+      for(let i=0;i<44;i++){const u=i/43,px=kx-Math.pow(u,1.5)*110+Math.sin(G.t*.35+i*.9)*1.2,py=ky-2-u*SURF*.24*(1-u*.3),r=2+u*12;
+        if(nt<1){c.fillStyle=K(u<.2?'#8e8272':'#d2cec6',on*(.32-u*.2)*(1-nt),.25);c.beginPath();c.arc(px,py,r,0,TAU);c.fill();}
+        if(nt>0){c.fillStyle=`rgba(${230-u*110|0},${110-u*55|0},${60-u*30|0},${on*(.26-u*.17)*nt})`;c.beginPath();c.arc(px,py+r*.15,r,0,TAU);c.fill();}}
+      if(nt<1)for(let i=0;i<10;i++){const u=.05+i/12,px=kx-Math.pow(u,1.5)*110,py=ky-2-u*SURF*.24*(1-u*.3),r=2+u*12;c.fillStyle=K('#ffffff',on*.12*(1-nt),.15);c.beginPath();c.arc(px-r*.3,py-r*.4,r*.6,0,TAU);c.fill();}
+      // at night the lava fountain shows as a bright point, and its glow lights the plume and the sky over the vent
+      if(nt>0){const g=c.createRadialGradient(kx,ky,0,kx,ky,70);g.addColorStop(0,`rgba(255,170,80,${.8*on*nt})`);g.addColorStop(.35,`rgba(255,110,40,${.3*on*nt})`);g.addColorStop(1,'rgba(255,90,30,0)');c.fillStyle=g;c.fillRect(kx-70,ky-70,140,74);
+        c.strokeStyle=`rgba(255,${215+Math.sin(G.t*9)*30|0},150,${on*nt})`;c.lineWidth=1.5;c.beginPath();c.moveTo(kx,ky);c.lineTo(kx+Math.sin(G.t*7)*.6,ky-5-Math.sin(G.t*5)*1.5);c.stroke();}}}
+  c.restore();
+  // trade-wind clouds: a bank of soft cumulus sits along the middle of the mountain's slopes, thickest in the afternoon
+  if(!fog){const hr=(S.minutes/60)%24,amt=.35+.45*smooth(10,15,hr)*(1-smooth(18,20,hr))+(rain?.3:0);c.save();c.translate(-cam*.06,0);
+    for(let i=0;i<16;i++){const x=-40+i*(W*1.3/15)+fHash(i*3.3)*30,y=hz-SURF*.165-fHash(i*2.1)*SURF*.03,r=8+fHash(i*5.7)*11;if(Math.abs(x+cam*.06-(W*.42+W*1.25*.22-cam*.04))<34)continue;
+      c.fillStyle=K('#f2f4f6',amt*(.55+fHash(i)*.3),.15);c.beginPath();c.arc(x,y,r,0,TAU);c.arc(x+r*.8,y+2,r*.75,0,TAU);c.arc(x-r*.8,y+3,r*.6,0,TAU);c.fill();
+      c.fillStyle=K('#aab4c4',amt*.35,.15);c.beginPath();c.ellipse(x,y+r*.55,r*1.5,r*.3,0,0,TAU);c.fill();}c.restore();}
+  // vog: a yellow-grey haze lying low over the land
+  {const g=c.createLinearGradient(0,hz-SURF*.22,0,hz);g.addColorStop(0,'rgba(214,204,170,0)');g.addColorStop(1,`rgba(214,204,170,${vog*.55*(1-dk*.7)})`);c.fillStyle=g;c.fillRect(0,hz-SURF*.22,W,SURF*.22);}
+  // the Kaʻū slopes: pasture and ʻōhiʻa scrub, cut by gulches, rising to a line of pali (fault cliffs)
+  c.save();c.translate(-cam*.1,0);{const x0=-60,x1=W*1.15+cam*.1,top=x=>hz-26-14*fFbm(x*.008+2)-7*(fStep(x,60,4)-.5)-4*Math.sin(x*.013);
+    c.fillStyle=K('#4f6a44',1,.42);c.beginPath();c.moveTo(x0,hz);for(let x=x0;x<=x1;x+=5)c.lineTo(x,top(x));c.lineTo(x1,hz);c.closePath();c.fill();
+    c.save();c.clip();c.fillStyle=K('#3a5236',.7,.4);for(let x=x0;x<x1;x+=5){const t=top(x);if(fNoise(x*.03+5)>.62)c.fillRect(x,t,5,2.2);}
+      // gulches: shadowed folds that widen downhill, lit on one bank
+      for(let k=0;k<22;k++){const gx=x0+(x1-x0)*fHash(k*2.7+1),t=top(gx),w=.8+fHash(k)*1.2;c.lineCap='round';
+        const path=()=>{c.beginPath();c.moveTo(gx,t+2);for(let j=1;j<=8;j++){const u=j/8;c.lineTo(gx+Math.sin(u*5+k)*1.6*u+(fHash(k*4)-.5)*4*u,lerp(t+2,hz,u));}};
+        c.strokeStyle=K('#2a4226',.18,.42);c.lineWidth=w*2.4;path();c.stroke();c.strokeStyle=K('#22361f',.22,.42);c.lineWidth=w;path();c.stroke();}
+      // ʻōhiʻa and kiawe dotted over the pasture, thicker in the gulches
+      for(let k=0;k<160;k++){const tx=x0+(x1-x0)*fHash(k*1.31+7),tt=top(tx),ty=tt+3+fHash(k*2.77)*(hz-tt-3);if(fNoise(tx*.02+ty*.05)<.42)continue;c.fillStyle=K(k%3?'#2c4428':'#38522e',.75,.4);c.beginPath();c.ellipse(tx,ty,.9+fHash(k*3.3)*.9,.6+fHash(k*4.4)*.4,0,0,TAU);c.fill();}
+      // paddocks of drier, paler grass
+      for(let k=0;k<8;k++){const px=x0+(x1-x0)*fHash(k*9.1+4),pt=top(px)+6+fHash(k*3)*6,pw=14+fHash(k*5)*24;c.fillStyle=K('#8a9a5a',.22,.4);c.beginPath();c.moveTo(px,pt);c.lineTo(px+pw,pt+1);c.lineTo(px+pw-3,pt+5);c.lineTo(px-2,pt+4);c.closePath();c.fill();}
+      c.fillStyle=K('#6c8450',.35,.4);for(let x=x0;x<x1;x+=7){c.fillRect(x,top(x)+8+6*fNoise(x*.05),7,1.2);}c.restore();}
+  c.restore();
+  // the far side of the bay: water from the far shore down to your feet
+  {const g=c.createLinearGradient(0,hz,0,SURF);g.addColorStop(0,K('#5a9ec0',1,.3));g.addColorStop(1,K(LOC().water[0],1,.05));c.fillStyle=g;c.fillRect(0,hz,W,SURF-hz+1);}
+  // the open Pacific beyond the lava point, out to the horizon on the right
+  c.save();c.translate(-cam*.2,0);{const sx0=W*.72,sx1=W*1.2+cam*.2,g=c.createLinearGradient(0,hz-2,0,SURF);g.addColorStop(0,K('#5a8eb8',1,.35));g.addColorStop(1,K('#2e7aa4',1,.15));
+    c.fillStyle=g;c.fillRect(sx0,hz-2,sx1-sx0,SURF-hz+3);c.fillStyle=`rgba(255,255,255,${.22*(1-dk*.7)})`;for(let i=0;i<30;i++){const x=sx0+((i*97.3+G.t*2*(1+i%3))%(sx1-sx0)),y=hz+((i*5)%10);c.fillRect(x,y,2+(i%3),.6);}
+    // humpbacks: a spout, a back and fluke, or a full breach and splash
+    const Wh=KAU.whale;if(Wh&&!fog){const x=Wh.x,y=hz+3,t=Wh.t;if(Wh.br){const u=t/1.4;if(u<1){c.save();c.translate(x,y-Math.sin(u*Math.PI)*16);c.rotate(-1.2+u*1.6);c.fillStyle=K('#2c3440',1,.3);c.beginPath();c.ellipse(0,0,9,3,0,0,TAU);c.fill();c.fillStyle=K('#dfe4e8',1,.3);c.beginPath();c.ellipse(2,1.8,5,1.1,0,0,TAU);c.fill();c.restore();}
+        if(u>.75){const s=Math.min(1,(u-.75)*2),f=Math.max(0,1-(t-1.4)/1.8);c.fillStyle=`rgba(255,255,255,${.85*f*(1-dk*.5)})`;for(let k=0;k<9;k++){c.beginPath();c.arc(x+(k-4)*2.2,y-s*8*Math.sin((k+1)/10*Math.PI)*f,1.6,0,TAU);c.fill();}}}
+      else{if(t<1.2){c.fillStyle=`rgba(240,244,246,${(1-t/1.2)*.8*(1-dk*.5)})`;for(let k=0;k<6;k++){c.beginPath();c.arc(x+Math.sin(k)*1.5,y-2-t*12*(k/6+.4),1.4+t,0,TAU);c.fill();}}
+        if(t>1&&t<3.6){const u=(t-1)/2.6;c.fillStyle=K('#2c3440',1,.3);c.beginPath();c.ellipse(x+Wh.dir*u*8,y,7*Math.sin(Math.min(1,u*1.5)*Math.PI),2,0,Math.PI,TAU);c.fill();}
+        if(t>3.4){const u=Math.min(1,(t-3.4)/.9);c.save();c.translate(x+Wh.dir*10,y);c.fillStyle=K('#2c3440',1,.3);c.beginPath();c.moveTo(0,0);c.lineTo(-1,-4*Math.sin(u*Math.PI));c.lineTo(-5,-6*Math.sin(u*Math.PI));c.lineTo(0,-4.5*Math.sin(u*Math.PI));c.lineTo(5,-6*Math.sin(u*Math.PI));c.lineTo(1,-4*Math.sin(u*Math.PI));c.closePath();c.fill();c.restore();}}}
+    // spinner dolphins leaping and spinning
+    const D=KAU.dolph;if(D&&!fog)for(let i=0;i<D.n;i++){const p=((D.t*1.1+i*.37)%1.6),x=D.x+D.dir*(D.t*14+i*7),y=hz+4;if(p>1)continue;c.save();c.translate(x,y-Math.sin(p*Math.PI)*7);c.rotate(D.dir*(-1+p*2)*.9+(i%3===0?p*TAU*2:0));c.fillStyle=K('#4a5662',1,.25);c.beginPath();c.ellipse(0,0,3.4,1,0,0,TAU);c.fill();c.restore();}}
+  c.restore();
+  // across the bay: the lava point and the black sand beach under its coconut grove, honu basking on the sand
+  c.save();c.translate(-cam*.22,0);{const bx0=-80,bx1=W*.86,base=hz+5;
+    c.fillStyle=K('#1d1c1e',1,.22);c.beginPath();c.moveTo(bx0,base+3);for(let x=bx0;x<=bx1+34;x+=3){const e=x>bx1?Math.max(0,1-Math.pow((x-bx1)/34,1.5)):1,pt=x>bx1-70?smooth(bx1-70,bx1-25,x):0;c.lineTo(x,base-(2+1.5*fNoise(x*.05))*e-pt*e*(7+3*fFbm(x*.15)));}c.lineTo(bx1+34,base+3);c.closePath();c.fill();
+    {const ph=(G.t*.21)%1;if(ph<.35){const u=ph/.35;c.fillStyle=`rgba(255,255,255,${(1-u)*.75*(1-dk*.6)})`;for(let k=0;k<7;k++){c.beginPath();c.arc(bx1+18+k*2-8,base-2-Math.sin(u*Math.PI)*(6+k%3*3)*(1-k/9),1.6+u*1.5,0,TAU);c.fill();}}}
+    // surf breaking white along the point and lapping the beach
+    c.fillStyle=`rgba(255,255,255,${.6*(1-dk*.6)})`;for(let x=bx0;x<bx1+26;x+=3){const sw=.5+.5*Math.sin(G.t*1.2-x*.05);c.fillRect(x,base+1.6-sw*(x>bx1-60?2.2:.8),3,.9+sw*(x>bx1-60?1.4:.4));}
+    // honu hauled out on the black sand
+    for(const [u,s] of [[.18,1],[.22,.8],[.41,1.1],[.55,.9]]){const x=bx0+(bx1-bx0)*u;c.fillStyle=K('#4a4030',1,.2);c.beginPath();c.ellipse(x,base-2.2,2.6*s,1.1*s,0,0,TAU);c.fill();c.fillStyle=K('#2a2620',1,.2);c.beginPath();c.arc(x+2.6*s,base-1.8,.7*s,0,TAU);c.fill();}
+    // coconut grove behind the beach, palms leaning every way toward the light
+    c.fillStyle=K('#2e4a2c',1,.3);c.beginPath();c.moveTo(bx0,base-3);for(let x=bx0;x<=bx1-50;x+=5)c.lineTo(x,base-6-4*fNoise(x*.06+2));c.lineTo(bx1-50,base-3);c.closePath();c.fill();
+    // the woods behind the beach: a lumpy canopy of kiawe and milo, lit on top
+    for(let i=0;i<120;i++){const x=bx0+(bx1-50-bx0)*fHash(i*3.3+.7),r=1.2+fHash(i*5.1)*2.4,yy=base-5.5-4*fNoise(x*.06+2)+(fHash(i*8.1)-.5)*3;c.fillStyle=K(['#2c4628','#32502c','#385632'][i%3],.85,.3);c.beginPath();c.ellipse(x,yy,r*1.5,r*.75,0,0,TAU);c.fill();
+      c.fillStyle=K('#55743e',.35,.3);c.beginPath();c.ellipse(x-r*.3,yy-r*.35,r*.7,r*.25,0,0,TAU);c.fill();}
+    // palms, tall ones behind and shorter in front, and a few hala
+    const PL=[];for(let i=0;i<30;i++)PL.push({x:bx0+20+(bx1-90-bx0)*fHash(i*1.7+3),hh:16+fHash(i*2.9)*20,lean:(fHash(i*4.1)-.5)*.55,i});PL.sort((a,b)=>b.hh-a.hh);
+    for(const p of PL)drawPalm(c,p.x,base-3,p.hh,p.lean,(col,a=1)=>K(col,a,.26),p.i,dk);
+    for(let i=0;i<5;i++){const x=bx0+40+(bx1-140-bx0)*fHash(i*6.9+2);drawHala(c,x,base-2.5,9+fHash(i*2.1)*4,(col,a=1)=>K(col,a,.24),i);}
+    // naupaka: low, rounded, bright green shrubs along the top of the beach
+    for(let i=0;i<24;i++){const x=bx0+10+(bx1-60-bx0)*fHash(i*2.3+9),r=1.6+fHash(i*7.7)*2.2;c.fillStyle=K('#4e7a40',1,.22);c.beginPath();c.ellipse(x,base-2.6,r*1.4,r*.8,0,Math.PI,TAU);c.fill();c.fillStyle=K('#7aa060',.7,.22);c.beginPath();c.ellipse(x-r*.3,base-2.6-r*.45,r*.6,r*.25,0,0,TAU);c.fill();}
+    // an outrigger canoe paddling across the bay
+    const C=KAU.canoe;if(C&&!fog){const x=C.x,y=base+9,st=Math.sin(G.t*3);c.fillStyle=K('#7a4a2a',1,.15);c.beginPath();c.moveTo(x-12,y);c.lineTo(x+12,y);c.lineTo(x+14*C.dir,y-1.5);c.lineTo(x-10,y+1.2);c.closePath();c.fill();
+      c.strokeStyle=K('#3a3028',1,.15);c.lineWidth=.6;c.beginPath();c.moveTo(x-4,y);c.lineTo(x-4,y+3.5);c.moveTo(x+4,y);c.lineTo(x+4,y+3.5);c.moveTo(x-5,y+3.5);c.lineTo(x+5,y+3.5);c.stroke();
+      for(let k=0;k<4;k++){const px=x-7+k*4.5;c.fillStyle=K('#4a3426',1,.15);c.fillRect(px-.8,y-5,1.6,4.2);c.strokeStyle=K('#c8a878',1,.15);c.beginPath();c.moveTo(px,y-3);c.lineTo(px-C.dir*(2+st*1.5),y+2);c.stroke();}}}
+  c.restore();}
+// The angler's ledge: black pāhoehoe. Its top is hummocky, a cooled crust of ropy folds and lobes; its seaward face is
+// a big rounded flow lobe, cracked, with a smaller lobe below it undercut by the waves. Below the salt-white splash
+// line the rock is wet and black, with patches of green and a few ʻopihi (limpets). Underwater the rock takes on the
+// colour of the water. Every few seconds a swell surges up the face and pours off in white streams, and an ʻaʻama crab
+// dashes across the wet rock and freezes. An ulua fisherman's spare rod leans in a spike with a bell on the tip.
+function drawLavaShore(c,dk,y){const K=(col,a=1)=>rgbStr(mx(col,'#0a0e12',dk*.8),a),t=G.t,X=DOCKX;
+  // the swell's phase, shared by the water heaped against the rock (drawn first, so the rock hides its back) and the
+  // foam, spray and runoff drawn over the rock afterward
+  const per=1/.21,ph=((t+3)/per)%1,rise=ph<.2?Math.sin(ph/.2*Math.PI/2):0,fall=ph>=.2?Math.pow(Math.max(0,1-(ph-.2)/.5),1.4):0,up=Math.max(rise,fall),H=13,fx=X+13,A=1-dk*.5;
+  const wy=x=>SURF-up*H*Math.exp(-Math.max(0,x-fx)/15)+Math.sin(x*.45-t*4.5)*.5*up;
+  {const W0=LOC().water[0];
+    if(up>.01){// the heaped water itself, see-through and lighter where it is thin, running up over the rock
+      // only the part standing above the sea line is drawn, so it blends into the water below with no edge
+      const wg=c.createLinearGradient(0,SURF-up*H,0,SURF+1);wg.addColorStop(0,rgbStr(mx(mx(W0,'#e0f4f4',.3),'#0a1418',dk*.7),.8));wg.addColorStop(1,rgbStr(mx(W0,'#0a1418',dk*.7),.95));
+      c.fillStyle=wg;c.beginPath();c.moveTo(X+80,SURF+1);for(let x=X+80;x>=X+4;x-=1.5)c.lineTo(x,Math.min(SURF+1,wy(x)));c.lineTo(X+4,SURF+1);c.closePath();c.fill();
+      c.strokeStyle=rgbStr(mx('#e8f6f6','#0a1418',dk*.7),.5*up);c.lineWidth=.6;c.beginPath();for(let x=X+80;x>=X+6;x-=1.5){const yy=wy(x);x>=X+79?c.moveTo(x,yy):c.lineTo(x,yy);}c.stroke();}
+  }
+  const top=x=>y+1.4*Math.sin(x*.17+.5)+.8*Math.sin(x*.43+1)-1.6*Math.pow(Math.max(0,Math.sin(x*.11+1)),3)+(x>X-8?smooth(X-8,X+2,x)*1.5:0);
+  // the face, as a smooth curve: down the front of the upper lobe, in under it, out over the lower lobe, down into the water
+  const face=[[X+2,top(X+2)],[X+9,y+2.5],[X+13,y+6],[X+12,y+9.5],[X+6,y+12],[X+9,SURF-3],[X+15,SURF-1.5],[X+19,SURF+3],[X+18,SURF+8],[X+10,SURF+13],[X-10,SURF+17],[-20,SURF+18]];
+  const shape=()=>{c.beginPath();c.moveTo(-20,top(-20));for(let x=-20;x<=X+2;x+=2)c.lineTo(x,top(x));for(let i=0;i<face.length-1;i++){const a=face[i],b=face[i+1];c.quadraticCurveTo(a[0],a[1],(a[0]+b[0])/2,(a[1]+b[1])/2);}c.lineTo(-20,SURF+18);c.closePath();};
+  shape();const g=c.createLinearGradient(0,y-4,0,SURF+16);g.addColorStop(0,K('#48484e'));g.addColorStop(.2,K('#2c2c31'));g.addColorStop(.62,K('#1d1d21'));g.addColorStop(1,K('#111113'));c.fillStyle=g;c.fill();
+  c.save();shape();c.clip();
+  // the round of each lobe catches the light along its upper edge; the undercut beneath is in deep shadow
+  {const lg=c.createRadialGradient(X+4,y+3,0,X+4,y+3,14);lg.addColorStop(0,K('#9aa0aa',.28));lg.addColorStop(1,K('#9aa0aa',0));c.fillStyle=lg;c.fillRect(X-12,y-6,28,18);}
+  c.fillStyle=K('#000000',.6);c.beginPath();c.ellipse(X+4,y+11.6,10,2.4,0,0,TAU);c.fill();
+  c.fillStyle=K('#8a8e98',.12);c.beginPath();c.ellipse(X+10,SURF-.5,8,3,-.15,-Math.PI,0);c.fill();
+  // ropy folds on the crust, bowed the way the lava flowed (toward the sea), in patches rather than rows
+  c.strokeStyle=K('#6c6c74',.45);c.lineWidth=.7;for(let k=0;k<26;k++){const x=-16+fHash(k*2.7)*(X+12),yy=top(x)+1+fHash(k*4.1)*5,w=2.5+fHash(k*6.3)*3;c.beginPath();c.moveTo(x-w,yy-.4);c.quadraticCurveTo(x+.8,yy+1.2,x+w,yy-.4);c.stroke();}
+  // cracks running down the face
+  c.strokeStyle=K('#060608',.8);c.lineWidth=.8;c.beginPath();for(const [x0,y0,len] of [[X-4,y+2,9],[X-18,y+1,13],[X+8,SURF-2,6],[X-32,y+3,8]]){c.moveTo(x0,y0);c.lineTo(x0+1.5,y0+len*.45);c.lineTo(x0+.5,y0+len);}c.stroke();
+  // vesicles: gas bubbles frozen in the rock
+  c.fillStyle=K('#060608',.55);for(let k=0;k<36;k++){const vx=-18+fHash(k*3.1)*(X+32),vy=top(vx)+3+fHash(k*5.3)*(SURF+12-top(vx)-3);c.beginPath();c.ellipse(vx,vy,.45+fHash(k)*.7,.3+fHash(k*2)*.45,0,0,TAU);c.fill();}
+  // the glassy sheen of the crust
+  c.fillStyle=K('#b0b8c2',.2);for(let x=-14;x<X;x+=7){c.beginPath();c.ellipse(x+fHash(x)*4,top(x)+.6,2+fHash(x*2)*3,.5,0,0,TAU);c.fill();}
+  // splash zone: a faint salt-white line, wet darker rock, patchy green film near the water, a few ʻopihi
+  {const wg=c.createLinearGradient(0,SURF-7,0,SURF+2);wg.addColorStop(0,K('#000000',0));wg.addColorStop(1,K('#000000',.5));c.fillStyle=wg;c.fillRect(-20,SURF-7,X+42,24);}
+  c.fillStyle=K('#4a7a3e',.3);for(let k=0;k<6;k++){const gx=X-26+fHash(k*5.9)*44,gw=2+fHash(k*1.3)*4;c.beginPath();c.ellipse(gx,SURF-1+fHash(k)*1.5,gw,.6+fHash(k*7)*.5,0,0,TAU);c.fill();}
+  for(let k=0;k<5;k++){const ox=X-14+fHash(k*9.1)*30,oy=SURF-5+fHash(k*3)*4;c.fillStyle=K('#77705f');c.beginPath();c.moveTo(ox-1.2,oy+.6);c.quadraticCurveTo(ox,oy-1.2,ox+1.2,oy+.6);c.closePath();c.fill();c.fillStyle=K('#d8d0b8',.55);c.beginPath();c.arc(ox,oy-.3,.35,0,TAU);c.fill();}
+  // under the surface the rock takes the colour of the water
+  {const wc=LOC().water[0];c.fillStyle=rgbStr(mx(wc,'#0a1418',dk*.7),.45);c.fillRect(-20,SURF+.5,X+44,20);}
+  c.restore();
+  // tide pool on top: still water reflecting the sky in a black rim
+  {const px=24,py=top(24)+1.5;c.fillStyle=K('#0c0c0e');c.beginPath();c.ellipse(px,py,8.5,2,0,0,TAU);c.fill();const pg=c.createLinearGradient(0,py-1.6,0,py+1.6);pg.addColorStop(0,K('#a8cce0',.85));pg.addColorStop(1,K('#4a7890',.85));c.fillStyle=pg;c.beginPath();c.ellipse(px,py+.2,7.3,1.35,0,0,TAU);c.fill();}
+  // an ʻaʻama crab: dark red-black, it dashes a little way across the wet rock, then freezes
+  {const ph=(t*.05)%1,run=Math.max(0,Math.sin(ph*TAU*2)),cx=X-6+Math.sin(ph*TAU)*9,cy=SURF-5.5+Math.cos(ph*TAU*.5)*1.5;c.strokeStyle=K('#7a2a24');c.lineWidth=.45;c.beginPath();
+    for(let l=0;l<4;l++){const lx=cx-1.2+l*.8,wv=run*Math.sin(t*28+l*1.7)*.45;c.moveTo(lx,cy);c.lineTo(lx-1.3+wv,cy+1.7);c.moveTo(lx,cy);c.lineTo(lx-1+wv,cy-1.5);}c.stroke();
+    c.fillStyle=K('#2a1416');c.beginPath();c.ellipse(cx,cy,1.6,1,0,0,TAU);c.fill();c.fillStyle=K('#9a3a2a');c.beginPath();c.ellipse(cx+1.4,cy-.2,.7,.45,.3,0,TAU);c.fill();}
+  // surge: every few seconds a swell runs in, heaps up against the face and climbs it, throws spray off the lip, then
+  // drains back off the rock in thin white rivulets while its foam spreads out over the water as lace
+  {
+    // foam: dense and churned where the water hits the rock, thinning out to sea; it lingers as the water drains
+    const foam=Math.max(up,fall*.8),r=k=>fHash(k*7.31+Math.floor((t+3)/per)*3.7);
+    for(let k=0;k<80;k++){const u=Math.pow(k/80,1.5),x=X+5+u*62+Math.sin(t*.8+k)*1.2,amt=foam*Math.exp(-u*62/(14+fall*22))+.12*(1-u);if(amt<.04)continue;
+      const y=(up>.01?wy(x):SURF)+(r(k)-.5)*(1.2+amt*2.5)-.2-amt*r(k+70)*2,rx=(.6+r(k+50)*1.4)*(.5+amt*.8),ry=rx*(.4+r(k+90)*.3);
+      c.fillStyle=`rgba(250,252,252,${Math.min(.72,.22+amt*.6)*A})`;c.beginPath();c.ellipse(x,y,rx,ry,0,0,TAU);c.fill();}
+    // a haze of fine spray hanging over the face for a moment at the peak
+    if(up>.3){const mg=c.createRadialGradient(fx,SURF-H*up*.9,0,fx,SURF-H*up*.9,10+up*6);mg.addColorStop(0,`rgba(245,250,250,${.28*(up-.3)*A})`);mg.addColorStop(1,'rgba(245,250,250,0)');c.fillStyle=mg;c.beginPath();c.arc(fx,SURF-H*up*.9,10+up*6,0,TAU);c.fill();}
+    // lace left behind on the water: rings of foam drifting out and breaking up
+    if(fall>.02){c.strokeStyle=`rgba(245,250,250,${.5*fall*A})`;c.lineWidth=.5;for(let k=0;k<9;k++){const d=(1-fall),x=X+18+r(k+200)*30+d*14,y=SURF+.3+r(k+210)*.6;c.beginPath();c.ellipse(x,y,1.5+r(k+220)*2.5+d*2,.45+d*.3,0,0,TAU);c.stroke();}}
+    // spray thrown up off the face at the peak
+    if(ph>.12&&ph<.42){const s=(ph-.12)*per;for(let k=0;k<16;k++){const x0=fx-1+r(k+300)*5,vx=4+r(k+310)*14,vy=14+r(k+320)*22,x=x0+vx*s,y=SURF-H*.8-vy*s+30*s*s,a=Math.max(0,1-s/1.2)*A;
+        if(y>SURF||a<=0)continue;c.fillStyle=`rgba(245,250,250,${.8*a})`;c.beginPath();c.arc(x,y,.45+r(k+330)*.6,0,TAU);c.fill();}}
+    // the water draining off the rock in thin streams down the face
+    if(ph>.24&&ph<.8){const d=(ph-.24)/.56;c.strokeStyle=`rgba(235,245,245,${.55*(1-d)*A})`;c.lineWidth=.6;c.lineCap='round';
+      for(let k=0;k<6;k++){const sx=X+7+k*2.1+r(k+400)*1.2,top0=SURF-H*(.95-k*.06),y0=lerp(top0,SURF,d*.7),len=3+r(k+410)*4;c.beginPath();c.moveTo(sx,y0);c.quadraticCurveTo(sx+.8,y0+len*.5,sx+.4+k*.15,Math.min(SURF+.5,y0+len));c.stroke();}}}
+}
+// Reef on the lava floor, cached with the ground: lava pillows and boulders, sand channels, corals, limu crust, urchins.
+// The reef is costly to draw, so it is painted in tiles that are kept until the light changes.
+const KAUTILES={m:new Map(),old:new Map(),key:''};
+function drawKauReef(c,x0,x1,dk){const lv=Math.round(dk*24)/24,k=SC*DPR,key=[S.loc,TW,SC,DPR,SURF,GROUND,lv].join('|'),TS=240,y0=SURF-10,y1=GROUND+60,T=KAUTILES,t0=performance.now();T.dirty=false;
+  // when only the light changed, keep the old tiles to fall back on, so the new ones can be painted a couple per frame
+  if(T.key!==key){const lightOnly=T.key.split('|').slice(0,6).join()===key.split('|').slice(0,6).join();T.old=lightOnly?new Map([...T.old,...T.m]):new Map();T.m=new Map();T.key=key;}
+  for(let i=Math.floor(x0/TS);i*TS<x1;i++){let cv=T.m.get(i);
+    if(!cv&&T.old.has(i)&&performance.now()-t0>14){cv=T.old.get(i);T.dirty=true;}
+    else if(!cv){cv=document.createElement('canvas');cv.width=Math.ceil(TS*k);cv.height=Math.ceil((y1-y0)*k);const o=cv.getContext('2d');o.setTransform(k,0,0,k,-i*TS*k,-y0*k);drawKauReefRaw(o,i*TS-60,i*TS+TS+60,lv);
+      T.m.set(i,cv);T.old.delete(i);if(T.m.size>12)T.m.delete(T.m.keys().next().value);}
+    c.drawImage(cv,i*TS,y0,TS,y1-y0);}
+  while(T.old.size>12)T.old.delete(T.old.keys().next().value);}
+function drawKauReefRaw(c,x0,x1,dk){const K=(col,a=1)=>rgbStr(mx(col,'#081420',dk*.75),a),hs=fHash,LAVA=['#2e2e33','#38383d','#29292d','#414146','#34333a'];
+  // sand channels: a band of mixed black and pale grains under the sand, rippled on top
+  c.save();c.beginPath();c.moveTo(x0,GROUND+80);for(let x=x0;x<=x1;x+=4)c.lineTo(x,kauRockAt(x)+.5);c.lineTo(x1,GROUND+80);c.closePath();c.clip();
+  for(let x=Math.floor(x0/2)*2;x<x1;x+=2){const sd=kauSand(x/TW);if(sd<.02)continue;const b=kauRockAt(x),g=c.createLinearGradient(0,b,0,b+44);g.addColorStop(0,K('#77726a',.9*sd));g.addColorStop(.5,K('#5e5a54',.6*sd));g.addColorStop(1,K('#3a3836',0));c.fillStyle=g;c.fillRect(x,b,2.3,44);}
+  for(let n=Math.floor(x0/2);n*2<x1;n++){const x=n*2,sd=kauSand(x/TW);if(sd<.3)continue;const b=kauRockAt(x);for(let k=0;k<2;k++){c.fillStyle=hs(n*11+k)<.55?K('#1e1e22',.5*sd):K('#e6dcc4',.45*sd);c.fillRect(x+hs(n+k*7)*2,b+1+hs(n*3+k)*14,.9,.9);}}
+  c.restore();
+  {c.strokeStyle=K('#9c958a',.4);c.lineWidth=.8;c.beginPath();for(let x=Math.floor(x0/8)*8;x<x1;x+=8){if(kauSand(x/TW)<.6)continue;const b=kauRockAt(x);c.moveTo(x,b+2.5);c.quadraticCurveTo(x+3,b+1,x+6,b+2.5);}c.stroke();}
+  // lava pillows and boulders lying on the bottom, overlapping, each lit from above with a dark crease beneath
+  const pillow=(x,y,rx,ry,col,seed)=>{c.fillStyle=K(col);c.beginPath();for(let k=0;k<=16;k++){const a=k/16*TAU,r=1+.12*Math.sin(k*1.9+seed)+.07*Math.sin(k*3.7+seed*2);c.lineTo(x+Math.cos(a)*rx*r,y+Math.sin(a)*ry*r);}c.closePath();c.fill();
+    const g=c.createRadialGradient(x-rx*.3,y-ry*.55,0,x-rx*.3,y-ry*.55,rx*1.1);g.addColorStop(0,K('#8a8e96',.35));g.addColorStop(1,K('#8a8e96',0));c.fillStyle=g;c.fill();
+    c.strokeStyle=K('#0c0c0e',.5);c.lineWidth=.7;c.beginPath();c.ellipse(x,y+ry*.15,rx*.98,ry*.85,0,.15,Math.PI-.15);c.stroke();};
+  for(let n=Math.floor(x0/7);n*7<x1;n++){const x=n*7+hs(n)*5,sd=kauSand(x/TW);if(sd>.6||hs(n*2.7)<sd*1.6||(sd<.05&&x>DOCKX+12&&hs(n*3.7)<.8))continue;const b=kauRockAt(x),big=hs(n*3.1)<.18,rx=big?8+hs(n*4)*8:3+hs(n*4)*5,ry=rx*(.55+hs(n*6)*.25);
+    pillow(x,b+ry*.35,rx,ry,LAVA[Math.floor(hs(n*5)*LAVA.length)],n);}
+  // urchins: black wana with long spines, the red slate pencil urchin with thick blunt spines
+  for(let n=Math.floor(x0/19);n*19<x1;n++){const x=n*19+hs(n*5.3)*12,u=x/TW;if(kauSand(u)>.2||x<DOCKX+20||hs(n*8.3)<.4)continue;const b=kauRockAt(x)+.5;
+    if(hs(n*3.9)<.55){c.strokeStyle=K('#101014');c.lineWidth=.45;c.beginPath();for(let k=0;k<13;k++){const a=Math.PI+k/12*Math.PI;c.moveTo(x,b-1);c.lineTo(x+Math.cos(a)*5,b-1+Math.sin(a)*4.4);}c.stroke();c.fillStyle=K('#1a1420');c.beginPath();c.arc(x,b-1,1.5,0,TAU);c.fill();}
+    else{c.strokeStyle=K('#a8302a');c.lineWidth=1.4;c.lineCap='round';c.beginPath();for(let k=0;k<7;k++){const a=Math.PI+.2+k/6*(Math.PI-.4);c.moveTo(x,b-1.5);c.lineTo(x+Math.cos(a)*4.4,b-1.5+Math.sin(a)*3.6);}c.stroke();c.fillStyle=K('#6a2020');c.beginPath();c.arc(x,b-1.5,1.7,0,TAU);c.fill();}}
+  // Corals on the lava, at their real sizes (a foot is about pxPerFt): lobe coral mounds a foot to four across, the biggest
+  // in deeper water; cauliflower coral heads in the shallow surge; finger coral thickets and rice coral shelves deeper
+  // down; blue rice coral crusting bare rock; orange cup coral under the lava pillows. Back ones are drawn first.
+  {const L=[],ft=pxPerFt(),BM=[];
+    // big old lobe coral heads, a few feet high, stand up off the bottom; smaller corals grow over them
+    for(const m of kauBommies())if(m.x>x0-90&&m.x<x1+90)BM.push(m);
+    const topAt=kauTopAt;
+    for(let n=Math.floor((x0-40)/7);n*7<x1+40;n++){const x=n*7+(hs(n*1.3)-.5)*9,u=x/TW;if(kauSand(u)>.15||x<DOCKX+12||hs(n*9.1)<.28)continue;const b=topAt(x),dep=clamp((kauRockAt(x)-SURF)/(GROUND-SURF),0,1),k=hs(n*2.1),slope=Math.abs(kauRockAt(x+6)-kauRockAt(x-6))/12,off=hs(n*5.9)*4*(1-clamp(slope,0,1)),sd=n*7+3;
+      const shallow=1-dep;let kind=k<.28+dep*.1?'lobe':k<.58+shallow*.1?'cauli':k<.88?'finger':'plates';const sz=hs(n*4.7);
+      const hw=ft*(kind==='lobe'?.4+sz*sz*1.4:.5);L.push({x,y:Math.max(b,topAt(x-hw*.7),topAt(x+hw*.7))+1+off,kind,dep,sd,sz,off,ord:off-(kind==='lobe'?sz*6+2:sz*2)});}
+    L.sort((a,b)=>a.ord-b.ord);
+    const LOBE=[[196,180,92],[170,178,100],[190,158,100],[150,160,120],[206,184,120]],CAU=[[214,164,140],[200,158,110],[186,164,96],[222,186,160]],FIN=[[206,182,130],[192,172,138],[210,180,150]],PL=[[160,84,62],[130,80,96],[176,104,58]];
+    // every colony its own shade: a blend of two colours from its kind's range, a little lighter or darker
+    const pick=(P,sd)=>{const a=P[Math.floor(hs(sd*1.7+.3)*P.length)],b=P[Math.floor(hs(sd*2.9+.7)*P.length)];return mx(mx(a,b,hs(sd*3.1)),hs(sd*4.3)<.5?[255,250,236]:[20,24,30],hs(sd*5.7)*.18);};
+    // corals are clipped to the rock surface, so on a slope a colony's foot follows the ground instead of ending in a flat shelf
+    c.save();c.beginPath();c.moveTo(x0-80,SURF-40);for(let x=x0-80;x<=x1+80;x+=3)c.lineTo(x,kauRockAt(x)+2.5);c.lineTo(x1+80,SURF-40);c.closePath();c.clip();
+    for(const m of BM){const C=(col,a=1)=>rgbStr(mx(mx(col,[40,110,140],m.dep*.2),[8,20,32],dk*.75),a);CORAL.lobe(c,C,m.x,m.y,m.w,m.h,m.sd,pick(LOBE,m.sd));}
+    for(const o of L){const C=(col,a=1)=>rgbStr(mx(mx(col,[40,110,140],o.dep*.2),[8,20,32],dk*.75),a);
+      if(o.kind==='lobe'){const w=ft*(.4+o.sz*o.sz*1.4+o.dep*.3);CORAL.lobe(c,C,o.x,o.y,w,w*(.45+hs(o.sd)*.5),o.sd,pick(LOBE,o.sd));}
+      else if(o.kind==='cauli')CORAL.cauli(c,C,o.x,o.y,ft*(.4+o.sz*.5),o.sd,pick(CAU,o.sd));
+      else if(o.kind==='finger'){const w=ft*(.4+o.sz*.6);CORAL.finger(c,C,o.x,o.y,w,w*(.8+hs(o.sd)*.9),o.sd,pick(FIN,o.sd),[200,170,190]);}
+      else CORAL.plates(c,C,o.x,o.y,ft*(.35+o.sz*.4),o.sd,pick(PL,o.sd));}
+    for(let n=Math.floor(x0/23);n*23<x1;n++){const x=n*23+hs(n*3.3)*10;if(kauSand(x/TW)>.1||x<DOCKX+24||hs(n*6.1)<.75||Math.abs(topAt(x+13)-topAt(x-13))>3||Math.abs(topAt(x)-kauRockAt(x))>2)continue;const C=(col,a=1)=>rgbStr(mx(col,[8,20,32],dk*.75),a);
+      if(hs(n*8.8)<.6)CORAL.crust(c,C,x-6-hs(n)*6,x+6+hs(n*2)*6,xx=>topAt(xx)+1,n,[74,108,196]);else CORAL.cups(c,C,x,topAt(x)+2,2.4,n);}
+    // where coral meets rock: a dark contact shadow with a little pink coralline, following the ground
+    for(let x=Math.floor(x0/2)*2;x<x1;x+=2){if(kauSand(x/TW)>.15)continue;const b=kauRockAt(x),g=c.createLinearGradient(0,b-6,0,b+2.5);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.5,rgbStr(mx([120,80,96],[8,20,32],dk*.75),.3));g.addColorStop(1,rgbStr([10,14,20],.6));c.fillStyle=g;c.fillRect(x,b-6,2.2,8.5);}
+    c.restore();}}
+// ---- Hawaiian reef corals, side-on and lit from above. Each draws with its base at (x,y) on the rock. C(col,a) applies
+// the water's depth tint and the time of day; colours go in as hex or [r,g,b]. Kinds and colours after Hawaiʻi DAR's
+// coral guide: lobe coral (Porites lobata), cauliflower coral (Pocillopora meandrina), finger coral (Porites compressa),
+// rice coral (Montipora capitata), blue rice coral (Montipora flabellata), orange cup coral (Tubastraea coccinea).
+const CORAL=(()=>{
+  const rng=seed=>{let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};};
+  const LT=[255,250,236],DK=[10,16,22];
+  const lt=(c,t)=>mx(c,LT,t),dn=(c,t)=>mx(c,DK,t);
+  // shade a ball: dark underneath, lit crown, soft edge
+  const ball=(c,C,x,y,r,col,k=1)=>{const g=c.createRadialGradient(x-r*.3,y-r*.45,r*.05,x,y,r*1.02);g.addColorStop(0,C(lt(col,.42*k)));g.addColorStop(.55,C(col));g.addColorStop(.88,C(dn(col,.32)));g.addColorStop(1,C(dn(col,.5)));c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,TAU);c.fill();};
+  // A lumpy mound: Porites lobata. A low dome crowded with rounded lobes of different sizes, each catching the light on its
+  // crown; tiny polyp pits freckle the surface; the base is undercut and crusted with pink coralline where it has died back.
+  function lobe(c,C,x,y,w,h,seed,col){const r=rng(seed),B=[],sk=(r()-.5)*.5;
+    
+    // the body: a dome, then lobes packed over it, back ones first
+    const dome=()=>{c.beginPath();c.moveTo(x-w*.95,y+2);for(let i=0;i<=24;i++){const u=i/24*2-1,e=Math.pow(Math.max(0,1-u*u),.55+r0*.3)*(1+sk*u);c.lineTo(x+u*w*.95,y-h*.78*e);}c.lineTo(x+w*.95,y+2);c.quadraticCurveTo(x,y+2+h*.3,x-w*.95,y+2);c.closePath();};const r0=r();
+    dome();const g=c.createLinearGradient(0,y-h,0,y+2+h*.15);g.addColorStop(0,C(lt(col,.15)));g.addColorStop(.7,C(dn(col,.3)));g.addColorStop(1,C(dn(col,.6)));c.fillStyle=g;c.fill();
+    // lobes along the crown poke above the dome line; the rest sit in it as low swellings
+    const n=Math.round(3+w*.2+r()*3);for(let i=0;i<n;i++){const u=r()*1.8-.9,e=Math.pow(Math.max(0,1-u*u),.55+r0*.3)*(1+sk*u),rr=(w*(.1+r()*.22))*(.6+.4*e);B.push({x:x+u*w*.92,y:y-h*.78*e+rr*(.3+r()*.5),r:rr});}
+    const sil=()=>{dome();for(const b of B){c.moveTo(b.x+b.r,b.y);c.arc(b.x,b.y,b.r,0,TAU);}};
+    for(const b of B){const gg=c.createRadialGradient(b.x-b.r*.3,b.y-b.r*.5,0,b.x,b.y,b.r);gg.addColorStop(0,C(lt(col,.4)));gg.addColorStop(.7,C(lt(col,.08)));gg.addColorStop(1,C(dn(col,.15)));c.fillStyle=gg;c.beginPath();c.arc(b.x,b.y,b.r,0,TAU);c.fill();}
+    c.save();dome();c.clip();
+    for(let i=0;i<n+3;i++){const u=r()*1.6-.8,e=Math.sqrt(1-u*u),bx=x+u*w*.85,by=y-h*.78*e*(.2+r()*.5),br=w*(.12+r()*.12);const gg=c.createRadialGradient(bx-br*.3,by-br*.5,0,bx,by,br*1.1);gg.addColorStop(0,C(lt(col,.3),.7));gg.addColorStop(.6,C(lt(col,.1),.25));gg.addColorStop(.85,C(dn(col,.4),.25));gg.addColorStop(1,C(dn(col,.4),0));c.fillStyle=gg;c.beginPath();c.arc(bx,by,br*1.1,0,TAU);c.fill();}
+    c.restore();
+    c.save();sil();c.clip();
+    const np=Math.min(300,w*h*.6|0);for(const[cc,fr] of[[C(dn(col,.5),.35),.6],[C(lt(col,.55),.3),.4]]){c.fillStyle=cc;c.beginPath();for(let i=0;i<np*fr;i++)c.rect(x+(r()*2-1)*w,y+2-r()*h*1.3,.7,.7);c.fill();}
+    
+    c.restore();
+  }
+  // Cauliflower coral: a short trunk forks again and again into thick, flattened branches that fan up and out, each ending
+  // in a broad lobed tip covered in little warts (verrucae). Gaps between the branches show dark.
+  function cauli(c,C,x,y,R,seed,col){const r=rng(seed),TIPS=[],SEG=[];
+    
+    const grow=(x0,y0,a,len,wd,d,z)=>{const x1=x0+Math.cos(a)*len,y1=y0+Math.sin(a)*len;SEG.push({x0,y0,x1,y1,wd,z,d});
+      if(d>=3||len<R*.18){TIPS.push({x:x1,y:y1,a,wd,z});return;}
+      const k=2+(r()<.35?1:0);for(let i=0;i<k;i++){const da=(i-(k-1)/2)*(.5+r()*.25)+(r()-.5)*.2-(a+Math.PI/2)*.12;grow(x1,y1,a+da,len*(.72+r()*.12),wd*.78,d+1,z+(r()-.5)*.6);}};
+    const nb=6+(r()*3|0);for(let i=0;i<nb;i++){const a=-Math.PI/2+(i-(nb-1)/2)*(2.3/nb)+(r()-.5)*.15;grow(x+(r()-.5)*R*.25,y,a,R*.36,R*.25,1,r()*2-1);}
+    // the dark heart of the head, so gaps read as depth
+    c.fillStyle=C(dn(col,.8));c.beginPath();c.ellipse(x,y-R*.42,R*.66,R*.4,0,0,TAU);c.fill();
+    SEG.sort((a,b)=>a.z-b.z);for(const s of SEG){const f=clamp((s.z+1)/2,0,1);c.strokeStyle=C(dn(col,.55-f*.25-s.d*.08));c.lineWidth=s.wd;c.lineCap='round';c.beginPath();c.moveTo(s.x0,s.y0);c.lineTo(s.x1,s.y1);c.stroke();}
+    TIPS.sort((a,b)=>a.z-b.z);
+    for(const t of TIPS){const f=clamp((t.z+1)/2,0,1),bc=dn(col,.28-f*.28),tw=t.wd*2.1;
+      c.save();c.translate(t.x,t.y);c.rotate(t.a+Math.PI/2);
+      c.fillStyle=C(dn(bc,.2));c.beginPath();c.ellipse(0,tw*.1,tw*.62,tw*.48,0,0,TAU);c.fill();
+      c.fillStyle=C(lt(bc,.15));c.beginPath();c.moveTo(-tw*.62,0);c.quadraticCurveTo(-tw*.6,-tw*.55,-tw*.2,-tw*.5);c.quadraticCurveTo(0,-tw*.75,tw*.22,-tw*.5);c.quadraticCurveTo(tw*.62,-tw*.52,tw*.62,0);c.closePath();c.fill();
+      c.fillStyle=C(lt(bc,.5),.75);c.beginPath();for(let k=0;k<5;k++){const vx=(k-2)*tw*.24,vy=-tw*.42-(k%2)*tw*.1;c.moveTo(vx+tw*.09,vy);c.arc(vx,vy,tw*.09,0,TAU);}c.fill();
+      c.fillStyle=C(lt(bc,.6),.5);c.beginPath();c.ellipse(-tw*.15,-tw*.38,tw*.28,tw*.1,0,0,TAU);c.fill();c.restore();}}
+  // Finger coral: a dense thicket of thick, blunt fingers fused at the base, some forked; tan to lavender at the tips.
+  function finger(c,C,x,y,w,h,seed,col,tip){const r=rng(seed),F=[];const n=Math.max(9,w*2.1|0);
+    for(let i=0;i<n;i++){const u=r()*2-1,z=r(),fh=h*(.4+r()*.6)*(1-u*u*.5);F.push({fx:x+u*w*.9,z,fh,lean:u*.28+(r()-.5)*.18,fw:Math.max(2,w*.2*(.8+r()*.4)),fork:r()<.35?.5+r()*.2:0,fa:(r()<.5?-1:1)*(.22+r()*.2)});}
+    F.sort((a,b)=>a.z-b.z);
+    
+    c.fillStyle=C(dn(col,.55));c.beginPath();c.ellipse(x,y-h*.04,w*.95,h*.2,0,0,TAU);c.fill();
+    // each finger: a slightly knobbly, round-ended column, lit from the upper left
+    const stroke=(x0,y0,x1,y1,wd,f)=>{const bc=dn(col,.42-f*.42),len=Math.hypot(x1-x0,y1-y0),ux=(x1-x0)/len,uy=(y1-y0)/len,nx=-uy,ny=ux,ph=r()*9,L=[],R=[];
+      for(let k=0;k<=8;k++){const t=k/8,ww=wd*.5*(1+.13*Math.sin(t*7+ph))*(1-t*.08),px=x0+(x1-x0)*t,py=y0+(y1-y0)*t;L.push([px+nx*ww,py+ny*ww]);R.push([px-nx*ww,py-ny*ww]);}
+      const g=c.createLinearGradient(x0+nx*wd*.5,y0+ny*wd*.5,x0-nx*wd*.5,y0-ny*wd*.5),sideA=nx<0;
+      g.addColorStop(0,C(sideA?lt(bc,.35):dn(bc,.3)));g.addColorStop(.45,C(lt(bc,.08)));g.addColorStop(1,C(sideA?dn(bc,.3):lt(bc,.35)));
+      c.fillStyle=g;c.beginPath();c.moveTo(...L[0]);for(const p of L)c.lineTo(...p);c.arc(x1,y1,wd*.46,Math.atan2(ny,nx),Math.atan2(ny,nx)+Math.PI,true);for(let k=R.length-1;k>=0;k--)c.lineTo(...R[k]);c.closePath();c.fill();
+      const tc=lt(mx(bc,tip,.4+f*.2),.12+f*.12);const tg=c.createRadialGradient(x1-wd*.15,y1-wd*.15,0,x1,y1,wd*.75);tg.addColorStop(0,C(lt(tc,.3),.95));tg.addColorStop(.6,C(tc,.7));tg.addColorStop(1,C(tc,0));c.fillStyle=tg;c.beginPath();c.arc(x1,y1+wd*.15,wd*.62,0,TAU);c.fill();
+      c.fillStyle=C(dn(bc,.4),.35);c.beginPath();for(let k=0;k<len*.5;k++){const t=r(),s2=r()*2-1;c.rect(x0+(x1-x0)*t+nx*s2*wd*.4,y0+(y1-y0)*t+ny*s2*wd*.4,.6,.6);}c.fill();};
+    for(const f of F){const tx=f.fx+f.lean*f.fh,ty=y-f.fh;if(f.fork){const mx_=lerp(f.fx,tx,f.fork),my=lerp(y,ty,f.fork);stroke(mx_,my,mx_+f.fa*f.fh*.45,ty+f.fh*.12,f.fw*.85,f.z);stroke(f.fx,y+1,mx_,my,f.fw,f.z);stroke(mx_,my,tx,ty,f.fw*.85,f.z);}
+      else stroke(f.fx,y+1,tx,ty,f.fw,f.z);}}
+  // Rice coral: thin plates growing out from the rock in tiers like shelf fungus, curling up at the edges; the upper faces
+  // bumpy with a pale rim, deep shadow under each.
+  function plates(c,C,x,y,w,seed,col){const r=rng(seed),n=2+(r()*2|0),P=[];
+    
+    const side=r()<.5?-1:1;for(let i=0;i<n;i++)P.push({y:y-w*.1-i*w*.19-r()*w*.08,x:x+side*w*(.1+r()*.35)*(i%2?-.6:1),w:w*(1-i*.14)*(.7+r()*.35),cup:.12+r()*.18,i});
+    c.fillStyle=C(dn(col,.6));c.beginPath();c.moveTo(x-w*.18,y+1);c.lineTo(P[n-1].x-w*.06,P[n-1].y);c.lineTo(P[n-1].x+w*.06,P[n-1].y);c.lineTo(x+w*.18,y+1);c.fill();
+    for(const p of P){const th=Math.max(1.3,w*.07),cu=p.w*p.cup;
+      const arc=(dy,k)=>{c.moveTo(p.x-p.w*k,p.y-cu*k+dy);c.quadraticCurveTo(p.x,p.y+cu*.6+dy,p.x+p.w*k,p.y-cu*k+dy);};
+      c.strokeStyle=C(DK,.3);c.lineWidth=th*1.6;c.beginPath();arc(th*1.3,.95);c.stroke();
+      c.fillStyle=C(dn(col,.1));c.beginPath();c.moveTo(p.x-p.w,p.y-cu);c.quadraticCurveTo(p.x,p.y+cu*.6-th*1.6,p.x+p.w,p.y-cu);c.quadraticCurveTo(p.x,p.y+cu*.6+th*.5,p.x-p.w,p.y-cu);c.fill();
+      c.strokeStyle=C(dn(col,.35));c.lineWidth=th;c.beginPath();arc(th*.2,1);c.stroke();
+      c.fillStyle=C(lt(col,.35),.55);c.beginPath();for(let k=0;k<p.w*.9;k++){const t=r()*2-1;c.rect(p.x+t*p.w*.92,p.y-cu*Math.abs(t)+cu*.6*(1-t*t)-th*.8-r()*th*.6,.7,.7);}c.fill();
+      c.strokeStyle=C(lt(col,.6),.9);c.lineWidth=.8;c.beginPath();c.moveTo(p.x-p.w,p.y-cu);c.quadraticCurveTo(p.x,p.y+cu*.6-th*1.6,p.x+p.w,p.y-cu);c.stroke();}}
+  // Blue rice coral: a thin, bumpy blue crust spread over the top of the rock.
+  function crust(c,C,x0,x1,yAt,seed,col){const r=rng(seed);c.fillStyle=C(col);c.beginPath();c.moveTo(x0,yAt(x0)+1);for(let x=x0;x<=x1;x+=1.5){const e=Math.sin(Math.PI*(x-x0)/(x1-x0));c.lineTo(x,yAt(x)-e*(1.8+1.4*Math.sin(x*.9+seed)));}c.lineTo(x1,yAt(x1)+1.5);c.closePath();c.fill();
+    c.fillStyle=C(lt(col,.45),.8);for(let x=x0+1;x<x1-1;x+=2.2){const e=Math.sin(Math.PI*(x-x0)/(x1-x0));c.beginPath();c.arc(x,yAt(x)-e*2.4-.3,.6+r()*.5,0,TAU);c.fill();}}
+  // Orange cup coral: a clump of short orange cylinders, each crowned with yellow tentacles; on shaded rock faces.
+  function cups(c,C,x,y,s,seed){const r=rng(seed),n=3+(r()*4|0);for(let i=0;i<n;i++){const cx=x+(r()-.5)*s*2.2,ch=s*(.5+r()*.6),cw=s*(.38+r()*.15),a=(r()-.5)*.6;
+      c.save();c.translate(cx,y);c.rotate(a);c.fillStyle=C('#c24a18');c.fillRect(-cw/2,-ch,cw,ch+1);c.fillStyle=C('#e87a28',.8);c.fillRect(-cw/2,-ch,cw*.35,ch);
+      c.fillStyle=C('#f8c830');c.beginPath();c.ellipse(0,-ch,cw*.75,cw*.4,0,0,TAU);c.fill();c.strokeStyle=C('#ffe060',.9);c.lineWidth=.5;c.beginPath();for(let k=0;k<7;k++){const ta=Math.PI+.2+k/6*(Math.PI-.4);c.moveTo(Math.cos(ta)*cw*.4,-ch);c.lineTo(Math.cos(ta)*cw*.85,-ch+Math.sin(ta)*cw*.6);}c.stroke();c.restore();}}
+  return{lobe,cauli,finger,plates,crust,cups};})();
+// Spotted eagle ray (hīhīmanu), seen from the side and a little above as it flies by: a heavy head with a rounded duck
+// bill, wings that rise and fall slowly, dark above with white spots and white beneath, a whip of a tail three times
+// its body. sp = half the wingspan in px; th = the wingbeat (radians).
+function drawEagleRay(c,x,y,dir,sp,th,dk){const K=(col,a=1)=>rgbStr(mx(col,"#0b1a24",dk*.8),a),E=1.0,se=Math.sin(E);c.save();c.translate(x,y);c.scale(dir,1);
+  // mostly gliding, with a few slow beats now and then
+  const fl=Math.sin(th)*(.14+.22*Math.max(0,Math.sin(th*.23))),cf=Math.cos(fl),sf=Math.sin(fl);
+  // wing outline in the wing's own plane: (x along the body, z out along the span, 0..1)
+  const W=[[.3,0],[.22,.25],[.08,.55],[-.12,.86],[-.26,1],[-.3,.96],[-.26,.75],[-.3,.5],[-.42,.22],[-.48,.04],[-.46,0]];
+  // the wing bends as it beats: the tip swings further than the root
+  const pt=(wx,wz,side)=>{const a=fl*(.45+.75*wz),z=wz*sp;return[wx*sp*1.1,-z*Math.sin(a)+z*Math.cos(a)*side*se];};
+  const proj=(side)=>W.map(([wx,wz])=>pt(wx,wz,side));
+  const wing=(side)=>{const P=proj(side),tipY=P[5][1],top=side>0?tipY>0:tipY<0;
+    c.fillStyle=top?K('#2a2c32'):K('#e8e8e2');c.beginPath();P.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();
+    if(top){c.save();c.clip();c.fillStyle=K('#f2f2ea',.9);const fz=Math.max(.25,Math.abs(cf*se-sf*side*0)+Math.abs(sf)*.5);for(let i=0;i<28;i++){const wx=lerp(.22,-.4,fHash(i*3.1+side)),wz=fHash(i*5.7+side*2)*.95,[px,py]=pt(wx,wz,side);c.beginPath();c.ellipse(px,py,sp*.026,sp*.026*Math.min(1,fz),0,0,TAU);c.fill();}c.restore();
+      c.strokeStyle=K('#14161a',.6);}else c.strokeStyle=K('#b8bab4',.6);
+    c.lineWidth=Math.max(.4,sp*.012);c.beginPath();P.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.stroke();};
+  // the tail, trailing in a gentle wave
+  c.strokeStyle=K('#26282c');c.lineCap='round';c.lineWidth=Math.max(.6,sp*.035);c.beginPath();c.moveTo(-sp*.45,0);for(let i=1;i<=12;i++){const u=i/12;c.lineTo(-sp*(.45+u*2.6),Math.sin(th*.5-u*3)*sp*.08*u);}c.stroke();
+  wing(-1);
+  // body: thick head and trunk, dark above and pale below, the bill out front
+  const g=c.createLinearGradient(0,-sp*.16,0,sp*.12);g.addColorStop(0,K('#30323a'));g.addColorStop(.72,K('#3a3c42'));g.addColorStop(.8,K('#d8d8d2'));g.addColorStop(1,K('#eeeee8'));
+  c.fillStyle=g;c.beginPath();c.moveTo(sp*.62,sp*.03);c.bezierCurveTo(sp*.64,-sp*.06,sp*.55,-sp*.12,sp*.42,-sp*.12);c.bezierCurveTo(sp*.2,-sp*.16,-sp*.2,-sp*.12,-sp*.46,-sp*.02);c.lineTo(-sp*.46,sp*.03);c.bezierCurveTo(-sp*.2,sp*.1,sp*.2,sp*.12,sp*.42,sp*.09);c.bezierCurveTo(sp*.55,sp*.09,sp*.62,sp*.07,sp*.62,sp*.03);c.fill();
+  c.fillStyle=K('#f2f2ea',.85);for(const [bx,by] of [[.1,-.1],[-.06,-.09],[-.2,-.06],[.24,-.1]]){c.beginPath();c.arc(bx*sp,by*sp,sp*.02,0,TAU);c.fill();}
+  c.fillStyle=K('#0c0c0e');c.beginPath();c.arc(sp*.4,-sp*.06,sp*.022,0,TAU);c.fill();c.strokeStyle=K('#1a1a1e',.6);c.lineWidth=Math.max(.3,sp*.01);c.beginPath();c.moveTo(sp*.6,sp*.05);c.quadraticCurveTo(sp*.52,sp*.075,sp*.44,sp*.07);c.stroke();
+  wing(1);c.restore();}
+// A moray (puhi; the yellowmargin moray) looking out of a hole in the coral: a thick neck, a blunt head with small eyes,
+// the mouth slowly opening and closing as it breathes; yellow-brown with dark freckles, the fin along its back edged in
+// yellow-green. out: how far it is out (0..1). gape 0..1.
+function drawMoray(c,x,y,dir,s,out,gape,dk){const K=(col,a=1)=>rgbStr(mx(col,'#0b1a24',dk*.8),a);c.save();c.translate(x,y);c.scale(dir*s,s);
+  // the hole
+  const hg=c.createRadialGradient(0,.3,0,0,0,4.6);hg.addColorStop(0,K('#050808',.95));hg.addColorStop(.55,K('#0a0e10',.85));hg.addColorStop(1,K('#0a0e10',0));c.fillStyle=hg;c.beginPath();c.ellipse(0,0,3.8,4.4,0,0,TAU);c.fill();
+  if(out>.02){const len=11*out,P=[];for(let i=0;i<=12;i++){const u=i/12;P.push([u*len,-u*u*3.2*out+Math.sin(u*Math.PI)*.8*out]);}
+    const w=u=>2.4-u*.25;
+    // neck: a thick tube out of the hole, curving up to the head; the fin along its back edged in yellow-green
+    const g0=c.createLinearGradient(0,-3,0,3);g0.addColorStop(0,K('#6e6230'));g0.addColorStop(.5,K('#8e7e40'));g0.addColorStop(1,K('#b8a868'));c.fillStyle=g0;
+    c.beginPath();P.forEach(([px,py],i)=>i?c.lineTo(px,py-w(i/12)):c.moveTo(px,py-w(0)));for(let i=12;i>=0;i--)c.lineTo(P[i][0],P[i][1]+w(i/12));c.closePath();c.fill();
+    c.strokeStyle=K('#b8c454',.9);c.lineWidth=.8;c.beginPath();P.forEach(([px,py],i)=>{if(i>9)return;i?c.lineTo(px,py-w(i/12)-.35):c.moveTo(px,py-w(0)-.35);});c.stroke();
+    c.fillStyle=K('#2a2414',.5);for(let i=1;i<11;i++){const [px,py]=P[i];for(const o of[-1.6,-.2,1.2]){c.beginPath();c.arc(px+((i*37+o*10)%5)*.14,py+o,.32,0,TAU);c.fill();}}
+    // head: tall behind the eyes, tapering to a long snout; the lower jaw drops as it breathes
+    const [hx,hy]=P[12],ang=Math.atan2(P[12][1]-P[10][1],P[12][0]-P[10][0])*.7;c.save();c.translate(hx-.6,hy);c.rotate(ang);const g=gape*.3;
+    c.save();c.translate(-.5,1);c.rotate(g);c.fillStyle=K('#a8985a');c.beginPath();c.moveTo(0,-.2);c.lineTo(5.6,-.1);c.quadraticCurveTo(5.4,1.2,3.4,1.7);c.quadraticCurveTo(1,2.1,0,1.9);c.closePath();c.fill();
+      c.fillStyle=K('#f0ece0');for(let k=0;k<5;k++){c.beginPath();c.moveTo(1+k*.9,-.1);c.lineTo(1.35+k*.9,-.75);c.lineTo(1.7+k*.9,-.1);c.fill();}c.restore();
+    if(gape>.05){c.fillStyle=K('#4a1e1c');c.beginPath();c.moveTo(-.5,1);c.lineTo(5.2,.85);c.lineTo(-.5+Math.cos(g)*5.6,1+Math.sin(g)*5.6);c.closePath();c.fill();}
+    const hg=c.createLinearGradient(0,-3.4,0,1.2);hg.addColorStop(0,K('#6a5e2e'));hg.addColorStop(1,K('#9a8a48'));c.fillStyle=hg;
+    c.beginPath();c.moveTo(-1.2,-2.3);c.bezierCurveTo(.4,-2.9,2.4,-2.6,4.2,-1.4);c.quadraticCurveTo(5.6,-.5,5.7,.4);c.lineTo(5.2,.95);c.lineTo(-.5,1.1);c.quadraticCurveTo(-1.5,.2,-1.2,-2.3);c.fill();
+    c.fillStyle=K('#f0ece0');for(let k=0;k<4;k++){c.beginPath();c.moveTo(1.6+k*.9,.95);c.lineTo(1.95+k*.9,1.55);c.lineTo(2.3+k*.9,.95);c.fill();}
+    c.fillStyle=K('#2a2414',.55);for(const [fx,fy] of [[0,-1.8],[1,-.6],[-.2,.2],[2.2,-2.2],[1.6,-1.4],[3.4,-.4]]){c.beginPath();c.arc(fx,fy,.3,0,TAU);c.fill();}
+    c.fillStyle=K('#e8dc70');c.beginPath();c.arc(3.6,-1.5,.62,0,TAU);c.fill();c.fillStyle=K('#0a0a08');c.beginPath();c.arc(3.75,-1.5,.36,0,TAU);c.fill();
+    c.strokeStyle=K('#6a5e2e');c.lineWidth=.45;c.lineCap='round';c.beginPath();c.moveTo(5.2,-.4);c.lineTo(5.9,-.7);c.stroke();c.restore();}
+  c.restore();}
+// Honu (green sea turtle), side-on, swimming right. Long front flippers that sweep like wings; short paddle-shaped rear
+// flippers trailing behind the shell with a stub of tail between; a smooth oval shell of olive-brown scutes with rays of
+// yellow-brown; a pale yellow plastron; a blunt head of dark scales edged in cream.
+function drawHonu(c,x,y,dir,t,dk,s=1){const K=(col,a=1)=>rgbStr(mx(col,'#0b1a24',dk*.8),a),fl=Math.sin(t*1.6),rf=Math.sin(t*1.6+1.2);c.save();c.translate(x,y);c.scale(dir*s,s);c.rotate(-.06+Math.sin(t*.8)*.05);
+  const flip=(px,py,len,wd,ang,col,edge)=>{c.save();c.translate(px,py);c.rotate(ang);c.fillStyle=K(col);c.beginPath();c.moveTo(0,-wd*.5);c.bezierCurveTo(len*.35,-wd*1.1,len*.8,-wd*.7,len,0);c.bezierCurveTo(len*.75,wd*.35,len*.3,wd*.7,0,wd*.5);c.closePath();c.fill();
+    if(edge){c.strokeStyle=K(edge,.7);c.lineWidth=.45;c.beginPath();c.moveTo(0,-wd*.5);c.bezierCurveTo(len*.35,-wd*1.1,len*.8,-wd*.7,len,0);c.stroke();c.lineWidth=.3;c.strokeStyle=K(edge,.45);c.beginPath();c.moveTo(len,0);c.bezierCurveTo(len*.75,wd*.35,len*.3,wd*.7,0,wd*.5);c.stroke();
+      const fg=c.createLinearGradient(0,-wd*.7,0,wd*.6);fg.addColorStop(0,K('#2e2e1c',0));fg.addColorStop(.45,K('#2e2e1c',.35));fg.addColorStop(1,K('#2e2e1c',0));c.fillStyle=fg;c.beginPath();c.moveTo(wd*.3,-wd*.3);c.bezierCurveTo(len*.4,-wd*.6,len*.8,-wd*.35,len*.95,0);c.bezierCurveTo(len*.7,wd*.15,len*.3,wd*.35,wd*.3,wd*.25);c.fill();c.fillStyle=K(edge,.8);c.beginPath();c.arc(len*.45,-wd*.62,.35,0,TAU);c.fill();}c.restore();};
+  const paddle=(px,py,ang,col)=>{c.save();c.translate(px,py);c.rotate(ang);c.fillStyle=K(col);c.beginPath();c.moveTo(0,-1.2);c.bezierCurveTo(-2.5,-2.2,-5.5,-1.8,-6.2,.2);c.bezierCurveTo(-5.4,2,-2.4,2,0,1.2);c.closePath();c.fill();
+    c.strokeStyle=K('#2a2a1c',.5);c.lineWidth=.3;c.beginPath();c.moveTo(-1.5,-1.2);c.lineTo(-1.7,1.2);c.moveTo(-3.4,-1.5);c.lineTo(-3.6,1.4);c.stroke();c.restore();};
+  // far side: front flipper, rear paddle
+  flip(8.2,.6,10.5,3.6,2.72-fl*.78,'#4a4a30');paddle(-9.5,2.2,.15+rf*.18,'#4e4e32');
+  // tail
+  c.fillStyle=K('#5a5a3a');c.beginPath();c.moveTo(-10.5,.8);c.lineTo(-14,1.8);c.lineTo(-10.5,2.4);c.fill();
+  // neck
+  c.fillStyle=K('#6a6a44');c.beginPath();c.moveTo(8,-1.4);c.quadraticCurveTo(11,-2.2,12.5,-1.4);c.lineTo(12.5,1.6);c.quadraticCurveTo(10,2.6,8,2.2);c.fill();
+  // shell: carapace and plastron
+  const g=c.createLinearGradient(0,-6,0,2);g.addColorStop(0,K('#7a6a3e'));g.addColorStop(.6,K('#5e5030'));g.addColorStop(1,K('#463c24'));c.fillStyle=g;
+  c.beginPath();c.moveTo(-11,1);c.bezierCurveTo(-11,-3.5,-5,-6.2,0,-6.2);c.bezierCurveTo(5,-6.2,10.5,-3.5,10.5,.8);c.quadraticCurveTo(0,2.2,-11,1);c.fill();
+  c.fillStyle=K('#d8c88e');c.beginPath();c.moveTo(-10,.9);c.quadraticCurveTo(0,1.6,10,.6);c.quadraticCurveTo(0,3.6,-10,.9);c.fill();
+  // scutes: the vertebral row along the top and the costal row on the side, each with yellow-brown rays
+  c.save();c.beginPath();c.moveTo(-11,1);c.bezierCurveTo(-11,-3.5,-5,-6.2,0,-6.2);c.bezierCurveTo(5,-6.2,10.5,-3.5,10.5,.8);c.quadraticCurveTo(0,2.2,-11,1);c.clip();
+  c.strokeStyle=K('#a08a50',.32);c.lineWidth=.3;for(const [cx,cy] of [[-7,-1.4],[-3,-2.2],[1.6,-2.2],[6.2,-1.2],[-3.5,-5.4],[1,-5.8],[5.5,-4.8]]){c.beginPath();for(let k=0;k<6;k++){const a=k/6*TAU+cx,l=1.3+((k*7+cx*3)%5)*.25;c.moveTo(cx+Math.cos(a)*.4,cy+Math.sin(a)*.3);c.lineTo(cx+Math.cos(a)*l,cy+Math.sin(a)*l*.7);}c.stroke();}
+  c.strokeStyle=K('#2e2618',.45);c.lineWidth=.35;c.beginPath();c.moveTo(-9.6,-2.2);c.quadraticCurveTo(0,-5.4,9.4,-2);
+  for(const [sx,lean] of [[-5.6,-.6],[-.8,-.2],[3.8,.3]]){c.moveTo(sx,-5.3+Math.abs(sx)*.06);c.quadraticCurveTo(sx+lean,-2.4,sx+lean*1.6,-.1);}
+  c.moveTo(-3.2,-6);c.lineTo(-3,-4.9);c.moveTo(1.4,-6.1);c.lineTo(1.5,-5);c.stroke();
+  c.strokeStyle=K('#2e2618',.35);c.beginPath();c.moveTo(-10.8,-.2);c.quadraticCurveTo(0,.9,10.4,-.3);for(let k=0;k<11;k++){const mx_=-10+k*2;c.moveTo(mx_,-.2+Math.abs(mx_)*.01);c.lineTo(mx_+.2,1.2);}c.stroke();c.restore();
+  c.fillStyle=K('#b8a670',.35);c.beginPath();c.ellipse(-1.5,-4.6,6,1.2,-.05,0,TAU);c.fill();
+  // near rear paddle
+  paddle(-9,2.8,.3+rf*.22,'#66663e');
+  // head: rounded, a short beak, scales edged in cream
+  c.fillStyle=K('#6e6442');c.beginPath();c.moveTo(11.5,-2);c.bezierCurveTo(13,-3.6,16.4,-3,16.8,-.6);c.quadraticCurveTo(16.6,1,15.2,1.4);c.lineTo(12,1.8);c.closePath();c.fill();
+  c.save();c.beginPath();c.moveTo(11.5,-2);c.bezierCurveTo(13,-3.6,16.4,-3,16.8,-.6);c.quadraticCurveTo(16.6,1,15.2,1.4);c.lineTo(12,1.8);c.closePath();c.clip();
+  c.strokeStyle=K('#d8cc9c',.6);c.lineWidth=.28;c.beginPath();c.moveTo(14.2,-3.2);c.lineTo(14,-2);c.lineTo(12.6,-1.4);c.moveTo(14,-2);c.lineTo(15.6,-2.4);c.moveTo(12.6,-1.4);c.lineTo(12.8,.2);c.lineTo(14.4,.6);c.lineTo(15.4,-.4);c.moveTo(12.8,.2);c.lineTo(12,.9);c.moveTo(14.4,.6);c.lineTo(14.2,1.6);c.stroke();c.restore();
+  c.fillStyle=K('#c8bc8a');c.beginPath();c.moveTo(16.8,-.4);c.quadraticCurveTo(16.4,.9,15,1.3);c.lineTo(15.4,.2);c.fill();
+  c.fillStyle=K('#141410');c.beginPath();c.arc(15.1,-1.3,.5,0,TAU);c.fill();c.fillStyle=K('#ffffff',.6);c.beginPath();c.arc(15.25,-1.45,.15,0,TAU);c.fill();
+  // near front flipper with its scaled leading edge and a claw
+  // the shoulder: skin bulging out from under the front of the shell, so the flipper grows from it
+  c.fillStyle=K('#66663e');c.beginPath();c.ellipse(8.4,1.5,2.7,2.1,.2,0,TAU);c.fill();
+  flip(8.4,1.5,11.5,4.2,2.62-fl*.85,'#6a6a44','#e0d6a8');
+  c.restore();}
+// Reef life that isn't caught, so the water is never empty: schools of manini grazing the coral, yellow tang, kihikihi,
+// lauwiliwili and the humuhumunukunukuāpuaʻa over the heads, hīnālea darting about, uhu biting the coral, a shimmering
+// school of akule out in the open, a moray watching from its hole, a spotted eagle ray flying past now and then, a
+// whitetip reef shark resting on the sand by day and hunting at night, and the honu.
+// The big coral heads are shared with the reef drawing, so the animals swim over them rather than through them.
+var KAUBM={key:'',list:[]};
+function kauBommies(){const B=KAUBM;if(B.tw===TW&&B.wx===WX&&B.s===SURF&&B.g===GROUND&&B.n===cboulders.length)return B.list;Object.assign(B,{tw:TW,wx:WX,s:SURF,g:GROUND,n:cboulders.length});const L=[],hs=fHash,ft=pxPerFt();
+  for(let n=Math.floor(DOCKX/120)-1;n*120<WX+120;n++){const x=n*120+hs(n*4.4+.5)*80;if(kauSand(x/TW)>.04||x<DOCKX+70||hs(n*7.7)<.3)continue;
+    const w=ft*(1.5+hs(n*3.3)*1.7),b=Math.max(kauRockAt(x-w*.7),kauRockAt(x+w*.7),kauRockAt(x)),h=w*(.8+hs(n*5.5)*.35);L.push({x,y:b+2,w,h,sd:n*13+1,dep:clamp((b-SURF)/(GROUND-SURF),0,1)});}
+  for(const k of cboulders){if(k.log)continue;const b=kauRockAt(k.x);L.push({x:k.x,y:b+2,w:k.r*1.35,h:k.r*1.75,sd:(k.x|0)*7+5,dep:clamp((b-SURF)/(GROUND-SURF),0,1)});}
+  return KAUBM.list=L;}
+function kauHeadAt(x,b){let t=b;for(const m of kauBommies()){const u=(x-m.x)/(m.w*.82);if(Math.abs(u)<1)t=Math.min(t,m.y-m.h*.78*Math.sqrt(1-u*u)+3);}return t;}
+function kauTopAt(x){let t=kauRockAt(x);for(const m of kauBommies()){const u=(x-m.x)/(m.w*.82);if(Math.abs(u)<1)t=Math.min(t,m.y-m.h*.78*Math.sqrt(1-u*u)+3);}return t;}
+const KAULIFE={key:'',groups:null,uhu:null,shark:null,ray:null,akule:null,honu:null,lt:0};
+const AMB={};for(const id of['ytang','manini','idol','humu','lauwili','hinalea','akule','uhu','uhufem','whitetip'])AMB[id]={id,shape:'amb'};
+function kauLifeSetup(){const key=[TW,WX,SURF,GROUND].join('|');if(KAULIFE.key===key)return;KAULIFE.key=key;const hs=fHash,G0=[];
+  // reef fish in groups along the reef: [kind, how many, how far they roam, how high over the coral, size in ft]
+  const KINDS=[['manini',[6,14],28,[3,10],.5],['ytang',[2,6],18,[4,12],.55],['idol',[2,2],14,[6,16],.6],['humu',[1,1],16,[3,8],.65],['lauwili',[5,10],24,[14,30],.5],['hinalea',[1,2],30,[2,9],.6]];
+  for(let n=0;n<44;n++){const x=DOCKX+40+hs(n*3.7+1)*(WX-DOCKX-60);if(kauSand(x/TW)>.25)continue;const K=KINDS[Math.floor(hs(n*5.3)*KINDS.length)],cnt=Math.round(lerp(K[1][0],K[1][1],hs(n*6.1))),F=[];
+    for(let i=0;i<cnt;i++)F.push({ph:hs(n*9.3+i*1.7)*TAU,r:K[2]*(.4+hs(n*2.2+i*3.1)*.6),h:lerp(K[3][0],K[3][1],hs(n*4.1+i*2.3)),sp:.25+hs(n*1.9+i*4.4)*.3,s:.85+hs(n*8.8+i)*.3,dx:(hs(n*7.7+i*5.5)-.5)*K[2]*.6});
+    G0.push({x,kind:K[0],F,len:K[4]});}
+  KAULIFE.groups=G0;
+  KAULIFE.uhu=[0,1,2,3,4].map(i=>({x:DOCKX+120+hs(i*13.1)*(WX-DOCKX-200),tx:0,st:'swim',tt:0,face:1,fem:i>0,len:i>0?1.15:1.5,ph:i*2.1,y:0}));
+  KAULIFE.akule={x:DOCKX+TW*.5,dir:1,y:0,pts:Array.from({length:46},(_,i)=>{const r1=Math.sqrt(-2*Math.log(.02+hs(i*2.3)*.98)),a1=hs(i*4.1)*TAU;return{ox:clamp(r1*Math.cos(a1)*.42,-1,1),oy:clamp(r1*Math.sin(a1)*.42,-1,1),ph:hs(i*6.7)*TAU,sz:.85+hs(i*8.3)*.3,face:1};})};
+  KAULIFE.shark={x:0,y:0,face:1,st:'rest'};KAULIFE.ray={t:-25,x:0,y:0,dir:1};KAULIFE.honu={x:DOCKX+200,dir:1,up:0,y:0};}
+function drawKauLife(c,dk,vx0,vx1){kauLifeSetup();const t=G.t,dt=clamp(t-(KAULIFE.lt||t),0,.1),ft=pxPerFt(),night=clamp((dk-.35)/.3,0,1),day=1-night;KAULIFE.lt=t;
+  const fish=(sp,x,y,L,face,wig,a,pitch)=>{if(a<=.02||x<vx0-L||x>vx1+L)return;c.save();c.translate(x,y);if(pitch)c.rotate(pitch*face);drawFish(c,sp,L,face,wig,a,false);c.restore();};
+  const D=GROUND-SURF;
+  // a spotted eagle ray now and then, by day, flying past in mid-water
+  {const R=KAULIFE.ray;R.t+=dt;if(R.t>0&&!R.on&&day>.5){R.on=true;R.dir=fHash(Math.floor(t))<.5?1:-1;R.x=R.dir>0?G.cam-120:G.cam+W+120;R.y=SURF+D*(.4+fHash(Math.floor(t)*1.3)*.25);}
+    if(R.on){R.x+=R.dir*22*dt;R.y+=Math.sin(t*.3)*dt*2;if((R.dir>0&&R.x>G.cam+W+160)||(R.dir<0&&R.x<G.cam-160)){R.on=false;R.t=-(90+fHash(t)*120);}
+      else drawEagleRay(c,R.x,R.y,R.dir,ft*3,t*1.4,dk);}}
+  // a school of akule out in the open, over the reef by day and up toward the surface at night
+  {const A=KAULIFE.akule,wantY=SURF+D*lerp(.5,.22,night);A.y=A.y?A.y+(wantY-A.y)*Math.min(1,dt*.2):wantY;A.x+=A.dir*9*dt;
+    if(A.x>WX-120&&A.dir>0){A.dir=-1;A.turn=t;}if(A.x<DOCKX+140&&A.dir<0){A.dir=1;A.turn=t;}
+    const L=ft*.72,sx=1+.3*Math.sin(t*.13),sy=1-.25*Math.sin(t*.13);for(const p of A.pts){const ox=p.ox*48*sx+Math.sin(t*.35+p.ph)*5,oy=p.oy*16*sy+Math.sin(t*.5+p.ph*1.3)*2.5+Math.sin(ox*.05+t*.6)*5,x=A.x+ox,y=A.y+oy+Math.sin(t*.25+A.x*.01)*6;
+      // the school turns as a wave: the fish at the front turn first
+      if(A.turn!=null&&p.face!==A.dir&&t-A.turn>(.5-ox*A.dir/92)*1.4)p.face=A.dir;else if(A.turn==null)p.face=A.dir;
+      const flash=Math.max(0,Math.sin(t*1.7+p.ph))**6;fish(AMB.akule,x,y,L*p.sz,p.face,t*9+p.ph,.9,Math.sin(t*.8+p.ph)*.08);
+      if(flash>.3&&x>vx0&&x<vx1){c.fillStyle=`rgba(255,255,255,${(flash-.3)*.5*(1-dk*.7)})`;c.beginPath();c.ellipse(x,y,L*.3,L*.06,0,0,TAU);c.fill();}}}
+  // morays in holes in some of the big coral heads, slowly in and out, breathing
+  for(const m of kauBommies()){if(fHash(m.sd*.37)<.7||m.w<ft||m.x<vx0-40||m.x>vx1+40)continue;const side=fHash(m.sd*.71)<.5?-1:1,hx=m.x+side*m.w*.42,hy=m.y-m.h*.42,ph=m.sd%7;
+    const out=clamp(.55+.45*Math.sin(t*.12+ph),0,1)*.85,gape=Math.pow(Math.max(0,Math.sin(t*1.1+ph)),2);drawMoray(c,hx,hy,side,ft*.75/11,out,gape,dk);}
+  // the whitetip: lying on the sand of a channel by day, cruising the reef at night
+  {const S0=KAULIFE.shark,L=ft*4.6,restX=TW*1.52,restY=bottomAt(restX)-L*.06;if(!S0.x){S0.x=restX;S0.y=restY;}
+    if(night>.5){S0.st='hunt';const spd=16;S0.x+=S0.face*spd*dt;if(S0.x>WX-60)S0.face=-1;if(S0.x<DOCKX+90)S0.face=1;const ty=Math.min(kauTopAt(S0.x+S0.face*L*.4),kauTopAt(S0.x))-L*.1-6+Math.sin(t*.4)*5;S0.y+=(ty-S0.y)*Math.min(1,dt*.8);
+      fish(AMB.whitetip,S0.x,S0.y,L,S0.face,t*4,1,clamp((ty-S0.y)*.01,-.12,.12));}
+    else{const dx=restX-S0.x;if(Math.abs(dx)>3){S0.face=dx>0?1:-1;S0.x+=S0.face*12*dt;S0.y+=((Math.abs(dx)<40?restY:Math.min(restY,kauTopAt(S0.x)-L*.1-6))-S0.y)*Math.min(1,dt);fish(AMB.whitetip,S0.x,S0.y,L,S0.face,t*4,1,0);}
+      else{S0.x=restX;S0.y=restY;fish(AMB.whitetip,S0.x,S0.y,L,S0.face,Math.sin(t*.6)*.6,1,-.03);}}}
+  // reef fish over the coral; they hide in the reef at night
+  const rf=day*.98+.02;if(rf>.05)for(const g of KAULIFE.groups){if(g.x<vx0-60||g.x>vx1+60)continue;const L=ft*g.len;
+    for(const f of g.F){const a=t*f.sp+f.ph,dart=g.kind==='hinalea'?Math.sin(t*2.3+f.ph)*.6:0,x=g.x+f.dx+Math.sin(a+dart)*f.r,face=Math.cos(a+dart)>=0?1:-1,y=kauTopAt(x)-f.h-L*.3+Math.sin(a*1.7)*2.5;
+      const peck=g.kind==='manini'&&Math.sin(a*2.3)>.75;fish(AMB[g.kind],x,y+(peck?2:0),L*f.s,face,t*(g.kind==='hinalea'?12:7)+f.ph,rf,peck?.35:0);}}
+  // uhu: swim to a spot on the coral, bite at it for a while, move on; asleep in the reef at night
+  if(day>.05)for(const u of KAULIFE.uhu){const L=ft*u.len;if(u.st==='swim'){if(!u.tx)u.tx=u.x+(fHash(t+u.ph)-.5)*160;u.tx=clamp(u.tx,DOCKX+90,WX-60);if(kauSand(u.tx/TW)>.2)u.tx=u.x;
+      const dx=u.tx-u.x;u.face=dx>=0?1:-1;u.x+=u.face*Math.min(Math.abs(dx),10*dt);if(Math.abs(dx)<2){u.st='bite';u.tt=t+2+fHash(t*1.7+u.ph)*3;}}
+    else if(t>u.tt){u.st='swim';u.tx=0;}
+    const biting=u.st==='bite',ty=kauTopAt(u.x+u.face*L*.45)-(biting?L*.18:L*.45+6);u.y=u.y?u.y+(ty-u.y)*Math.min(1,dt*1.5):ty;
+    const jab=biting?Math.max(0,Math.sin(t*5+u.ph))*1.2:0;fish(u.fem?AMB.uhufem:AMB.uhu,u.x+u.face*jab,u.y,L,u.face,t*(biting?3:6)+u.ph,day,biting?.45:0);}
+  // the honu: cruises along over the reef, rising to the surface every few minutes to breathe
+  {const H=KAULIFE.honu;H.x+=H.dir*7*dt;if(H.x>TW*1.9)H.dir=-1;if(H.x<DOCKX+120)H.dir=1;H.up=(H.up+dt/120)%1;
+    const reef=Math.min(kauTopAt(H.x),kauTopAt(H.x+H.dir*14),kauTopAt(H.x-H.dir*14))-16,breathe=H.up>.85?Math.sin((H.up-.85)/.15*Math.PI):0,ty=lerp(reef,SURF+4,breathe);H.y=H.y?H.y+(ty-H.y)*Math.min(1,dt*1.2):ty;
+    if(H.x>vx0-30&&H.x<vx1+30)drawHonu(c,H.x,H.y,H.dir,t,dk,1.1);}}
+
 // ---- Russian River Falls: the centerpiece of the Kenai ----
 // Looking upstream from the pool below the falls: the river pours over a broad shelf of jointed dark rock in two tiers,
 // mist hangs over the plunge, salmon fling themselves at the lower tier during a run, and a brown bear stands on a
@@ -8834,6 +9728,7 @@ const LINFO={
   liver:{rod:'Catfish Rod with a sinker rig. Lob it out gently so it stays on.',how:'Soft and smelly. Cast gently or it flies off the hook, then let it sit on the bottom and wait for the scent to work.'},
   dough:{rod:'Catfish Rod or All-Round with a sinker on the bottom. Carp pull hard and run far.',how:'Mold it around the hook and let it sit still on the bottom. Carp take their time, so be patient.'},
   shrimp:{rod:'All-Round or the Surf & Pier Rod, with a sinker on the bottom or under a bobber.',how:'Hooked through the tail so it keeps kicking. Fish it on the sand for redfish, pompano and flounder, tight to the pilings for sheepshead, or under a bobber at night for speckled trout. Only salt water fish want it.'},
+  tako:{rod:'The heaviest rod you have, with a sinker on the bottom: ulua run for the rocks.',how:'Hook a whole tako and cast it out along the ledge, then leave it. Ulua hunt by night and find it by smell. Bonefish and goatfish pick at it on the sand by day.'},
   roe:{rod:'All-Round or the Heavy Rod with a split shot or a drift rig, bounced along the bottom in the current.',how:'Let it tumble downstream right along the gravel where the fish hold. Salmon take it out of habit, trout and char because it\u2019s food.'},
   corn:{rod:'All-Round with a split shot, or Ultralight for stocked trout.',how:'A few kernels on a small hook, fished on the bottom or under a bobber. Tough enough to survive nibblers.'},
   spinner:{how:'Cast and reel steadily so the blade keeps spinning. Faster in warm water, slower when it\u2019s cold.',reg:['trout','brook','brown','pike','smallmouth','pickerel','whitebass']},
@@ -8924,6 +9819,7 @@ function renderInstall(){const st=(n,t,p,img)=>`<section class="inst-step"><h3><
    +'<div class="inst-done">Tight lines!</div>';}
 // ---------- dev notes: newest first. Keep each line to a sentence or less: what changed, not how ----------
 const NOTES=[
+  ["v1.29", "Kaʻū Coast, Hawaiʻi", ["New place at level 29: black lava ledges on Hawaiʻi Island, below Mauna Loa and Kīlauea", "A living reef: coral heads, reef fish, uhu, morays, an eagle ray, a whitetip shark and honu", "Surf surges up the lava ledge you fish from", "The plane's banner speaks Hawaiian here", "Nine new fish, from āholehole to giant ulua, and a legend", "Tako (octopus) bait", "Moi season is closed in summer, so they go back", "Fixed the bottom of the water hiding under the buttons when an app toolbar appears after loading"]],
   ["v1.28", "Fly casting", ["False casts carry more line each stroke, building up to most of the final cast", "The angler stands ready while you pick the power", "The rod leads and the line follows it on every stroke", "Recasting picks the line up off the water into the back cast, and the power meter stays on screen"]],
   ["v1.27", "Kenai River", ["New place at level 22: the Kenai River in Alaska, with king, sockeye, coho and pink salmon runs by season", "Rainbows, Dolly Varden and grayling live there all year", "A waterfall where salmon leap during the runs and a bear fishes from the rocks", "Summer nights stay light, and clear fall and winter nights bring the northern lights", "New bait: cured salmon roe"]],
   ["v1.27", "Leaderboard", ["Each board now has This month and All-time", "Your place and the anglers just above and below you show when you're outside the top 10", "Past months keep their top 3", "Every species can now grow a rare trophy size, so no board tops out"]],
@@ -9020,9 +9916,10 @@ function showCatch(){
   {const canB=gearOn('bucket')&&baitSized(P.sp,P.len),full=bucketCount()>=BUCKET_MAX,canC=CUT_OK.has(P.sp.id)&&!P.sp.legend;
     $('#cBucket').hidden=!canB;$('#cBucket').disabled=full;$('#cBucketAmt').textContent=full?'Bucket is full':`Live bait · ${bucketCount()+1}/${BUCKET_MAX}`;
     {const n=cutStrips(P.weight),rm=cutRoom();$('#cCut').hidden=!canC;$('#cCut').disabled=rm<=0;$('#cCutAmt').textContent=rm<=0?(gearOn('cooler')?'Cooler is full':'Bag is full · get a cooler'):rm<n?`Room for ${rm} of ${n} strips`:`${n} strip${n>1?'s':''} · keeps a day`;}$('#cKeep').hidden=!canB&&!canC;}
-  {const sea=!!G.sea,rel=!!P.sp.release;$('#cBucket').firstChild.textContent=sea?'Live well':'Bait bucket';$('#cRelease').firstChild.textContent=rel?'Tag & release':'Release';$('#cSell').hidden=rel;$('#cRelease').style.gridColumn=rel?'1 / -1':'';
+  {const sea=!!G.sea,shut=closedSeason(P.sp),rel=!!P.sp.release||shut;$('#cBucket').firstChild.textContent=sea?'Live well':'Bait bucket';$('#cRelease').firstChild.textContent=P.sp.release?'Tag & release':'Release';if(shut){$('#cBucket').hidden=true;$('#cCut').hidden=true;$('#cKeep').hidden=true;}$('#cSell').hidden=rel;$('#cRelease').style.gridColumn=rel?'1 / -1':'';
     if(sea){const canW=SEA_BAIT.has(P.sp.id),full=G.sea.well.length>=WELL_MAX;$('#cBucket').hidden=!canW;$('#cKeep').hidden=!canW;$('#cBucket').disabled=full;$('#cBucketAmt').textContent=full?'The well is full':`Bait for the tuna rod \u00b7 ${G.sea.well.length+1}/${WELL_MAX}`;$('#cCut').hidden=true;}
-    if(rel)$('#cRelAmt').textContent='Tow it alongside till it kicks off'+(respectFor(P)?` \u00b7 +${respectFor(P)} respect`:'');
+    if(shut)$('#cRelAmt').textContent=`Closed season · +${Math.ceil(P.value*.5)}`+(respectFor(P)?` \u00b7 +${respectFor(P)} respect`:'');
+    else if(rel)$('#cRelAmt').textContent='Tow it alongside till it kicks off'+(respectFor(P)?` \u00b7 +${respectFor(P)} respect`:'');
     if(P.fightT){const s=document.createElement('span');s.className='badge alt';s.textContent=`Fight ${Math.floor(P.fightT/60)}:${String(Math.floor(P.fightT%60)).padStart(2,'0')}`;$('#cBadges').append(s);}}
   const c=$('#catchCanvas'),x=c.getContext('2d');let t0=performance.now();
   const anim=()=>{if($('#catch').hidden)return;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,640,320);const t=(performance.now()-t0)/1000;
@@ -9032,6 +9929,8 @@ function showCatch(){
     x.fillStyle='rgba(255,255,255,.5)';for(let i=0;i<10;i++){const a=t*.8+i*.63,r=140+Math.sin(t*2+i)*14;x.fillRect(320+Math.cos(a)*r*1.6,160+Math.sin(a)*r*.7,3,3);}
     requestAnimationFrame(anim);};anim();
 }
+// A species with a closed season (closed: the seasons it's closed in) can be caught then, but must go back.
+function closedSeason(sp){return!!(sp&&sp.closed&&sp.closed.includes(seasonIdx()));}
 function finishCatch(sold){const P=G.pending;if(!P)return;const rp0=sold?0:respectFor(P);const amt=sold?P.value:Math.ceil(P.value*.5);catchEv(P,sold?'sold':P.sp.release?'tagged':'released',amt,rp0);S.coins+=amt;S.stats.earned+=amt;if(!sold){S.stats.released++;S.luck=Math.min(.6,S.luck+(P.bed?.08:.04));{const rp=rp0;markRespect(P);if(rp){const r0=rankIdx();S.respect=(S.respect||0)+rp;if(rankIdx()>r0)setTimeout(()=>{toast(`Respect earned: ${rankName()}`,rankUnlocks(rankIdx()));SFX.coin();vib([60,40,60]);},1700);}}gainXP(P.bed?10:4);if(P.bed){P.bed.empty=false;setTimeout(updateNests,1500);}}
   G.pending=null;save();SFX.coin();resume();toast(sold?`+${amt} coins`:P.bed?'Back to its nest':P.sp.giant?'Tagged and released':'Released',sold?null:`+${amt} coins · luck now +${Math.round(S.luck*100)}%`+(rp0?` · +${rp0} respect`:''));
   const qd=(P.quest||[]).filter(h=>h.done);if(qd.length)setTimeout(()=>{toast('Quest complete!',qd.map(h=>`${qTitle(h.q)} · +${h.q.reward} coins`).join(' · '));SFX.coin();},1300);updateQuestBtn();}
